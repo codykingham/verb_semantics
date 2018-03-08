@@ -1,4 +1,5 @@
 from IPython.display import HTML, display
+from random import shuffle
 
 def filter_results(results, levels={}):
     
@@ -25,7 +26,7 @@ def filter_results(results, levels={}):
     return no_duplicates
 
 
-def show_results(results, cl_index=0, option=0, limit=100, highlight=[]):
+def show_results(results, cl_index=0, option=0, limit=100, highlight=[], random=False):
     
     '''
     Prints results from a TF search template for manual inspection.
@@ -36,6 +37,9 @@ def show_results(results, cl_index=0, option=0, limit=100, highlight=[]):
     reg_text = '<span style="font-family: Times New Roman; font-size: 14px; line-height: 1">{}</span>'
     heb_text = '<span style="font-family: Times New Roman; font-size: 20px; line-height: 1">{}</span>'
     high_text = '<span style="color: blue">{}</span>'
+    
+    if random:
+        shuffle(results)
     
     for i, result in enumerate(results):
         
