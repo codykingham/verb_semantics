@@ -1,5 +1,6 @@
 from IPython.display import HTML, display
 from random import shuffle
+from itertools import cycle
 
 def filter_results(results, levels={}):
     
@@ -34,12 +35,16 @@ def show_results(results, cl_index=0, option=0, limit=100, highlight=[], random=
     
     from __main__ import T, L, F
     
-    reg_text = '<span style="font-family: Times New Roman; font-size: 14px; line-height: 1">{}</span>'
-    heb_text = '<span style="font-family: Times New Roman; font-size: 20px; line-height: 1">{}</span>'
-    high_text = '<span style="color: blue">{}</span>'
+    reg_text = '<span style="font-family: Times New Roman; font-size: 18px; line-height: 1">{}</span>'
+    heb_text = '<span style="font-family: Times New Roman; font-size: 24px; line-height: 1">{}</span>'
+    high_text = '<span style="color: {}">{}</span>'
+    colors = cycle(('blue', 'green'))
     
     if random:
         shuffle(results)
+    
+    # summarize results first
+    print(len(results), 'results\n')
     
     for i, result in enumerate(results):
         
@@ -48,16 +53,26 @@ def show_results(results, cl_index=0, option=0, limit=100, highlight=[], random=
         text = ''
         
         # format words and words with highlights
+        
+        text = ''
+        highlights = {}
+        
+        # format highlighted words
+        for index in highlight:
+            hi = result[index]
+            hcolor = next(colors)
+            if F.otype.v(hi) == 'word':
+                highlights[hi] = high_text.format(hcolor, T.text([hi]))
+            else:
+                for w in L.d(hi, otype='word'):
+                    highlights[w] = high_text.format(hcolor, T.text([w]))
+        
+        # format the whole clause string
         for w in L.d(clause, otype='word'):
-            highlights = []
-            for h_index in highlight:
-                h = result[h_index]
-                if F.otype.v(h) == 'word':
-                    highlights.append(h)
-                else:
-                    highlights.extend(L.d(h, otype='word'))
-            w_text = T.text([w]) if w not in highlights else high_text.format(T.text([w]))
-            text += w_text
+            if w in highlights:
+                text += highlights[w]
+            else:
+                text += T.text([w])
     
         # display pretty Hebrew results
         display(HTML(reg_text.format(str(i+1) + '. ' + ref)))
