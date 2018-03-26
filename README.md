@@ -1,7 +1,7 @@
 # Semantic Space
 ## Harvesting Noun Similarity Sets from BHSA
 
-[Read the draft text]("DRAFT. Kingham, C. Modeling Noun Semantics with Vector Spaces and the ETCBC Hebrew Database.pdf") of my 2018 ETEN conference presentation, describing the rationale of this project.
+Read the draft text, "Modeling Noun Semantics with Vector Spaces and the ETCBC Hebrew Database" (above) of my 2018 ETEN conference presentation, describing the rationale of this project.
 
 The goal of this project is to cluster similar nouns in the Hebrew Bible using only syntactic data. That is done with a semantic [vector space model](https://en.wikipedia.org/wiki/Vector_space_model), by which the lexical and syntactic context of words can be compared as [vectors](https://en.wikipedia.org/wiki/Vector_space). 
 
