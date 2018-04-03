@@ -9,9 +9,10 @@ This project applies an adaptation of Padó and Lapata's ([2007](https://www.mi
 
 The data used for the analysis is the [ETCBC](http://www.etcbc.nl)'s [BHSA](https://github.com/ETCBC/bhsa) in [Text-Fabric representation](https://github.com/Dans-labs/text-fabric/wiki). 
 
-The repository consists of four primary analysis notebooks:
+The repository consists of these primary analysis notebooks:
 
-1) word2vec Experiment - An experiment that applies word2vec yields a set of low quality similarity sets. However, these sets are useful for notebook 2.
+1) word2vec Experiment - An experiment that applies word2vec yields a set similarity sets. These sets are interesting but contain mixed results, such as the combination of numbers with animals (due to a high frequency of co-occurrence). However, these sets are useful for notebook 2.
 2) Context Selection Discovery - This NB explores which colexemes should be selected on the basis of the noun's status in the clause. E.g. if the noun is in a direct object function phrase, the verb of the predicate phrase is valuable and should be considered. The similar words generated in the word2vec experiment (1) are used to identify other desirable traits that should be considered in the selection process.
 3) Context Selection Development - This NB develops the functions that can extract the needed relations identified in the context selection discovery NB.
 4) Semantic Space Construction - The semantic space is constructed using the context selection functions. Words are clustered into similarity sets. The results are exported to a text-fabric data representation stored on lexeme nodes in the BHSA dataset.
+5) Evaluation - The semantic space is evaluated by exploring what features are most determiniative for a word's location in the space or its similarity to other words. Are certain verbs or coordinate relations especially important? Can these verbs/co-nouns be considered formal attributes of a noun?
