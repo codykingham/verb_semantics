@@ -11,6 +11,7 @@ A single class, SemSpace, contains all of the methods combined and can be used f
 evaluations and analyses.
 
 Most of the code in this module is derived from notebook 4 in my semantics repo.
+https://github.com/codykingham/semantics
 '''
 
 import collections, os, math
