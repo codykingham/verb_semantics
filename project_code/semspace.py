@@ -48,9 +48,12 @@ class SemSpace:
         
         # apply pca or other data maneuvers
         self.pca_ll = self.apply_pca(self.loglikelihood)
+        self.pca_ll_3d = self.apply_pca(self.loglikelihood, n=3)
         self.pca_pmi = self.apply_pca(self.pmi)
         self.pca_raw = self.apply_pca(cooccurrences)
         
+        # make TF api available
+        self.tf_api = tf_api
     '''
     -----
     BHSA Methods:
@@ -72,11 +75,12 @@ class SemSpace:
                       ''', silent=True)
         return api
         
-    def get_lex(self, lex_string, feature_class):
+    def get_lex(self, lex_string):
         '''
         Return ETCBC lex node number from a lexeme string.
         Requires a text fabric feature class with otype/lex features loaded.
         '''
+        F = self.tf_api.F
         lex = next(lex for lex in F.otype.s('lex') if F.lex.v(lex) == lex_string)
         return lex
     
@@ -103,11 +107,12 @@ class SemSpace:
         Returns the log-likelihood when the supplied elements are given.
         via Padó & Lapita 2007
         '''
-        p1 = (k*log(k)) + (l*log(l)) + (m*log(m)) + (n*log(n))        
-        p2 = ((k+l)*log(k+l)) - ((k+m)*log(k+m))
-        p3 = ((l+n)*log(l+n)) - ((m+n)*log(m+n))
-        p4 = ((k+l+m+n))*log(k+l+m+n)
-        llikelihood = 2*(p1-p2-p3+p4)
+    
+        llikelihood = 2*(k*log(k) + l*log(l) + m*log(m) + n * log(n)        
+                            - (k+l)*log(k+l) - (k+m)*log(k+m)
+                            - (l+n)*log(l+n) - (m+n)*log(m+n)
+                            + (k+l+m+n)*log(k+l+m+n))
+
         return llikelihood
 
     def apply_loglikelihood(self, comatrix):
@@ -179,11 +184,11 @@ class SemSpace:
     Data Transformations and Cluster Analyses:
     '''
 
-    def apply_pca(self, comatrix):
+    def apply_pca(self, comatrix, n=2):
         '''
         Apply principle component analysis to a supplied cooccurrence matrix.
         '''
-        pca = PCA(n_components=2)
+        pca = PCA(n_components=n)
         return pca.fit_transform(comatrix.T.values)
         
     def experiment_data(self, tf_api):
@@ -239,7 +244,7 @@ class SemSpace:
 
             # restrict on frequency
             freq = [F.freq_lex.v(L.u(w, 'lex')[0]) for w in E.heads.f(phrase)]
-            if min(freq) < 8:
+            if min(freq) < 5:
                 continue
 
             # restrict on proper names
@@ -293,7 +298,7 @@ class SemSpace:
 
         # weed out results with little data
         cooccurrences = dict((word, counts) for word, counts in cooccurrences.items()
-                                if sum(counts.values()) >= 8
+                                if sum(counts.values()) >= 5
                             )
 
         # return final results
@@ -313,7 +318,7 @@ class ExperimentData:
     '''
     
     def __init__(self, tf_api):
-    
+        '''    
         # define shortform text-fabric method names
         F, E, L = tf_api.F, tf_api.E, tf_api.L
         self.F, self.E, self.L = F, E, L # make available to other methods
@@ -328,6 +333,7 @@ class ExperimentData:
         
         # put raw cooccurrence data here
         cooccurrences = collections.defaultdict(lambda: collections.Counter()) # noun counts here
+        '''
 
     def target_parameters(self, phrase):
         
@@ -371,7 +377,8 @@ class ExperimentData:
         good_paths = path_weights[function]
         paths = [phrase for phrase in L.d(clause, 'phrase')
                     if F.function.v(phrase) in good_paths.keys()
-                ]'''
+                ]
+        '''
 
         
     def good_t_words(self, phrase):
@@ -380,8 +387,7 @@ class ExperimentData:
         Returns boolean on whether phrase contains
         acceptable target words.
         '''
-        '''       
-
+        '''
         # skip non-Hebrew sections
         
         if language != 'Hebrew':
@@ -396,7 +402,8 @@ class ExperimentData:
         pdps = set(F.pdp.v(w) for w in E.heads.f(phrase))
         ls = set(F.ls.v(w) for w in E.heads.f(phrase))
         if {'nmpr', 'gntl'} & set(pdps|ls):
-            continue        '''
+            continue
+        '''
     
     
     def path_parameters(self, target_words, tf_api):
@@ -414,8 +421,8 @@ class ExperimentData:
         • weigh 1 for noun -> coordinate noun relations
         • exclude HJH[ (היה) predicates
         '''
-            
-        '''        # PATHS
+        '''            
+        # PATHS
         # configure weights
         path_weights = {'Subj': {'Pred': 1,
                                 },
@@ -462,4 +469,141 @@ class ExperimentData:
                                 if sum(counts.values()) >= 8
                             )
 
-        self.data = pd.DataFrame(cooccurrences).fillna(0)'''
+        self.data = pd.DataFrame(cooccurrences).fillna(0)
+        '''
+        
+def plot_silhouettes(data_vectors, range_n_clusters, scatter=False, randomstate=10):
+    
+    '''    
+    Plot silhouette plots based on a supplied range of K using a supplied method.
+    Can also plot an optional scatter plot if PCA transformed vectors are supplied.
+    Code modified from http://scikit-learn.org/stable/auto_examples/cluster/plot_kmeans_silhouette_analysis.html
+    '''
+    
+    pairwise_dists = pairwise_distances(data_vectors, metric='cosine')
+    
+    for n_clusters in range_n_clusters:
+        
+        # use method to make the clusters
+        medoids, clusters = kmedoids.kMedoids(pairwise_dists, n_clusters, state=randomstate)
+    
+        # make cluster labels with index corresponding to target word cluster
+        cluster_labels = sorted((i, group) for group in clusters # sort groups by index
+                                    for i in clusters[group])
+        cluster_labels = np.array(list(group[1] for group in cluster_labels)) # put the groups in indexed order in an array
+        
+        # Create plots
+        if not scatter:
+            fig, ax = plt.subplots(1, 1)
+            fig.set_size_inches(10, 8)
+        else:
+            fig, (ax, ax2) = plt.subplots(1,2)
+            fig.set_size_inches(18, 7)
+
+        # The silhouette_score gives the average value for all the samples.
+        # This gives a perspective into the density and separation of the formed
+        # clusters
+        silhouette_avg = silhouette_score(pairwise_dists, cluster_labels)
+        print("For n_clusters =", n_clusters,
+              "The average silhouette_score is :", silhouette_avg)
+
+        # Compute the silhouette scores for each sample
+        sample_silhouette_values = silhouette_samples(pairwise_dists, cluster_labels)
+                
+        # Set x-axis limits
+        # The silhouette coefficient can range from -1, 1
+        # I set the lower limit a -0.2 since the min with one method is -0.13
+        ax.set_xlim([-0.2, 0.06])
+        
+        # The (n_clusters+1)*10 is for inserting blank space between silhouette
+        # plots of individual clusters, to demarcate them clearly.
+        ax.set_ylim([0, len(pairwise_dists) + (n_clusters + 1) * 10])
+        
+        y_lower = 10
+        for i in range(n_clusters):
+            # Aggregate the silhouette scores for samples belonging to
+            # cluster i, and sort them
+            ith_cluster_silhouette_values = \
+                sample_silhouette_values[cluster_labels == i]
+
+            ith_cluster_silhouette_values.sort()
+
+            size_cluster_i = ith_cluster_silhouette_values.shape[0]
+            y_upper = y_lower + size_cluster_i
+
+            color = cm.ocean(float(i) / n_clusters)
+            ax.fill_betweenx(np.arange(y_lower, y_upper),
+                              0, ith_cluster_silhouette_values,
+                              facecolor=color, edgecolor='black', alpha=0.7)
+
+            # Label the silhouette plots with their cluster numbers at the middle
+            ax.text(-0.05, y_lower + 0.5 * size_cluster_i, str(i))
+
+            # Compute the new y_lower for next plot
+            y_lower = y_upper + 10  # 10 for the 0 samples
+
+        ax.set_title("The silhouette plot for the various clusters.")
+        ax.set_xlabel("The silhouette coefficient values")
+        ax.set_ylabel("Cluster label")
+
+        # The vertical line for average silhouette score of all the values
+        ax.axvline(x=silhouette_avg, color="red", linestyle="--")
+
+        ax.set_yticks([])  # Clear the yaxis labels / ticks
+        ax.set_xticks([-0.2, 0, 0.2, 0.4, 0.6, 0.8, 1])
+        
+        # plot scatter if PCA data is given
+        if scatter:
+            colors = cm.ocean(cluster_labels.astype(float) / n_clusters)
+            ax2.scatter(data_vectors[:, 0], data_vectors[:, 1], marker='.', s=30, lw=0, alpha=0.7,
+                        c=colors, edgecolor='k')
+
+            # Labeling the clusters
+            centers = data_vectors[medoids]
+            # Draw white circles at cluster centers
+            ax2.scatter(centers[:, 0], centers[:, 1], marker='o',
+                        c="white", alpha=1, s=200, edgecolor='k')
+
+            for i, c in enumerate(centers):
+                ax2.scatter(c[0], c[1], marker='$%d$' % i, alpha=1,
+                            s=50, edgecolor='k')
+
+            ax2.set_title("The visualization of the clustered data.")
+            ax2.set_xlabel("Feature space for the 1st feature")
+            ax2.set_ylabel("Feature space for the 2nd feature")
+
+        plt.suptitle(("Silhouette analysis for clustering on sample data "
+                      "with n_clusters = %d" % n_clusters),
+                     fontsize=14, fontweight='bold')
+        
+
+        plt.show()
+        
+def plot_silhouette_scores():
+    '''
+    OLD CODE
+    '''
+    sil_scoresX = []
+    sil_scoresY = []
+    limit = 41
+
+    for n in range(2, limit):
+
+        # make the clusters with n
+        medoids, clusters = kmedoids.kMedoids(pca_dists_ll, n, state=random_seed)
+
+        # make cluster labels with index corresponding to target word cluster
+        cluster_labels = sorted((i, group) for group in clusters # sort groups by index
+                                    for i in clusters[group])
+        cluster_labels = np.array(list(group[1] for group in cluster_labels)) # put the groups in indexed order in an array
+
+        # get sil average
+        silhouette_avg = silhouette_score(pca_dists_ll, cluster_labels)
+
+        sil_scoresX.append(n)
+        sil_scoresY.append(silhouette_avg)
+
+    plt.figure(1, figsize=(10, 5))
+    ax = plt.axes()
+    ax.set_xticks(range(0, limit))
+    plt.plot(sil_scoresX, sil_scoresY)
