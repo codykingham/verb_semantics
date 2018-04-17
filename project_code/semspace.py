@@ -1,3 +1,6 @@
+# LEAVEOFF: In the process of modifying the paths methods
+# took a break to solve heads problem, which will help simplify that method.
+
 '''
 This module contains code used for constructing and evaluating a semantic space.
 The space should consist of a Pandas dataframe with target words as columns;
@@ -35,11 +38,20 @@ class SemSpace:
     The class loads and processes the data in one go.
     '''
     
-    def __init__(self):
+    def __init__(self, experiment, info=0):
+        '''
+        Requires an experiment class (defined below).
+        This allows various experiment parameters
+        to be feed to the semantic space builder.
+        
+        Change "info" to divisable number
+        if status updates are desired for the
+        log likelihood calculations.
+        '''
         
         # load BHSA experiment data
         tf_api = self.load_tf_bhsa()
-        cooccurrences = self.experiment_data(tf_api)
+        cooccurrences = experiment(tf_api)
         
         # adjust raw counts with log-likelihood & pointwise mutual information
         self.loglikelihood = self.apply_loglikelihood(cooccurrences)
@@ -54,6 +66,7 @@ class SemSpace:
         
         # make TF api available
         self.tf_api = tf_api
+        
     '''
     -----
     BHSA Methods:
@@ -115,7 +128,7 @@ class SemSpace:
 
         return llikelihood
 
-    def apply_loglikelihood(self, comatrix):
+    def apply_loglikelihood(self, comatrix, info=0):
 
         '''
         Adjusts values in a cooccurrence matrix using log-likelihood. 
@@ -133,19 +146,20 @@ class SemSpace:
         
         new_matrix = comatrix.copy()
         #optional: information for large datasets
-        #i = 0 
-        #indent(reset=True)
-        #info('beginning calculations...')
-        #indent(1, reset=True)
+        i = 0 
+        self.tf_api.indent(reset=True)
+        self.tf_api.info('beginning calculations...')
+        self.tf_api.indent(1, reset=True)
+        
         for target in comatrix.columns:
             for basis in comatrix.index:
                 k = comatrix[target][basis]
 
                 if not k:
-                    #i += 1
-                    #if i % 500000 == 0:
-                        #indent(1)
-                        #info(f'at iteration {i}')
+                    i += 1
+                    if info and i % info == 0:
+                        self.tf_api.indent(1)
+                        self.tf_api.info(f'at iteration {i}')
                     continue
 
                 l = comatrix.loc[basis].sum() - k
@@ -155,12 +169,13 @@ class SemSpace:
                 new_matrix[target][basis] = ll
                 
                 # optional: information for large datasets
-                #i += 1
-                #if i % 500000 == 0:
-                    #indent(1)
-                    #info(f'at iteration {i}')
-        #indent(0)
-        #info(f'FINISHED at iteration {i}')
+                i += 1
+                if info and i % info == 0:
+                    self.tf_api.indent(1)
+                    self.tf_api.info(f'at iteration {i}')
+        self.tf_api.indent(0)
+        self.tf_api.info(f'FINISHED at iteration {i}')
+        
         return new_matrix
     
     def apply_pmi_column(self, col, datamatrix):
@@ -191,120 +206,7 @@ class SemSpace:
         pca = PCA(n_components=n)
         return pca.fit_transform(comatrix.T.values)
         
-    def experiment_data(self, tf_api):
-        '''
-        Retrieves BHSA cooccurrence data based on my first experiment's parameters.
-        Returns a Pandas dataframe with cooccurrence data.
-        Requires TF api loaded with BHSA data and the appropriate features.
-        
-        --experiment 1 parameters--
-        • phrase must be a subject/object function phrase
-        • language must be Hebrew
-        • head nouns extracted from subj/obj phrase w/ E.heads feature
-        • minimum noun occurrence frequency is 8
-        • proper names and gentilics excluded
-        • only nouns from narrative is included
-        • weigh 1 for subject -> predicate relations
-        • weigh 1 for object -> predicate relations
-        • weigh 1 for noun -> coordinate noun relations
-        • exclude HJH[ (היה) predicates
-        '''
-
-        # shortform text fabric methods
-        F, E, L = tf_api.F, tf_api.E, tf_api.L
-        
-        # configure weights for path counts
-        path_weights = {'Subj': {'Pred': 1,
-                                },
-                        'Objc': {
-                                 'Pred': 1,
-                                },
-                        'coor': 1
-                       }
-
-        cooccurrences = collections.defaultdict(lambda: collections.Counter()) # noun counts here
-
-        # Subj/Objc Counts
-        for phrase in F.otype.s('phrase'):
-
-            # skip non-Hebrew sections
-            language = F.language.v(L.d(phrase, 'word')[0]) 
-            if language != 'Hebrew':
-                continue
-
-            # skip non subject/object phrases
-            function = F.function.v(phrase)
-            if function not in {'Subj', 'Objc'}:
-                continue
-
-            # get head nouns
-            nouns = set(F.lex.v(w) for w in E.heads.f(phrase)) # count lexemes only once
-            if not nouns:
-                continue
-
-            # restrict on frequency
-            freq = [F.freq_lex.v(L.u(w, 'lex')[0]) for w in E.heads.f(phrase)]
-            if min(freq) < 5:
-                continue
-
-            # restrict on proper names
-            pdps = set(F.pdp.v(w) for w in E.heads.f(phrase))
-            ls = set(F.ls.v(w) for w in E.heads.f(phrase))
-            if {'nmpr', 'gntl'} & set(pdps|ls):
-                continue
-
-            # restrict on domain
-            if F.domain.v(L.u(phrase, 'clause')[0]) != 'N':
-                continue
-
-            # gather contextual data
-            clause = L.u(phrase, 'clause')[0]
-            good_paths = path_weights[function]
-            paths = [phrase for phrase in L.d(clause, 'phrase')
-                        if F.function.v(phrase) in good_paths.keys()
-                    ]
-
-            # make the counts
-            for path in paths:
-
-                pfunct = F.function.v(path)
-                weight = good_paths[pfunct]
-
-                # count for verb
-                if pfunct == 'Pred':
-                    verb = [w for w in L.d(path, 'word') if F.pdp.v(w) == 'verb'][0]
-                    verb_lex = F.lex.v(verb)
-                    verb_stem = F.vs.v(verb)
-                    verb_basis = function + '.' + verb_lex + '.' + verb_stem # with function name added
-                    if verb and F.lex.v(verb) not in {'HJH['}: # omit "to be" verbs, others?
-                        for noun in nouns:
-                            cooccurrences[noun][verb_basis] += 1
-
-                # count for subj/obj
-                else:
-                    conouns = E.heads.f(path)
-                    cnoun_bases = set(function + '.' + F.lex.v(w) + f'.{pfunct}' for w in conouns) # with function name added
-                    counts = dict((basis, weight) for basis in cnoun_bases)
-                    if counts:
-                        for noun in nouns:
-                            cooccurrences[noun].update(counts)
-
-            # count coordinates
-            for noun in nouns:
-                for cnoun in nouns:
-                    if cnoun != noun:
-                        cnoun_basis = 'coor.'+cnoun # with coordinate function name
-                        cooccurrences[noun][cnoun_basis] += path_weights['coor']
-
-        # weed out results with little data
-        cooccurrences = dict((word, counts) for word, counts in cooccurrences.items()
-                                if sum(counts.values()) >= 5
-                            )
-
-        # return final results
-        return pd.DataFrame(cooccurrences).fillna(0)
-        
-class ExperimentData:
+class Experiment:
     
     '''
     [!UNDER CONSTRUCTION & INCOMPLETE!
@@ -317,122 +219,148 @@ class ExperimentData:
     Requires TF api loaded with BHSA data and the appropriate features.
     '''
     
+    # easily configurable parameters:
+    
+    min_freq = 8    # min word occurrence frequency
+    path_weights = {'Subj': {'Pred': 1,     # <- relations to be counted at clause level:
+                            },  
+                    'Objc': {
+                             'Pred': 1,
+                            }
+                   }
+    
     def __init__(self, tf_api):
-        '''    
-        # define shortform text-fabric method names
-        F, E, L = tf_api.F, tf_api.E, tf_api.L
-        self.F, self.E, self.L = F, E, L # make available to other methods
+
+        # make text-fabric api available to whole class
+        self.F, self.E, self.L = tf_api.F, tf_api.E, tf_api.L
         
-        # save results starting with phrase level data
-        # phrase is a good starting point since it is 
-        # less numerous than words (better for performance)
-        # and is also the necessary starting point for isolating
-        # target nouns within a given function
+        # raw cooccurrence data goes here
+        cooccurrences = collections.defaultdict(lambda: collections.Counter())
+        
+        # Begin gathering data by phrase iteration:
         for phrase in F.otype.s('phrase'):
-            pass # under construction
-        
-        # put raw cooccurrence data here
-        cooccurrences = collections.defaultdict(lambda: collections.Counter()) # noun counts here
-        '''
+            
+            # test for good phrase type
+            if not self.target_parameters(phrase): 
+                continue
+                
+            # begin processing context
+            
 
     def target_parameters(self, phrase):
         
         '''
-        Applies the target word parameters of my first experiment to BHSA data.
-        A target word is a word for which co-occurrence data will be recorded.
-        Returns a tuple of target word node numbers.
+        Evaluates whether a phrase matches the supplied
+        parameters. Parameters are broken down into smaller
+        methods, so that they can be easily modified or exchanged
+        for other experiment parameters.
         
-        This method is intended to be easily exchangeable for alternative
-        experiment parameters.
+        --input--
+        phrase node
         
-        --parameters--
-        • phrase must be a subject/object function phrase
-        • language must be Hebrew
-        • head nouns extracted from subj/obj phrase w/ E.heads feature
-        • minimum noun occurrence frequency is 8
-        • proper names and gentilics excluded
-        • only nouns from narrative is included
+        --output--
+        boolean
         '''
-        '''
+
         # apply various parameters at various linguistic levels
         # these parameters can be easily overwritten in subclasses
+        test_parameters = all([target_phrase(phrase),
+                               target_clause(phrase),
+                               target_words(phrase)])
         
-        # phrase parameters
+        return test_parameters # a boolean
+        
+    def target_phrase(self, phrase):
+        '''
+        Applies phrase parameters.
+        This is a strict version that validates 
+        only subject or object function phrases.
+        Requires a phrase node number.
+        '''
+        # phrase features
         function = self.F.function.v(phrase)
         good_functions = {'Subj', 'Objc'} # check whether subj/obj phrase
         
-        # clause parameters
-        clause = L.u(phrase, 'clause')
+        return bool(function in good_functions)
+        
+    def target_clause(self, phrase):
+        '''
+        Applies clause parameters.
+        This version validates only narrative clauses.
+        Requires a phrase node number.
+        '''
+        clause = self.L.u(phrase, 'clause')
         domain = self.F.domain.v(clause) # check for narrative or discourse
         
-        # word parameters
-        targets = E.head.f(phrase) # potential target nouns
+        return bool(domain == 'N')
         
-        language = F.language.v(L.d(phrase, 'word')[0]) # check noun for language
+    def target_words(self, phrase):
+        '''
+        Applies clause parameters.
+        This version checks for frequency,
+        head words, and proper names.
+        There is an option to easily modify
+        the frequency parameter.
+        Requires a phrase node number.
+        '''
         
+        # check for head nouns
+        head_nouns = E.heads.f(phrase)
+        if not head_nouns:
+            return False # i.e. there is no available noun to test
+        
+        # prepare for parameter checks
+        language = self.F.language.v(head_nouns[0]) # language
+        freq = [self.F.freq_lex.v(self.L.u(w, 'lex')[0]) for w in head_nouns] # word frequencies
+        pdps = set(self.F.pdp.v(w) for w in head_nouns) # proper nouns
+        ls = set(self.F.ls.v(w) for w in head_nouns) # gentilics
+        
+        # test all parameters
+        test = all([language == 'Hebrew', 
+                    min(freq) >= self.min_freq, # defined in __init__
+                    'nmpr' not in pdps,
+                    'gntl' not in ls,
+                   ])
+        
+        return test # i.e. a boolean
 
+    def path_parameters(self, phrase, cooccurrence_dict):
+        '''
+        Evaluates the context of a supplied phrase node
+        and adds the counts as appropriate to a supplied
+        cooccurrence dictionary.
         
-        # gather contextual data
-        clause = L.u(phrase, 'clause')[0]
-        good_paths = path_weights[function]
-        paths = [phrase for phrase in L.d(clause, 'phrase')
-                    if F.function.v(phrase) in good_paths.keys()
-                ]
-        '''
-
+        --input--
+        - phrase node number
+        - collections default dict with embedded collections default dict
         
-    def good_t_words(self, phrase):
+        --output--
+        Iterates the counts in the supplied dictionary
         '''
-        Applies various parameters to a given phrase node.
-        Returns boolean on whether phrase contains
-        acceptable target words.
-        '''
-        '''
-        # skip non-Hebrew sections
         
-        if language != 'Hebrew':
-            continue
-
-        # restrict on frequency
-        freq = [F.freq_lex.v(L.u(w, 'lex')[0]) for w in E.heads.f(phrase)]
-        if min(freq) < 8:
-            continue
-
-        # restrict on proper names
-        pdps = set(F.pdp.v(w) for w in E.heads.f(phrase))
-        ls = set(F.ls.v(w) for w in E.heads.f(phrase))
-        if {'nmpr', 'gntl'} & set(pdps|ls):
-            continue
         '''
-    
-    
-    def path_parameters(self, target_words, tf_api):
-        '''
-        Applies the path parameters of my first experiment to BHSA data.
-        A path defines a co-occurrence of supplied target words.
-        target_words is an iterable of Text-Fabric node numbers.
-        
-        This method is intended to be easily exchangeable for alternative
-        experiment parameters.
-        
         --parameters--
         • weigh 1 for subject -> predicate relations
         • weigh 1 for object -> predicate relations
         • weigh 1 for noun -> coordinate noun relations
         • exclude HJH[ (היה) predicates
-        '''
-        '''            
-        # PATHS
-        # configure weights
-        path_weights = {'Subj': {'Pred': 1,
-                                },
-                        'Objc': {
-                                 'Pred': 1,
-                                },
-                        'coor': 1
-                       }
 
-        # make the counts
+        '''
+        
+        # define shortform TF api methods
+        F, E, L = self.tf_api.F, self.tf_api.E, self.tf_api.L
+        
+        # Relationships to be counted at clause level
+        path_weights = self.path_weights
+        
+        # calculate clause-level context
+        clause = L.u(phrase, 'clause')[0]
+        good_paths = path_weights[function]
+        
+        paths = [phrase for phrase in L.d(clause, 'phrase')
+                    if F.function.v(phrase) in good_paths.keys()]
+        
+        # make the counts for clause-level relations
         for path in paths:
 
             pfunct = F.function.v(path) # path name
@@ -470,8 +398,46 @@ class ExperimentData:
                             )
 
         self.data = pd.DataFrame(cooccurrences).fillna(0)
+        
+        
+    def verb_basis(self):
+        '''
+        Formats a basis element for a verb phrase.
+        
+        --input--
+        phrase node number
+        
+        --output--
+        string
         '''
         
+        pass
+    
+    def noun_basis(self):
+        '''
+        Formats a basis element for a noun phrase.
+        
+        --input--
+        phrase node number
+        
+        --output--
+        string
+        '''
+        
+        pass
+    
+    
+'''
+****
+***
+**
+NB: OLD OR OUT-OF-USE CODE FROM THIS POINT ON
+**
+***
+****
+'''
+    
+    
 def plot_silhouettes(data_vectors, range_n_clusters, scatter=False, randomstate=10):
     
     '''    
@@ -607,3 +573,117 @@ def plot_silhouette_scores():
     ax = plt.axes()
     ax.set_xticks(range(0, limit))
     plt.plot(sil_scoresX, sil_scoresY)
+    
+    
+def OLD_experiment_data(self, tf_api):
+    '''
+    Retrieves BHSA cooccurrence data based on my first experiment's parameters.
+    Returns a Pandas dataframe with cooccurrence data.
+    Requires TF api loaded with BHSA data and the appropriate features.
+
+    --experiment 1 parameters--
+    • phrase must be a subject/object function phrase
+    • language must be Hebrew
+    • head nouns extracted from subj/obj phrase w/ E.heads feature
+    • minimum noun occurrence frequency is 8
+    • proper names and gentilics excluded
+    • only nouns from narrative is included
+    • weigh 1 for subject -> predicate relations
+    • weigh 1 for object -> predicate relations
+    • weigh 1 for noun -> coordinate noun relations
+    • exclude HJH[ (היה) predicates
+    '''
+
+    # shortform text fabric methods
+    F, E, L = tf_api.F, tf_api.E, tf_api.L
+
+    # configure weights for path counts
+    path_weights = {'Subj': {'Pred': 1,
+                            },
+                    'Objc': {
+                             'Pred': 1,
+                            },
+                    'coor': 1
+                   }
+
+    cooccurrences = collections.defaultdict(lambda: collections.Counter()) # noun counts here
+
+    # Subj/Objc Counts
+    for phrase in F.otype.s('phrase'):
+
+        # skip non-Hebrew sections
+        language = F.language.v(L.d(phrase, 'word')[0]) 
+        if language != 'Hebrew':
+            continue
+
+        # skip non subject/object phrases
+        function = F.function.v(phrase)
+        if function not in {'Subj', 'Objc'}:
+            continue
+
+        # get head nouns
+        nouns = set(F.lex.v(w) for w in E.heads.f(phrase)) # count lexemes only once
+        if not nouns:
+            continue
+
+        # restrict on frequency
+        freq = [F.freq_lex.v(L.u(w, 'lex')[0]) for w in E.heads.f(phrase)]
+        if min(freq) < 5:
+            continue
+
+        # restrict on proper names
+        pdps = set(F.pdp.v(w) for w in E.heads.f(phrase))
+        ls = set(F.ls.v(w) for w in E.heads.f(phrase))
+        if {'nmpr', 'gntl'} & set(pdps|ls):
+            continue
+
+        # restrict on domain
+        if F.domain.v(L.u(phrase, 'clause')[0]) != 'N':
+            continue
+
+        # gather contextual data
+        clause = L.u(phrase, 'clause')[0]
+        good_paths = path_weights[function]
+        paths = [phrase for phrase in L.d(clause, 'phrase')
+                    if F.function.v(phrase) in good_paths.keys()
+                ]
+
+        # make the counts
+        for path in paths:
+
+            pfunct = F.function.v(path)
+            weight = good_paths[pfunct]
+
+            # count for verb
+            if pfunct == 'Pred':
+                verb = [w for w in L.d(path, 'word') if F.pdp.v(w) == 'verb'][0]
+                verb_lex = F.lex.v(verb)
+                verb_stem = F.vs.v(verb)
+                verb_basis = function + '.' + verb_lex + '.' + verb_stem # with function name added
+                if verb and F.lex.v(verb) not in {'HJH['}: # omit "to be" verbs, others?
+                    for noun in nouns:
+                        cooccurrences[noun][verb_basis] += 1
+
+            # count for subj/obj
+            else:
+                conouns = E.heads.f(path)
+                cnoun_bases = set(function + '.' + F.lex.v(w) + f'.{pfunct}' for w in conouns) # with function name added
+                counts = dict((basis, weight) for basis in cnoun_bases)
+                if counts:
+                    for noun in nouns:
+                        cooccurrences[noun].update(counts)
+
+        # count coordinates
+        for noun in nouns:
+            for cnoun in nouns:
+                if cnoun != noun:
+                    cnoun_basis = 'coor.'+cnoun # with coordinate function name
+                    cooccurrences[noun][cnoun_basis] += path_weights['coor']
+
+    # weed out results with little data
+    cooccurrences = dict((word, counts) for word, counts in cooccurrences.items()
+                            if sum(counts.values()) >= 5
+                        )
+
+    # return final results
+    return pd.DataFrame(cooccurrences).fillna(0)
