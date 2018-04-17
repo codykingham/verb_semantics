@@ -573,9 +573,190 @@ def plot_silhouette_scores():
     ax = plt.axes()
     ax.set_xticks(range(0, limit))
     plt.plot(sil_scoresX, sil_scoresY)
+
+
+class P1SemSpace:
+    '''
+    Phase 1 Semantic Space:
+    This class brings together all of the methods defined in 
+    notebook 4 of my semantics repository (phase 1). This class has a
+    number of attributes which contain cooccurrence counts,
+    adjusted counts, similarity scores, and more.
+    The class loads and processes the data in one go.
+    '''
     
+    def __init__(self, info=0):
+        '''
+        Requires an experiment class (defined below).
+        This allows various experiment parameters
+        to be feed to the semantic space builder.
+        
+        Change "info" to divisable number
+        if status updates are desired for the
+        log likelihood calculations.
+        '''
+        
+        # load BHSA experiment data
+        tf_api = self.load_tf_bhsa()
+        cooccurrences = p1_experiment_data(tf_api)
+        
+        # make TF api available
+        self.tf_api = tf_api
+        
+        # adjust raw counts with log-likelihood & pointwise mutual information
+        self.loglikelihood = self.apply_loglikelihood(cooccurrences)
+        self.pmi = self.apply_pmi(cooccurrences)
+        self.raw = cooccurrences
+        
+        # apply pca or other data maneuvers
+        self.pca_ll = self.apply_pca(self.loglikelihood)
+        self.pca_ll_3d = self.apply_pca(self.loglikelihood, n=3)
+        self.pca_pmi = self.apply_pca(self.pmi)
+        self.pca_raw = self.apply_pca(cooccurrences)
+        
+    '''
+    -----
+    BHSA Methods:
+        Methods used to prepare and process the BHSA
+        Hebrew Bible data.
+    '''
+        
+    def load_tf_bhsa(self):
+        '''
+        Loads a TF instance of the BHSA dataset.
+        '''
+        TF = Fabric(locations='~/github', modules=['etcbc/bhsa/tf/c', 'semantics/phase1/tf/c'], # modify paths here for your system
+                    silent=True)
+        api = TF.load('''
+                        book chapter verse
+                        function lex vs language
+                        pdp freq_lex gloss domain ls
+                        heads
+                      ''', silent=True)
+        return api
+        
+    def get_lex(self, lex_string):
+        '''
+        Return ETCBC lex node number from a lexeme string.
+        Requires a text fabric feature class with otype/lex features loaded.
+        '''
+        F = self.tf_api.F
+        lex = next(lex for lex in F.otype.s('lex') if F.lex.v(lex) == lex_string)
+        return lex
     
-def OLD_experiment_data(self, tf_api):
+
+    '''
+    -----
+    Association Measure Methods:
+        i.e. applying adjustments to raw frequency counts
+        The measures are based on various sources including Padó & Lapita (2007)
+        and Levshina (2015).
+    '''
+    
+    def safe_log(self, number):
+        '''
+        Evaluate for zero before applying log function.
+        '''
+        if number == 0:
+            return 0
+        else:
+            return math.log(number)
+
+    def loglikelihood(self, k, l, m, n, log):
+        '''
+        Returns the log-likelihood when the supplied elements are given.
+        via Padó & Lapita 2007
+        '''
+    
+        llikelihood = 2*(k*log(k) + l*log(l) + m*log(m) + n * log(n)        
+                            - (k+l)*log(k+l) - (k+m)*log(k+m)
+                            - (l+n)*log(l+n) - (m+n)*log(m+n)
+                            + (k+l+m+n)*log(k+l+m+n))
+
+        return llikelihood
+
+    def apply_loglikelihood(self, comatrix, info=0):
+
+        '''
+        Adjusts values in a cooccurrence matrix using log-likelihood. 
+        Requires a cooccurrence matrix.
+        
+        An option for progress updates is commented out.
+        This option can be useful for very large datasets
+        that take more than a few seconds to execute.
+        i.e. sets that contain target words > ~500
+        
+        via Padó & Lapita 2007
+        '''
+        safe_log = self.safe_log
+        log_likelihood = self.loglikelihood
+        
+        new_matrix = comatrix.copy()
+        #optional: information for large datasets
+        i = 0
+        if info:
+            self.tf_api.indent(reset=True)
+            self.tf_api.info('beginning calculations...')
+            self.tf_api.indent(1, reset=True)
+        
+        for target in comatrix.columns:
+            for basis in comatrix.index:
+                k = comatrix[target][basis]
+
+                if not k:
+                    i += 1
+                    if info and i % info == 0:
+                        self.tf_api.indent(1)
+                        self.tf_api.info(f'at iteration {i}')
+                    continue
+
+                l = comatrix.loc[basis].sum() - k
+                m = comatrix[target].sum() - k
+                n = comatrix.values.sum() - (k+l+m)
+                ll = self.loglikelihood(k, l, m, n, safe_log)
+                new_matrix[target][basis] = ll
+                
+                # optional: information for large datasets
+                i += 1
+                if info and i % info == 0:
+                    self.tf_api.indent(1)
+                    self.tf_api.info(f'at iteration {i}')
+                    
+        if info:
+            self.tf_api.indent(0)
+            self.tf_api.info(f'FINISHED at iteration {i}')
+        
+        return new_matrix
+    
+    def apply_pmi_column(self, col, datamatrix):
+
+        '''
+        Apply PMI to a given column.
+        Method derived from Levshina 2015.
+        '''
+        expected = col * datamatrix.sum(axis=1) / datamatrix.values.sum()
+        pmi = np.log(col / expected).fillna(0)
+        return pmi
+    
+    def apply_pmi(self, datamatrix):
+        '''
+        Apply pmi to a data matrix.
+        Method derived from Levshina 2015.
+        '''
+        return datamatrix.apply(lambda k: self.apply_pmi_column(k, datamatrix))
+    
+    '''
+    Data Transformations and Cluster Analyses:
+    '''
+
+    def apply_pca(self, comatrix, n=2):
+        '''
+        Apply principle component analysis to a supplied cooccurrence matrix.
+        '''
+        pca = PCA(n_components=n)
+        return pca.fit_transform(comatrix.T.values)
+    
+def p1_experiment_data(tf_api):
     '''
     Retrieves BHSA cooccurrence data based on my first experiment's parameters.
     Returns a Pandas dataframe with cooccurrence data.
