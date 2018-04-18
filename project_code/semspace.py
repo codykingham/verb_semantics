@@ -51,18 +51,17 @@ class SemSpace:
         
         # load BHSA experiment data
         tf_api = self.load_tf_bhsa()
-        cooccurrences = experiment(tf_api)
         
         # adjust raw counts with log-likelihood & pointwise mutual information
-        self.loglikelihood = self.apply_loglikelihood(cooccurrences)
-        self.pmi = self.apply_pmi(cooccurrences)
-        self.raw = cooccurrences
+        self.loglikelihood = self.apply_loglikelihood(experiment)
+        self.pmi = self.apply_pmi(experiment)
+        self.raw = experiment
         
         # apply pca or other data maneuvers
         self.pca_ll = self.apply_pca(self.loglikelihood)
         self.pca_ll_3d = self.apply_pca(self.loglikelihood, n=3)
         self.pca_pmi = self.apply_pca(self.pmi)
-        self.pca_raw = self.apply_pca(cooccurrences)
+        self.pca_raw = self.apply_pca(experiment)
         
         # make TF api available
         self.tf_api = tf_api
@@ -209,10 +208,7 @@ class SemSpace:
 class Experiment:
     
     '''
-    [!UNDER CONSTRUCTION & INCOMPLETE!
-    Intended for flexible adjustments to the experiment through method
-    modifications. but it became too complex for now. If I need this class later,
-    I will complete it.]
+    [!UNDER CONSTRUCTION & INCOMPLETE!]
     
     Retrieves BHSA cooccurrence data based on an experiment's parameters.
     Returns a Pandas dataframe with cooccurrence data.
@@ -765,7 +761,7 @@ def p1_experiment_data(tf_api):
     --experiment 1 parameters--
     • phrase must be a subject/object function phrase
     • language must be Hebrew
-    • head nouns extracted from subj/obj phrase w/ E.heads feature
+    • head nouns extracted from subj/obj phrase w/ (old) E.heads feature
     • minimum noun occurrence frequency is 8
     • proper names and gentilics excluded
     • only nouns from narrative is included
@@ -809,7 +805,7 @@ def p1_experiment_data(tf_api):
 
         # restrict on frequency
         freq = [F.freq_lex.v(L.u(w, 'lex')[0]) for w in E.heads.f(phrase)]
-        if min(freq) < 5:
+        if min(freq) < 8:
             continue
 
         # restrict on proper names
@@ -838,7 +834,7 @@ def p1_experiment_data(tf_api):
             # count for verb
             if pfunct == 'Pred':
                 verb = [w for w in L.d(path, 'word') if F.pdp.v(w) == 'verb'][0]
-                verb_lex = F.lex.v(verb)
+                verb_lex = F.lex.v(verb)                
                 verb_stem = F.vs.v(verb)
                 verb_basis = function + '.' + verb_lex + '.' + verb_stem # with function name added
                 if verb and F.lex.v(verb) not in {'HJH['}: # omit "to be" verbs, others?
@@ -863,7 +859,7 @@ def p1_experiment_data(tf_api):
 
     # weed out results with little data
     cooccurrences = dict((word, counts) for word, counts in cooccurrences.items()
-                            if sum(counts.values()) >= 5
+                            if sum(counts.values()) >= 8
                         )
 
     # return final results
