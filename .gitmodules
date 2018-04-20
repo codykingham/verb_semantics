@@ -1,3 +1,6 @@
 [submodule "project_code/kmedoids"]
 	path = project_code/kmedoids
 	url = https://github.com/codykingham/kmedoids
+[submodule "project_code/lingo"]
+	path = project_code/lingo
+	url = https://github.com/ETCBC/lingo

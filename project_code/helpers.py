@@ -2,6 +2,15 @@ from IPython.display import HTML, display
 from random import shuffle
 from itertools import cycle
 
+def get_lex(self, lex_string):
+    '''
+    Return ETCBC lex node number from a lexeme string.
+    Requires a text fabric feature class with otype/lex features loaded.
+    '''
+    from __main__ import F
+    lex = next(lex for lex in F.otype.s('lex') if F.lex.v(lex) == lex_string)
+    return lex
+
 def filter_results(results, levels={}):
     
     '''
