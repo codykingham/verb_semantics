@@ -27,6 +27,7 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.metrics.pairwise import pairwise_distances
 from tf.fabric import Fabric
+from tf.extra.bhsa import Bhsa
 from .kmedoids import kmedoids
 
 class SemSpace:
@@ -593,11 +594,12 @@ class P1SemSpace:
         '''
         
         # load BHSA experiment data
-        tf_api = self.load_tf_bhsa()
+        tf_api, B = self.load_tf_bhsa()
         cooccurrences = p1_experiment_data(tf_api)
         
         # make TF api available
         self.tf_api = tf_api
+        self.B = B
         
         # adjust raw counts with log-likelihood & pointwise mutual information
         self.loglikelihood = self.apply_loglikelihood(cooccurrences)
@@ -629,7 +631,10 @@ class P1SemSpace:
                         pdp freq_lex gloss domain ls
                         heads
                       ''', silent=True)
-        return api
+        
+        B = Bhsa(api, '4. Semantic Space Construction', version='c')
+        
+        return api, B
         
     def get_lex(self, lex_string):
         '''
