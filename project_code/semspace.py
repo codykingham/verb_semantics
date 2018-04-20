@@ -189,10 +189,11 @@ class Experiment:
                         function lex vs language
                         pdp freq_lex gloss domain ls
                         heads prep_obj mother rela
+                        typ sp
                       ''', silent=True)
         
         F, E, L, T = tf_api.F, tf_api.E, tf_api.L, tf_api.T  # shorten TF methods
-        self.TF, self.F, self.E, self.L, self.T = TF, F, E, L, T # make available to class
+        self.tf_api, self.TF, self.F, self.E, self.L, self.T = tf_api, TF, F, E, L, T # make available to class
         
         # raw cooccurrence data goes here
         target_counts = collections.defaultdict(lambda: collections.Counter())
@@ -201,9 +202,9 @@ class Experiment:
         for clause in F.otype.s('clause'):
             
             # filter for targets
-            targets = [head for phrase in L.d(clause, 'phrase') 
-                          for head in E.heads.f(phrase)
-                          if self.target_parameters(phrase)]            
+            targets = [target for phrase in L.d(clause, 'phrase') 
+                          for target in self.get_targets(phrase)
+                          if self.target_parameters(target)]            
             if not targets: 
                 continue
 
@@ -228,34 +229,56 @@ class Experiment:
         self.min_observation_freq = 8
         self.target2basis = {
                                 ('Subj', 'Objc'):
-                                    {'Pred': self.predicate_basis},  
+                                    {'Pred': self.make_predicate_basis},  
 
                                 ('subs',): 
-                                    {'par': self.coordinate_noun_basis},
+                                    {'par': self.make_coordinate_noun_basis},
                             }
     
     '''
     / Target Parameters & Methods /
     ''' 
         
-    def target_parameters(self, phrase):
-        
+    def get_targets(self, phrase):
         '''
-        Evaluates whether a phrase matches the supplied
-        parameters. Parameters are broken down into smaller
-        methods, so that they can be easily modified or exchanged
-        for other experiment parameters.
+        Extracts a target word based on the
+        phrase type using the heads.tf and
+        prep_obj.tf features.
         
         --input--
         phrase node
         
         --output--
+        tuple of target word nodes
+        '''
+        
+        if self.F.typ.v(phrase) == 'PP':
+            return [obj for prep in self.E.heads.f(phrase)
+                       for obj in self.E.prep_obj.f(prep)]
+        else:
+            return self.E.heads.f(phrase)
+        
+    def target_parameters(self, target):
+        
+        '''
+        Evaluates whether a word matches the supplied
+        parameters. Parameters are broken down into smaller
+        methods, so that they can be easily modified or exchanged
+        for other experiment parameters.
+        
+        --input--
+        word node
+        
+        --output--
         boolean
         '''
 
+        phrase = self.L.u(target, 'phrase')[0]
+        clause = self.L.u(target, 'clause')[0]
+        
         return all([self.target_phrase_parameters(phrase),
-                    self.target_clause_parameters(phrase),
-                    self.target_word_parameters(phrase)])
+                    self.target_clause_parameters(clause),
+                    self.target_word_parameters(target)])
         
         
     def target_phrase_parameters(self, phrase):
@@ -273,19 +296,17 @@ class Experiment:
         return bool(function in good_functions)
         
         
-    def target_clause_parameters(self, phrase):
+    def target_clause_parameters(self, clause):
         '''
         Applies clause parameters.
         This version validates only narrative clauses.
-        Requires a phrase node number.
+        Requires a clause node number.
         '''
-        clause = self.L.u(phrase, 'clause')[0]
         domain = self.F.domain.v(clause) # check for narrative or discourse
-        
         return bool(domain == 'N')
         
         
-    def target_word_parameters(self, phrase):
+    def target_word_parameters(self, word):
         '''
         Applies word-level parameters on phrase heads.
         This version checks for frequency,
@@ -298,22 +319,17 @@ class Experiment:
         boolean on acceptable word
         '''
         
-        # check for heads
-        heads = self.E.heads.f(phrase)
-        if not heads:
-            return False # i.e. there is no available word to test
-        
         # prepare for parameter checks
-        language = self.F.language.v(heads[0]) # language
-        freq = [self.F.freq_lex.v(self.L.u(w, 'lex')[0]) for w in heads] # word frequencies
-        pdps = set(self.F.pdp.v(w) for w in heads) # proper nouns
-        ls = set(self.F.ls.v(w) for w in heads) # gentilics
+        language = self.F.language.v(word) # language
+        freq = self.F.freq_lex.v(self.L.u(word, 'lex')[0]) # word frequencies
+        pdp = self.F.pdp.v(word) # proper nouns
+        ls = self.F.ls.v(word) # gentilics
         
         # test all parameters
         test = all([language == 'Hebrew', 
-                    min(freq) >= self.min_target_freq,
-                    'nmpr' not in pdps,
-                    'gntl' not in ls,
+                    freq >= self.min_target_freq,
+                    pdp == 'subs',
+                    ls != 'gntl',
                    ])
         
         return test
@@ -331,7 +347,7 @@ class Experiment:
         lexeme string
         '''
         return self.F.lex.v(target)
-    
+
     
     '''
     / Basis & Context Mapping /
@@ -358,33 +374,36 @@ class Experiment:
         # prepare context
         clause_phrases = L.d(L.u(target, 'clause')[0], 'phrase')
         target_funct = F.function.v(L.u(target, 'phrase')[0])
-        target_group = next(k for k in self.target2basis.keys() if target_funct in k)
         target_pos = F.pdp.v(target)
+        phrase_tgroup = next(k for k in self.target2basis.keys() if target_funct in k)        
+        subphrase_tgroup = next(k for k in self.target2basis.keys() if target_pos in k)
+
         
         phrase_bases = [phrase for phrase in clause_phrases
-                            if self.basis_phrase_parameters(phrase, target_group)]
+                            if self.basis_phrase_parameters(phrase, phrase_tgroup)]
         
         subphrase_bases = [related_sp for subphrase in L.u(target, 'subphrase')
                                for related_sp in E.mother.t(subphrase)
-                               if self.basis_subphrase_parameters(related_sp, target_group)]
-        
+                               if self.basis_subphrase_parameters(related_sp, subphrase_tgroup)]
+
         subphrase_bases.extend([sp for sp in E.mother.t(target) 
-                                    if self.basis_subphrase_parameters(sp, target_group)])
+                                    if self.basis_subphrase_parameters(sp, subphrase_tgroup)])
+
         
         bases = []
         
         # make the phrase-level basis elements
         for phrase in phrase_bases:
             basis_function = F.function.v(phrase)
-            basis_constructor = self.target2basis[target_group][basis_function]
-            basis = basis_constructor(phrase, target_group)
+            basis_constructor = self.target2basis[phrase_tgroup][basis_function]
+            basis = basis_constructor(phrase, target_funct)
             bases.extend(basis)
 
         # make the subphrase-level basis elements
         for subphrase in subphrase_bases:
             basis_rela = F.rela.v(subphrase)
-            basis_constructor = self.target2basis[target_group][basis_rela]
-            basis = basis_constructor(subphrase, target_group)
+            basis_constructor = self.target2basis[subphrase_tgroup][basis_rela]
+            basis = basis_constructor(subphrase, target_funct)
             bases.extend(basis)
         
         return tuple(bases)
@@ -457,7 +476,7 @@ class Experiment:
     '''
        
         
-    def predicate_basis(self, basis_phrase, target_function):
+    def make_predicate_basis(self, basis_phrase, target_function):
         '''
         Maps a verb to a string basis element, 
         where:
@@ -473,10 +492,10 @@ class Experiment:
         verb = self.E.heads.f(basis_phrase)[0]
         lex = self.F.lex.v(verb)
         stem = self.F.vs.v(verb)
-        return (f'{target_function}.{lex}.stem',)       
+        return (f'{target_function}.Pred.{lex}.{stem}',)       
     
     
-    def noun_basis(self, basis_phrase, target_function):  
+    def make_noun_basis(self, basis_phrase, target_function):  
         '''
         Maps a noun to a string basis element, 
         where:
@@ -513,7 +532,7 @@ class Experiment:
         return self.F.lex.v(basis)
         
         
-    def coordinate_noun_basis(self, basis_subphrase, target_function):
+    def make_coordinate_noun_basis(self, basis_subphrase, target_function):
         '''
         Maps coordinate nouns to bases, 
         i.e. nouns connected to a target with a conjunction
@@ -526,9 +545,11 @@ class Experiment:
         --output--
         basis element string
         '''
-        
-        head = next(find_quantified(w) or w
-                        for w in self.L.d(subphrase, 'word')
+        try:
+            head = next(find_quantified(w, self.tf_api) or w
+                        for w in self.L.d(basis_subphrase, 'word')
                         if self.F.pdp.v(w) == 'subs')
+            return (f'{target_function}.coor.{self.F.lex.v(head)}',)
         
-        return f'coor.{self.F.lex.v(head)}'
+        except StopIteration:
+            return tuple()
