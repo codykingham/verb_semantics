@@ -14,11 +14,12 @@ SemSpace requires an instance of another class, Experiment, which is responsible
 for selecting and formatting the BHSA Hebrew data. The Experiment class is intended
 to be easily modified into various subclasses, each of which represents a different
 set of experiment parameters which I want to test. To accomplish this, Experiment's 
-tasks are broken down into a bunch of methods that can be overwritten in subclasses. 
+tasks are broken down into a bunch of small methods that can be overwritten in subclasses. 
 
 *NB*
-Paths here for the BHSA data must be modified to run correctly on your system.
-See first function, load_tf_bhsa.
+To properly run this module on your own system, you must set the BHSA data paths 
+upon initializing Experiment. say:
+    Experiment(bhsa_data_paths = [PATH_TO_BHSA_CORE, PATH_TO_ETCBC_LINGO_HEADS])
 '''
 
 import collections, os, math
@@ -27,7 +28,6 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.metrics.pairwise import pairwise_distances
 from tf.fabric import Fabric
-from tf.extra.bhsa import Bhsa
 from kmedoids.kmedoids import kMedoids
 from lingo.heads.heads import find_quantified
 
@@ -51,17 +51,20 @@ class SemSpace:
         calculations.
         '''
         
+        self.info = experiment.tf_api.info
+        self.indent = experiment.tf_api.indent
+        data = experiment.data
+        
         # adjust raw counts with log-likelihood & pointwise mutual information
-        self.loglikelihood = self.apply_loglikelihood(experiment)
-        self.pmi = self.apply_pmi(experiment)
-        self.raw = experiment
+        self.loglikelihood = self.apply_loglikelihood(data)
+        self.pmi = self.apply_pmi(data)
+        self.raw = data
         
         # apply pca or other data maneuvers
         self.pca_ll = self.apply_pca(self.loglikelihood)
         self.pca_ll_3d = self.apply_pca(self.loglikelihood, n=3)
         self.pca_pmi = self.apply_pca(self.pmi)
-        self.pca_raw = self.apply_pca(experiment)
-
+        self.pca_raw = self.apply_pca(data)
     '''
     -----
     Association Measures:
@@ -109,11 +112,12 @@ class SemSpace:
         log_likelihood = self.loglikelihood
         
         new_matrix = comatrix.copy()
-        #optional: information for large datasets
+        
         i = 0 
-        self.tf_api.indent(reset=True)
-        self.tf_api.info('beginning calculations...')
-        self.tf_api.indent(1, reset=True)
+        if info:
+            self.indent(reset=True)
+            self.info('beginning calculations...')
+            self.indent(1, reset=True)
         
         for target in comatrix.columns:
             for basis in comatrix.index:
@@ -122,8 +126,8 @@ class SemSpace:
                 if not k:
                     i += 1
                     if info and i % info == 0:
-                        self.tf_api.indent(1)
-                        self.tf_api.info(f'at iteration {i}')
+                        self.indent(1)
+                        self.info(f'at iteration {i}')
                     continue
 
                 l = comatrix.loc[basis].sum() - k
@@ -135,10 +139,11 @@ class SemSpace:
                 # optional: information for large datasets
                 i += 1
                 if info and i % info == 0:
-                    self.tf_api.indent(1)
-                    self.tf_api.info(f'at iteration {i}')
-        self.tf_api.indent(0)
-        self.tf_api.info(f'FINISHED at iteration {i}')
+                    self.indent(1)
+                    self.info(f'at iteration {i}')
+        if info:
+            self.indent(0)
+            self.info(f'FINISHED at iteration {i}')
         
         return new_matrix
     
@@ -169,6 +174,7 @@ class SemSpace:
         '''
         pca = PCA(n_components=n)
         return pca.fit_transform(comatrix.T.values)
+        
         
 class Experiment:
     
@@ -220,10 +226,9 @@ class Experiment:
                             )
         self.data = pd.DataFrame(target_counts).fillna(0)
 
-    
     def config(self):
         '''
-        / Experiment Configurations /
+        Experiment Configurations
         '''
         self.min_target_freq = 8
         self.min_observation_freq = 8
@@ -280,7 +285,6 @@ class Experiment:
                     self.target_clause_parameters(clause),
                     self.target_word_parameters(target)])
         
-        
     def target_phrase_parameters(self, phrase):
         '''
         Applies phrase parameters.
@@ -295,7 +299,6 @@ class Experiment:
         
         return bool(function in good_functions)
         
-        
     def target_clause_parameters(self, clause):
         '''
         Applies clause parameters.
@@ -304,8 +307,7 @@ class Experiment:
         '''
         domain = self.F.domain.v(clause) # check for narrative or discourse
         return bool(domain == 'N')
-        
-        
+           
     def target_word_parameters(self, word):
         '''
         Applies word-level parameters on phrase heads.
@@ -333,7 +335,6 @@ class Experiment:
                    ])
         
         return test
-
     
     def make_target_token(self, target):
         '''
@@ -348,11 +349,9 @@ class Experiment:
         '''
         return self.F.lex.v(target)
 
-    
     '''
     / Basis & Context Mapping /
     '''
-    
     
     def map_context(self, target):
         '''
@@ -378,7 +377,6 @@ class Experiment:
         phrase_tgroup = next(k for k in self.target2basis.keys() if target_funct in k)        
         subphrase_tgroup = next(k for k in self.target2basis.keys() if target_pos in k)
 
-        
         phrase_bases = [phrase for phrase in clause_phrases
                             if self.basis_phrase_parameters(phrase, phrase_tgroup)]
         
@@ -388,7 +386,6 @@ class Experiment:
 
         subphrase_bases.extend([sp for sp in E.mother.t(target) 
                                     if self.basis_subphrase_parameters(sp, subphrase_tgroup)])
-
         
         bases = []
         
@@ -408,11 +405,9 @@ class Experiment:
         
         return tuple(bases)
     
-    
     '''
     // Basis Parameters //
     '''
-    
     
     def basis_lexical_restrictions(self, phrase):
         '''
@@ -432,7 +427,6 @@ class Experiment:
         lexemes = set(self.F.lex.v(w) for w in self.E.heads.f(phrase) or self.L.d(phrase, 'word'))
         return not restricted_lexemes & lexemes
     
-    
     def basis_phrase_parameters(self, phrase, target_group):
         '''
         Defines and applies the parameters 
@@ -450,8 +444,7 @@ class Experiment:
         
         return all([basis_function in good_functions,
                     self.basis_lexical_restrictions(phrase)])
-        
-        
+         
     def basis_subphrase_parameters(self, subphrase, target_group):
         '''
         Defines and applies the parameters 
@@ -470,11 +463,9 @@ class Experiment:
         return all([subphrase_relation in good_relas,
                     self.basis_lexical_restrictions(subphrase)])
        
-        
     '''
     // Basis Constructor Methods //
     '''
-       
         
     def make_predicate_basis(self, basis_phrase, target_function):
         '''
@@ -493,8 +484,7 @@ class Experiment:
         lex = self.F.lex.v(verb)
         stem = self.F.vs.v(verb)
         return (f'{target_function}.Pred.{lex}.{stem}',)       
-    
-    
+     
     def make_noun_basis(self, basis_phrase, target_function):  
         '''
         Maps a noun to a string basis element, 
@@ -517,7 +507,6 @@ class Experiment:
             
         return tuple(f'{target_function}.{token}' for token in bases_tokens)
     
-    
     def make_basis_token(self, basis):
         '''
         Makes a basis token out of a word node.
@@ -530,7 +519,6 @@ class Experiment:
         '''
         
         return self.F.lex.v(basis)
-        
         
     def make_coordinate_noun_basis(self, basis_subphrase, target_function):
         '''
@@ -545,6 +533,10 @@ class Experiment:
         --output--
         basis element string
         '''
+        
+        # TO-DO: Fix this workaround properly. Should I have a 
+        # method with parameters on coordinate noun selection?
+        
         try:
             head = next(find_quantified(w, self.tf_api) or w
                         for w in self.L.d(basis_subphrase, 'word')
