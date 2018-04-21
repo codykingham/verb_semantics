@@ -34,7 +34,7 @@ from lingo.heads.heads import find_quantified
 class SemSpace:
     '''
     This class brings together all of the methods defined in 
-    notebook 4 of my semantics repository. This class has a
+    notebook 4 of my semantics repository. This class has as
     number of attributes which contain cooccurrence counts,
     adjusted counts, similarity scores, and more.
     The class loads and processes the data in one go.
