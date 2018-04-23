@@ -46,8 +46,10 @@ class SemSpace:
         calculations.
         '''
         
+        self.tf_api = experiment.tf_api
         self.info = experiment.tf_api.info
         self.indent = experiment.tf_api.indent
+        F = experiment.tf_api.F
         data = experiment.data
         
         # adjust raw counts with log-likelihood & pointwise mutual information
@@ -60,6 +62,37 @@ class SemSpace:
         self.pca_ll_3d = self.apply_pca(self.loglikelihood, n=3)
         self.pca_pmi = self.apply_pca(self.pmi)
         self.pca_raw = self.apply_pca(data)
+        
+        # pairwise distances
+        self.pairwise_ll = pairwise_distances(self.loglikelihood.T.values, metric='cosine')
+        self.pairwise_pmi = pairwise_distances(self.pmi.T.values, metric='cosine')
+        self.pairwise_raw = pairwise_distances(self.raw.T.values, metric='cosine')
+        self.pairwise_ll_pca = pairwise_distances(self.pca_ll, metric='euclidean')
+        self.pairwise_pmi_pca = pairwise_distances(self.pca_pmi, metric='euclidean')
+        self.pairwise_raw_pca = pairwise_distances(self.pca_raw, metric='euclidean')
+        self.pairwise_jaccard = pairwise_distances((self.raw > 0).T.values, metric='jaccard')
+        
+        # distance matrices
+        row_col = [F.lex.v(get_lex(w)) + ' (' + F.gloss.v(get_lex(w)) + ')' for w in self.raw.columns]
+        self.distance_ll = pd.DataFrame(pairwise_ll, columns=row_col, index=row_col)
+        self.distance_pmi = pd.DataFrame(pairwise_pmi, columns=row_col, index=row_col)
+        self.distance_raw = pd.DataFrame(pairwise_raw, columns=row_col, index=row_col)
+        self.distance_ll_pca = pd.DataFrame(pairwise_ll_pca, columns=row_col, index=row_col)
+        self.distance_pmi_pca = pd.DataFrame(pairwise_pmi_pca, columns=row_col, index=row_col)
+        self.distance_raw_pca = pd.DataFrame(pairwise_raw_pca, columns=row_col, index=row_col)
+        self.distance_jaccard = pd.DataFrame(pairwise_jaccard, columns=row_col, index=row_col)
+        
+        # similarity matrices
+        self.similarity_ll = self.distance_ll.apply(lambda x: 1-x)
+        self.similarity_pmi = self.distance_pmi.apply(lambda x: 1-x)
+        self.similarity_raw = self.distance_raw.apply(lambda x: 1-x)
+        self.similarity_jaccard = self.distance_jacccard.apply(lambda x: 1-x)
+        
+        # space plots
+        self.show_ll = PlotSpace(self.pca_ll, self.self.loglikelihood, self.tf_api)
+        self.show_pmi = PlotSpace(self.pca_pmi, self.self.pmi, self.tf_api)
+        self.show_raw = PlotSpace(self.pca_raw, self.self.raw, self.tf_api)
+        
     '''
     -----
     Association Measures:
@@ -169,3 +202,39 @@ class SemSpace:
         '''
         pca = PCA(n_components=n)
         return pca.fit_transform(comatrix.T.values)
+    
+    '''
+    // Plotting and Visualizations //
+    '''
+
+class PlotSpace:
+    '''
+    A simple visualization class that visualizes
+    a semantic space with PCA and with input data.
+    '''
+    def __init__(self, pca_arrays, data_matrix, tf_api):
+        self.pca_arrays = pca_arrays
+        self.data_matrix = data_matrix
+        self.F = tf_api.F
+            
+    def show(self, size=(10, 6), annotate=True, title='')
+        
+        '''
+        Shows the requested plot.
+        '''
+    
+        plt.figure(1, figsize=size)
+        plt.scatter(self.pca_arrays[:, 0], self.pca_arrays[:, 1])
+        plt.title(title)
+
+        if annotate:
+            self.annotate_space(self.data_matrix)
+            
+    def annotate_space(matrix):
+        '''
+        Annotates PCA scatter plots with word lexemes.
+        '''
+        
+        words = [self.F.gloss.v(get_lex(l)) for l in cooccurrences.columns]
+        for i, word in enumerate(words):
+            plt.annotate(word, xy=(matrix[i, 0], matrix[i, 1]))

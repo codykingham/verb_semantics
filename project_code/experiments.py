@@ -13,7 +13,10 @@ import collections, os, math
 import numpy as np
 import pandas as pd
 from tf.fabric import Fabric
-from lingo.heads.heads import find_quantified
+if not __package__:
+    from lingo.heads.heads import find_quantified
+else:
+    from .lingo.heads.heads import find_quantified
 
 class Experiment:
     
@@ -64,6 +67,7 @@ class Experiment:
                                 if sum(counts.values()) >= self.min_observation_freq
                             )
         self.data = pd.DataFrame(target_counts).fillna(0)
+        self.raw_data = target_counts
 
     def config(self):
         '''
@@ -73,10 +77,10 @@ class Experiment:
         self.min_observation_freq = 8
         self.target2basis = {
                                 ('Subj', 'Objc'):
-                                    {'Pred': self.make_predicate_basis},  
+                                    {('Pred',): self.make_predicate_basis},  
 
                                 ('subs',): 
-                                    {'par': self.make_coordinate_noun_basis},
+                                    {('par',): self.make_coordinate_noun_basis},
                             }
     
     '''
@@ -167,13 +171,11 @@ class Experiment:
         ls = self.F.ls.v(word) # gentilics
         
         # test all parameters
-        test = all([language == 'Hebrew', 
+        return all([language == 'Hebrew', 
                     freq >= self.min_target_freq,
                     pdp == 'subs',
-                    ls != 'gntl',
-                   ])
-        
-        return test
+                    ls != 'gntl'])
+
     
     def make_target_token(self, target):
         '''
@@ -213,35 +215,34 @@ class Experiment:
         clause_phrases = L.d(L.u(target, 'clause')[0], 'phrase')
         target_funct = F.function.v(L.u(target, 'phrase')[0])
         target_pos = F.pdp.v(target)
-        phrase_tgroup = next(k for k in self.target2basis.keys() if target_funct in k)        
+        phrase_tgroup = next((k for k in self.target2basis.keys() if target_funct in k), 0)        
         subphrase_tgroup = next((k for k in self.target2basis.keys() if target_pos in k), 0)
 
         phrase_bases = [phrase for phrase in clause_phrases
                             if self.basis_phrase_parameters(phrase, phrase_tgroup)]
         
-        if subphrase_tgroup:
-            subphrase_bases = [related_sp for subphrase in L.u(target, 'subphrase')
-                                   for related_sp in E.mother.t(subphrase)
-                                   if self.basis_subphrase_parameters(related_sp, subphrase_tgroup)]
+        subphrase_bases = [related_sp for subphrase in L.u(target, 'subphrase')
+                              for related_sp in E.mother.t(subphrase)
+                              if self.basis_subphrase_parameters(related_sp, subphrase_tgroup)]
 
-            subphrase_bases.extend([sp for sp in E.mother.t(target) 
-                                        if self.basis_subphrase_parameters(sp, subphrase_tgroup)])
-        else:
-            subphrase_bases = list()
+        subphrase_bases.extend([sp for sp in E.mother.t(target) 
+                                    if self.basis_subphrase_parameters(sp, subphrase_tgroup)])
         
         bases = []
         
         # make the phrase-level basis elements
         for phrase in phrase_bases:
             basis_function = F.function.v(phrase)
-            basis_constructor = self.target2basis[phrase_tgroup][basis_function]
+            phrase_bgroup = next((k for k in self.target2basis[phrase_tgroup].keys() if basis_function in k), 0)     
+            basis_constructor = self.target2basis[phrase_tgroup][phrase_bgroup]
             basis = basis_constructor(phrase, target_funct)
             bases.extend(basis)
 
         # make the subphrase-level basis elements
         for subphrase in subphrase_bases:
             basis_rela = F.rela.v(subphrase)
-            basis_constructor = self.target2basis[subphrase_tgroup][basis_rela]
+            subphrase_bgroup = next((k for k in self.target2basis[subphrase_tgroup].keys() if basis_rela in k), 0)     
+            basis_constructor = self.target2basis[subphrase_tgroup][subphrase_bgroup]
             basis = basis_constructor(subphrase, target_funct)
             bases.extend(basis)
         
@@ -281,7 +282,7 @@ class Experiment:
         boolean on good basis candidate
         '''
         
-        good_functions = self.target2basis[target_group]
+        good_functions = set(k for group in self.target2basis.get(target_group, {}) for k in group)
         basis_function = self.F.function.v(phrase)
         
         return all([basis_function in good_functions,
@@ -299,7 +300,7 @@ class Experiment:
         boolean on good basis candidate
         '''
         
-        good_relas = self.target2basis[target_group]
+        good_relas = set(k for group in self.target2basis.get(target_group, {}) for k in group)
         subphrase_relation = self.F.rela.v(subphrase)
         
         return all([subphrase_relation in good_relas,
@@ -387,8 +388,11 @@ class Experiment:
         
         except StopIteration:
             return tuple()
-        
-        
+      
+'''
+Experiments with verb vector spaces.
+'''
+    
 class VerbExperiment1(Experiment):
     
     def __init__(self):
@@ -398,9 +402,90 @@ class VerbExperiment1(Experiment):
         '''
         Experiment Configurations
         '''
-        self.min_target_freq = 8
-        self.min_observation_freq = 8
+        self.min_target_freq = 0
+        self.min_observation_freq = 0
         self.target2basis = {
-                                ('Subj', 'Objc'):
-                                    {'Pred': self.make_predicate_basis},  
+                                ('Pred', 'PreO', 'PreS', 'PtcO'):
+                                    {('PrAd', 'Adju', 'Cmpl', 'Loca', 'Time', 'Objc', 'Subj'): self.make_adverbial_bases},  
                             }
+        
+    def target_word_parameters(self, word):
+        '''
+        Applies word-level parameters on phrase heads.
+        This version checks for frequency,
+        head words, and proper names.
+        
+        --input--
+        phrase node
+        
+        --output--
+        boolean on acceptable word
+        '''
+        
+        # parameter checks
+        language = self.F.language.v(word) # language
+        freq = self.F.freq_lex.v(self.L.u(word, 'lex')[0]) # word frequency
+        pdp = self.F.pdp.v(word) # part of speech
+        lex = self.F.lex.v(word) # lexeme
+        
+        return all([language == 'Hebrew', 
+                    freq >= self.min_target_freq,
+                    pdp == 'verb',
+                    lex not in {'HJH['}])
+    
+    def make_adverbial_bases(self, phrase, target_funct):
+        '''
+        Builds a basis string from a supplied
+        adverbial phrase. Treats prepositional
+        phrases different from other phrase types.
+        
+        --input--
+        basis phrase node
+        
+        --output--
+        basis string
+        '''
+        
+        function = self.F.function.v(phrase)
+        heads = self.E.heads.f(phrase)
+        
+        if self.F.typ.v(phrase) == 'PP':
+            preps = [self.F.lex.v(h) for h in heads]
+            objs = [self.F.lex.v(obj) for prep in heads for obj in self.E.prep_obj.f(prep)]
+            basis_tokens = '|'.join(f'{prep}_{obj}' for prep, obj in zip(preps, objs))
+            basis_tokens = basis_tokens or '|'.join(self.F.lex.v(h) for h in heads)
+            return (f'{target_funct}.{function}.{basis_tokens}',)
+            
+        else:
+            return tuple(f'{target_funct}.{function}.{self.F.lex.v(w)}' for w in heads)
+    
+class VerbMinLexBasis(VerbExperiment1):
+    
+    def __init__(self):
+        VerbExperiment1.__init__(self)
+        
+    def make_adverbial_bases(self, phrase, target_funct):
+        '''
+        Builds a basis string from a supplied
+        adverbial phrase. Treats prepositional
+        phrases different from other phrase types.
+        
+        --input--
+        basis phrase node
+        
+        --output--
+        basis string
+        '''
+        
+        function = self.F.function.v(phrase)
+        heads = self.E.heads.f(phrase)
+        
+        if self.F.typ.v(phrase) == 'PP':
+            preps = [self.F.lex.v(h) for h in heads]
+            objs = [self.F.pdp.v(obj) for prep in heads for obj in self.E.prep_obj.f(prep)]
+            basis_tokens = '|'.join(f'{prep}_{obj}' for prep, obj in zip(preps, objs))
+            basis_tokens = basis_tokens or '|'.join(self.F.lex.v(h) for h in heads)
+            return (f'{target_funct}.{function}.{basis_tokens}',)
+
+        else:
+            return tuple(f'{target_funct}.{function}.{self.F.lex.v(w)}' for w in heads)

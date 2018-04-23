@@ -5,6 +5,18 @@ semantic space project. The code has since been modified
 and improved in the new module, semspace.py.
 '''
 
+import collections, os, math
+import numpy as np
+import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn.metrics.pairwise import pairwise_distances
+from tf.fabric import Fabric
+from tf.extra.bhsa import Bhsa
+
+if not __package__:
+    from lingo.heads.heads import find_quantified
+else:
+    from .lingo.heads.heads import find_quantified
 
 class SemSpace:
     '''
