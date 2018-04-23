@@ -17,6 +17,9 @@ if not __package__:
     from lingo.heads.heads import find_quantified
 else:
     from .lingo.heads.heads import find_quantified
+    
+bhsa_data_paths=['~/github/etcbc/bhsa/tf/c',
+                 '~/github/semantics/project_code/lingo/heads/tf/c']
 
 class Experiment:
     
@@ -26,25 +29,24 @@ class Experiment:
     Requires TF api loaded with BHSA data and the appropriate features.    
     '''
     
-    def __init__(self, bhsa_data_paths=['~/github/etcbc/bhsa/tf/c',
-                                        'lingo/heads/tf/c']):
+    def __init__(self, tf_api=None):
 
         self.config()
     
-        # load BHSA Hebrew data
-        TF = Fabric(bhsa_data_paths, silent=True)
-        tf_api = TF.load('''
-                        function lex vs language
-                        pdp freq_lex gloss domain ls
-                        heads prep_obj mother rela
-                        typ sp
-                      ''', silent=True)
-        
-        F, E, L, T = tf_api.F, tf_api.E, tf_api.L, tf_api.T  # shorten TF methods
-        self.tf_api, self.TF, self.F, self.E, self.L, self.T = tf_api, TF, F, E, L, T # make available to class
-        
+        # configure Text-Fabric
+        if tf_api:
+            self.tf_api = tf_api
+        else:
+            self.load_tf()      
+            
+        # configure shortform TF methods
+        self.F, self.E, self.L, self.T = self.tf_api.F, self.tf_api.E, self.tf_api.L, self.tf_api.T
+        F, E, L, T = self.F, self.E, self.L, self.T
+            
         # raw cooccurrence data goes here
         target_counts = collections.defaultdict(lambda: collections.Counter())
+        self.target2gloss = dict()
+        self.target2lex = dict()
         
         # Begin gathering data by clause:
         for clause in F.otype.s('clause'):
@@ -59,6 +61,8 @@ class Experiment:
             # process and count context
             for target in targets:
                 target_token = self.make_target_token(target)
+                self.target2gloss[target_token] = F.gloss.v(L.u(target, 'lex')[0])
+                self.target2lex[target_token] = L.u(target, 'lex')[0]
                 bases = self.map_context(target)
                 target_counts[target_token].update(bases)
     
@@ -83,6 +87,23 @@ class Experiment:
                                     {('par',): self.make_coordinate_noun_basis},
                             }
     
+    def load_tf(self):
+        
+        '''
+        Loads an instance of TF if necessary.
+        '''
+        
+        # load BHSA Hebrew data
+        TF = Fabric(bhsa_data_paths, silent=True)
+        tf_api = TF.load('''
+                        function lex vs language
+                        pdp freq_lex gloss domain ls
+                        heads prep_obj mother rela
+                        typ sp
+                      ''', silent=True)
+        
+        self.tf_api = tf_api
+            
     '''
     / Target Parameters & Methods /
     ''' 
@@ -395,8 +416,8 @@ Experiments with verb vector spaces.
     
 class VerbExperiment1(Experiment):
     
-    def __init__(self):
-        Experiment.__init__(self)
+    def __init__(self, tf_api=None):
+        super().__init__(tf_api=tf_api)
         
     def config(self):
         '''
@@ -461,8 +482,13 @@ class VerbExperiment1(Experiment):
     
 class VerbMinLexBasis(VerbExperiment1):
     
-    def __init__(self):
-        VerbExperiment1.__init__(self)
+    '''
+    This experiment supresses lexical data
+    for complement bases.
+    '''
+    
+    def __init__(self, tf_api=None):
+        super().__init__(tf_api=tf_api)
         
     def make_adverbial_bases(self, phrase, target_funct):
         '''
@@ -489,3 +515,53 @@ class VerbMinLexBasis(VerbExperiment1):
 
         else:
             return tuple(f'{target_funct}.{function}.{self.F.lex.v(w)}' for w in heads)
+        
+class VerbNoSubj(VerbExperiment1):
+    
+    '''
+    This experiment excludes subjects from functioning
+    as basis elements.
+    '''
+    
+    def __init__(self, tf_api=None):
+        super().__init__(tf_api=tf_api)
+        
+    def config(self):
+        '''
+        Experiment Configurations
+        '''
+        self.min_target_freq = 0
+        self.min_observation_freq = 0
+        self.target2basis = {
+                                ('Pred', 'PreO', 'PreS', 'PtcO'):
+                                    {('PrAd', 'Adju', 'Cmpl', 'Loca', 'Time', 'Objc'): self.make_adverbial_bases},  
+                            }
+        
+class VerbAndStem(VerbNoSubj):
+    
+    '''
+    This experiment adds the stem to the verb lexeme
+    during the target token construction.
+    The parameters of the VerbNoSubj are inherited
+    due to the success of that experiment.
+    '''
+    
+    def __init__(self, tf_api=None):
+        super().__init__(tf_api=tf_api)
+    
+    def make_target_token(self, target):
+        '''
+        Maps a target word to its
+        string representation.
+        
+        --input--
+        word node
+        
+        --output--
+        lexeme string
+        '''
+        
+        stem = self.F.vs.v(target)
+        lex = self.F.lex.v(target)
+        
+        return f'{lex}.{stem}'

@@ -22,9 +22,18 @@ upon initializing Experiment. say:
 import collections, os, math
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.metrics.pairwise import pairwise_distances
-from kmedoids.kmedoids import kMedoids
+
+if not __package__:
+    from kmedoids.kmedoids import kMedoids
+    from helpers import get_lex
+else:
+    from .kmedoids.kmedoids import kMedoids
+    from .helpers import get_lex
+
+
 
 class SemSpace:
     '''
@@ -35,7 +44,7 @@ class SemSpace:
     The class loads and processes the data in one go.
     '''
     
-    def __init__(self, experiment, info=0):
+    def __init__(self, experiment, info=0, test=False):
         '''
         Requires an experiment class (defined below).
         This allows various experiment parameters
@@ -49,13 +58,24 @@ class SemSpace:
         self.tf_api = experiment.tf_api
         self.info = experiment.tf_api.info
         self.indent = experiment.tf_api.indent
+        self.report = info
+        self.experiment = experiment
         F = experiment.tf_api.F
-        data = experiment.data
+        data = experiment.data if not test else experiment.data.head(10)
+        
+        if self.report:
+            self.indent(reset=True)
+            self.info('Beginning all calculations...')
+            self.indent(1, reset=True)
         
         # adjust raw counts with log-likelihood & pointwise mutual information
         self.loglikelihood = self.apply_loglikelihood(data)
         self.pmi = self.apply_pmi(data)
         self.raw = data
+        
+        if self.report:
+            self.indent(0)
+            self.info('FINISHED PMI...')
         
         # apply pca or other data maneuvers
         self.pca_ll = self.apply_pca(self.loglikelihood)
@@ -73,26 +93,29 @@ class SemSpace:
         self.pairwise_jaccard = pairwise_distances((self.raw > 0).T.values, metric='jaccard')
         
         # distance matrices
-        row_col = [F.lex.v(get_lex(w)) + ' (' + F.gloss.v(get_lex(w)) + ')' for w in self.raw.columns]
-        self.distance_ll = pd.DataFrame(pairwise_ll, columns=row_col, index=row_col)
-        self.distance_pmi = pd.DataFrame(pairwise_pmi, columns=row_col, index=row_col)
-        self.distance_raw = pd.DataFrame(pairwise_raw, columns=row_col, index=row_col)
-        self.distance_ll_pca = pd.DataFrame(pairwise_ll_pca, columns=row_col, index=row_col)
-        self.distance_pmi_pca = pd.DataFrame(pairwise_pmi_pca, columns=row_col, index=row_col)
-        self.distance_raw_pca = pd.DataFrame(pairwise_raw_pca, columns=row_col, index=row_col)
-        self.distance_jaccard = pd.DataFrame(pairwise_jaccard, columns=row_col, index=row_col)
+        row_col = [f'{w} ({experiment.target2gloss[w]})' for w in self.raw.columns]
+        self.distance_ll = pd.DataFrame(self.pairwise_ll, columns=row_col, index=row_col)
+        self.distance_pmi = pd.DataFrame(self.pairwise_pmi, columns=row_col, index=row_col)
+        self.distance_raw = pd.DataFrame(self.pairwise_raw, columns=row_col, index=row_col)
+        self.distance_ll_pca = pd.DataFrame(self.pairwise_ll_pca, columns=row_col, index=row_col)
+        self.distance_pmi_pca = pd.DataFrame(self.pairwise_pmi_pca, columns=row_col, index=row_col)
+        self.distance_raw_pca = pd.DataFrame(self.pairwise_raw_pca, columns=row_col, index=row_col)
+        self.distance_jaccard = pd.DataFrame(self.pairwise_jaccard, columns=row_col, index=row_col)
         
         # similarity matrices
         self.similarity_ll = self.distance_ll.apply(lambda x: 1-x)
         self.similarity_pmi = self.distance_pmi.apply(lambda x: 1-x)
         self.similarity_raw = self.distance_raw.apply(lambda x: 1-x)
-        self.similarity_jaccard = self.distance_jacccard.apply(lambda x: 1-x)
+        self.similarity_jaccard = self.distance_jaccard.apply(lambda x: 1-x)
         
         # space plots
-        self.show_ll = PlotSpace(self.pca_ll, self.self.loglikelihood, self.tf_api)
-        self.show_pmi = PlotSpace(self.pca_pmi, self.self.pmi, self.tf_api)
-        self.show_raw = PlotSpace(self.pca_raw, self.self.raw, self.tf_api)
+        self.ll_plot = PlotSpace(self.pca_ll, self.loglikelihood, self.tf_api, experiment.target2gloss)
+        self.pmi_plot = PlotSpace(self.pca_pmi, self.pmi, self.tf_api, experiment.target2gloss)
+        self.raw_plot = PlotSpace(self.pca_raw, self.raw, self.tf_api, experiment.target2gloss)
         
+        if self.report:
+            self.indent(0)
+            self.info('data gathering complete!')
     '''
     -----
     Association Measures:
@@ -123,7 +146,7 @@ class SemSpace:
 
         return llikelihood
 
-    def apply_loglikelihood(self, comatrix, info=0):
+    def apply_loglikelihood(self, comatrix):
 
         '''
         Adjusts values in a cooccurrence matrix using log-likelihood. 
@@ -142,9 +165,9 @@ class SemSpace:
         new_matrix = comatrix.copy()
         
         i = 0 
-        if info:
-            self.indent(reset=True)
-            self.info('beginning calculations...')
+        if self.report:
+            self.indent(0)
+            self.info('beginning Loglikelihood calculations...')
             self.indent(1, reset=True)
         
         for target in comatrix.columns:
@@ -153,7 +176,7 @@ class SemSpace:
 
                 if not k:
                     i += 1
-                    if info and i % info == 0:
+                    if self.report and i % self.report == 0:
                         self.indent(1)
                         self.info(f'at iteration {i}')
                     continue
@@ -166,12 +189,12 @@ class SemSpace:
                 
                 # optional: information for large datasets
                 i += 1
-                if info and i % info == 0:
+                if self.report and i % self.report == 0:
                     self.indent(1)
                     self.info(f'at iteration {i}')
-        if info:
+        if self.report:
             self.indent(0)
-            self.info(f'FINISHED at iteration {i}')
+            self.info(f'FINISHED loglikelihood at iteration {i}')
         
         return new_matrix
     
@@ -190,6 +213,9 @@ class SemSpace:
         Apply pmi to a data matrix.
         Method derived from Levshina 2015.
         '''
+        if self.report:
+            self.indent(0)
+            self.info('beginning PMI calculations...')
         return datamatrix.apply(lambda k: self.apply_pmi_column(k, datamatrix))
     
     '''
@@ -212,12 +238,13 @@ class PlotSpace:
     A simple visualization class that visualizes
     a semantic space with PCA and with input data.
     '''
-    def __init__(self, pca_arrays, data_matrix, tf_api):
+    def __init__(self, pca_arrays, matrix, tf_api, target2gloss):
         self.pca_arrays = pca_arrays
-        self.data_matrix = data_matrix
-        self.F = tf_api.F
+        self.matrix = matrix
+        self.api = tf_api
+        self.target2gloss = target2gloss
             
-    def show(self, size=(10, 6), annotate=True, title='')
+    def show(self, size=(10, 6), annotate=True, title='', axis=[]):
         
         '''
         Shows the requested plot.
@@ -226,15 +253,16 @@ class PlotSpace:
         plt.figure(1, figsize=size)
         plt.scatter(self.pca_arrays[:, 0], self.pca_arrays[:, 1])
         plt.title(title)
-
+        if axis:
+            plt.axis(axis)
         if annotate:
-            self.annotate_space(self.data_matrix)
+            self.annotate_space()
             
-    def annotate_space(matrix):
+    def annotate_space(self):
         '''
         Annotates PCA scatter plots with word lexemes.
         '''
         
-        words = [self.F.gloss.v(get_lex(l)) for l in cooccurrences.columns]
+        words = [self.target2gloss[l] for l in self.matrix.columns]
         for i, word in enumerate(words):
-            plt.annotate(word, xy=(matrix[i, 0], matrix[i, 1]))
+            plt.annotate(word, xy=(self.pca_arrays[i, 0], self.pca_arrays[i, 1]))
