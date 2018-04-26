@@ -109,9 +109,9 @@ class SemSpace:
         self.similarity_jaccard = self.distance_jaccard.apply(lambda x: 1-x)
         
         # space plots
-        self.ll_plot = PlotSpace(self.pca_ll, self.loglikelihood, self.tf_api, experiment.target2gloss)
-        self.pmi_plot = PlotSpace(self.pca_pmi, self.pmi, self.tf_api, experiment.target2gloss)
-        self.raw_plot = PlotSpace(self.pca_raw, self.raw, self.tf_api, experiment.target2gloss)
+        self.ll_plot = PlotSpace(self.pca_ll, self.loglikelihood, self.tf_api, experiment)
+        self.pmi_plot = PlotSpace(self.pca_pmi, self.pmi, self.tf_api, experiment)
+        self.raw_plot = PlotSpace(self.pca_raw, self.raw, self.tf_api, experiment)
         
         if self.report:
             self.indent(0)
@@ -238,11 +238,13 @@ class PlotSpace:
     A simple visualization class that visualizes
     a semantic space with PCA and with input data.
     '''
-    def __init__(self, pca_arrays, matrix, tf_api, target2gloss):
+    def __init__(self, pca_arrays, matrix, tf_api, experiment):
         self.pca_arrays = pca_arrays
         self.matrix = matrix
         self.api = tf_api
-        self.target2gloss = target2gloss
+        self.F = tf_api.F
+        self.target2gloss = experiment.target2gloss
+        self.target2node = experiment.target2node
             
     def show(self, size=(10, 6), annotate=True, title='', axis=[]):
         
@@ -263,6 +265,6 @@ class PlotSpace:
         Annotates PCA scatter plots with word lexemes.
         '''
         
-        words = [self.target2gloss[l] for l in self.matrix.columns]
+        words = [f'{self.target2gloss[l]}.{self.F.vs.v(self.target2node[l])}' for l in self.matrix.columns]
         for i, word in enumerate(words):
             plt.annotate(word, xy=(self.pca_arrays[i, 0], self.pca_arrays[i, 1]))

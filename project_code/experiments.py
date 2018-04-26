@@ -47,6 +47,7 @@ class Experiment:
         target_counts = collections.defaultdict(lambda: collections.Counter())
         self.target2gloss = dict()
         self.target2lex = dict()
+        self.target2node = dict()
         
         # Begin gathering data by clause:
         for clause in F.otype.s('clause'):
@@ -63,8 +64,10 @@ class Experiment:
                 target_token = self.make_target_token(target)
                 self.target2gloss[target_token] = F.gloss.v(L.u(target, 'lex')[0])
                 self.target2lex[target_token] = L.u(target, 'lex')[0]
+                self.target2node[target_token] = target
                 bases = self.map_context(target)
-                target_counts[target_token].update(bases)
+                if bases:
+                    target_counts[target_token].update(bases)
     
         # filter and arrange data
         target_counts = dict((word, counts) for word, counts in target_counts.items()
