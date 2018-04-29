@@ -414,7 +414,8 @@ class Experiment:
             return tuple()
       
 '''
-Experiments with verb vector spaces.
+Experiments with verb vector spaces:
+Composed during phase2 initial experiments notebook.
 '''
     
 class VerbExperiment1(Experiment):
@@ -568,3 +569,78 @@ class VerbAndStem(VerbNoSubj):
         lex = self.F.lex.v(target)
         
         return f'{lex}.{stem}'
+    
+'''
+Experiments with single-basis verb spaces: namely
+subject-only, object-only, and complement-only verb
+spaces. Explored in the phase 2 clustering experiment 
+notebook.
+'''
+
+class VerbSubjOnly(VerbExperiment1):
+    
+    '''
+    In this experiment, only subjects
+    are examined as basis elements.
+    '''
+    
+    def __init__(self, tf_api=None):
+        super().__init__(tf_api=tf_api)
+        
+    def config(self):
+        '''
+        Experiment Configurations
+        '''
+        self.min_target_freq = 0
+        self.min_observation_freq = 0
+        self.target2basis = {
+                                ('Pred', 'PreO', 'PreS', 'PtcO'):
+                                    {('Subj',): self.make_adverbial_bases},  
+                            }
+        
+class VerbObjOnly(VerbExperiment1):
+    
+    '''
+    In this experiment, only objects
+    are examined as basis elements.
+    '''
+    
+    def __init__(self, tf_api=None):
+        super().__init__(tf_api=tf_api)
+        
+    def config(self):
+        '''
+        Experiment Configurations
+        '''
+        self.min_target_freq = 0
+        self.min_observation_freq = 0
+        self.target2basis = {
+                                ('Pred', 'PreO', 'PreS', 'PtcO'):
+                                    {('Objc',): self.make_adverbial_bases},  
+                            }
+
+class VerbCmplOnly(VerbExperiment1):
+    
+    '''
+    In this experiment, only complements
+    are examined as basis elements.
+    
+    In this version, Loca (location) and Time
+    are excluded as complementizers to eliminate 
+    looser connections based less on semantic class
+    than on similarity of temporal/locative context.
+    '''
+    
+    def __init__(self, tf_api=None):
+        super().__init__(tf_api=tf_api)
+        
+    def config(self):
+        '''
+        Experiment Configurations
+        '''
+        self.min_target_freq = 0
+        self.min_observation_freq = 0
+        self.target2basis = {
+                                ('Pred', 'PreO', 'PreS', 'PtcO'):
+                                    {('PrAd', 'Adju', 'Cmpl'): self.make_adverbial_bases},  
+                            }
