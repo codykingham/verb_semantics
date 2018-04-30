@@ -222,7 +222,7 @@ class SemSpace:
     // Data Transformations and Cluster Analyses //
     '''
 
-    def apply_pca(self, comatrix, n=2):
+    def apply_pca(self, comatrix, n=100):
         '''
         Apply principle component analysis to a supplied cooccurrence matrix.
         '''
@@ -246,25 +246,25 @@ class PlotSpace:
         self.target2gloss = experiment.target2gloss
         self.target2node = experiment.target2node
             
-    def show(self, size=(10, 6), annotate=True, title='', axis=[]):
-        
+    def show(self, size=(10, 6), annotate=True, title='', axis=[], principal_components=(0, 1)):
+        0
         '''
         Shows the requested plot.
         '''
-    
+        pc1, pc2 = principal_components
         plt.figure(1, figsize=size)
-        plt.scatter(self.pca_arrays[:, 0], self.pca_arrays[:, 1])
+        plt.scatter(self.pca_arrays[:, pc1], self.pca_arrays[:, pc2])
         plt.title(title)
         if axis:
             plt.axis(axis)
         if annotate:
-            self.annotate_space()
+            self.annotate_space(principal_components)
             
-    def annotate_space(self):
+    def annotate_space(self, principal_components):
         '''
         Annotates PCA scatter plots with word lexemes.
         '''
-        
+        pc1, pc2 = principal_components
         words = [f'{self.target2gloss[l]}.{self.F.vs.v(self.target2node[l])}' for l in self.matrix.columns]
         for i, word in enumerate(words):
-            plt.annotate(word, xy=(self.pca_arrays[i, 0], self.pca_arrays[i, 1]))
+            plt.annotate(word, xy=(self.pca_arrays[i, pc1], self.pca_arrays[i, pc2]))

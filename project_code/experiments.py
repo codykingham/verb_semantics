@@ -478,8 +478,10 @@ class VerbExperiment1(Experiment):
             preps = [self.F.lex.v(h) for h in heads]
             objs = [self.F.lex.v(obj) for prep in heads for obj in self.E.prep_obj.f(prep)]
             basis_tokens = '|'.join(f'{prep}_{obj}' for prep, obj in zip(preps, objs))
-            basis_tokens = basis_tokens or '|'.join(self.F.lex.v(h) for h in heads)
-            return (f'{target_funct}.{function}.{basis_tokens}',)
+            if basis_tokens:
+                return (f'{target_funct}.{function}.{basis_tokens}',)
+            else:
+                return tuple()
             
         else:
             return tuple(f'{target_funct}.{function}.{self.F.lex.v(w)}' for w in heads)
@@ -644,3 +646,112 @@ class VerbCmplOnly(VerbExperiment1):
                                 ('Pred', 'PreO', 'PreS', 'PtcO'):
                                     {('PrAd', 'Adju', 'Cmpl'): self.make_adverbial_bases},  
                             }
+        
+class VerbMinLexBasis2(VerbExperiment1):
+    
+    '''
+    This experiment supresses lexical data
+    for complement bases.
+    
+    This version also suppresses lexical
+    info into a part of speech tag for 
+    non-prepositional objects as well.
+    '''
+    
+    def __init__(self, tf_api=None):
+        super().__init__(tf_api=tf_api)
+        
+    def make_adverbial_bases(self, phrase, target_funct):
+        '''
+        Builds a basis string from a supplied
+        adverbial phrase. Treats prepositional
+        phrases different from other phrase types.
+        
+        --input--
+        basis phrase node
+        
+        --output--
+        basis string
+        '''
+        
+        function = self.F.function.v(phrase)
+        heads = self.E.heads.f(phrase)
+        
+        if self.F.typ.v(phrase) == 'PP':
+            preps = [self.F.lex.v(h) for h in heads]
+            objs = [self.F.pdp.v(obj) for prep in heads for obj in self.E.prep_obj.f(prep)]
+            basis_tokens = '|'.join(f'{prep}_{obj}' for prep, obj in zip(preps, objs))
+            basis_tokens = basis_tokens or '|'.join(self.F.lex.v(h) for h in heads)
+            return (f'{target_funct}.{function}.{basis_tokens}',)
+
+        else:
+            return tuple(f'{target_funct}.{function}.{self.F.pdp.v(w)}' for w in heads)
+        
+class VerbSubjOnlyMinLex(VerbMinLexBasis2):
+    
+    '''
+    In this experiment, only subjects
+    are examined as basis elements.
+    '''
+    
+    def __init__(self, tf_api=None):
+        super().__init__(tf_api=tf_api)
+        
+    def config(self):
+        '''
+        Experiment Configurations
+        '''
+        self.min_target_freq = 0
+        self.min_observation_freq = 0
+        self.target2basis = {
+                                ('Pred', 'PreO', 'PreS', 'PtcO'):
+                                    {('Subj',): self.make_adverbial_bases},  
+                            }
+        
+class VerbObjOnlyMinLex(VerbMinLexBasis2):
+    
+    '''
+    In this experiment, only objects
+    are examined as basis elements.
+    '''
+    
+    def __init__(self, tf_api=None):
+        super().__init__(tf_api=tf_api)
+        
+    def config(self):
+        '''
+        Experiment Configurations
+        '''
+        self.min_target_freq = 0
+        self.min_observation_freq = 0
+        self.target2basis = {
+                                ('Pred', 'PreO', 'PreS', 'PtcO'):
+                                    {('Objc',): self.make_adverbial_bases},  
+                            }
+
+class VerbCmplOnlyMinLex(VerbMinLexBasis2):
+    
+    '''
+    In this experiment, only complements
+    are examined as basis elements.
+    
+    In this version, Loca (location) and Time
+    are excluded as complementizers to eliminate 
+    looser connections based less on semantic class
+    than on similarity of temporal/locative context.
+    '''
+    
+    def __init__(self, tf_api=None):
+        super().__init__(tf_api=tf_api)
+        
+    def config(self):
+        '''
+        Experiment Configurations
+        '''
+        self.min_target_freq = 0
+        self.min_observation_freq = 0
+        self.target2basis = {
+                                ('Pred', 'PreO', 'PreS', 'PtcO'):
+                                    {('PrAd', 'Adju', 'Cmpl'): self.make_adverbial_bases},  
+                            }
+        
