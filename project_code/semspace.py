@@ -33,8 +33,7 @@ else:
     from .kmedoids.kmedoids import kMedoids
     from .helpers import get_lex
 
-
-
+    
 class SemSpace:
     '''
     This class brings together all of the methods defined in 
@@ -44,7 +43,8 @@ class SemSpace:
     The class loads and processes the data in one go.
     '''
     
-    def __init__(self, experiment, info=0, test=False):
+    def __init__(self, experiment, info=0, test=False, 
+                 run_ll=True, precomputed={}):
         '''
         Requires an experiment class (defined below).
         This allows various experiment parameters
@@ -53,6 +53,18 @@ class SemSpace:
         "info" is an optionally divisable number
         if status updates are desired for lengthy
         calculations.
+        
+        "test" builds a semantic space on the first 100
+        elements of the experiment.
+        
+        "run_ll" toggles whether to run the log-likelihood
+        adjustment, which is more time consuming for large
+        data, and which is not being used much in this project yet.
+        
+        "precomputed" is a dictionary with either "loglikelihood"
+        or "pmi" keys with dataframe values. This allows computationally
+        intensive spaces to be saved to disk and loaded at a later time.
+        Pairwise distances will still need calculation, however.
         '''
         
         self.tf_api = experiment.tf_api
@@ -61,55 +73,71 @@ class SemSpace:
         self.report = info
         self.experiment = experiment
         F = experiment.tf_api.F
-        data = experiment.data if not test else experiment.data.head(10)
-        
+        data = experiment.data if not test else experiment.data.head(100)
+        self.raw = data
+        row_col = [f'{w} ({experiment.target2gloss[w]})' for w in self.raw.columns] # for similarity matrix indices/cols
+
+
         if self.report:
             self.indent(reset=True)
             self.info('Beginning all calculations...')
-            self.indent(1, reset=True)
         
         # adjust raw counts with log-likelihood & pointwise mutual information
-        self.loglikelihood = self.apply_loglikelihood(data)
-        self.pmi = self.apply_pmi(data)
-        self.raw = data
+        if run_ll:
+            i = 0 
+            if self.report:
+                self.indent(0)
+                self.info('beginning Loglikelihood calculations...')
+                self.indent(1, reset=True)
+            self.loglikelihood = precomputed['loglikelihood'] if 'loglikelihood' in precomputed\
+                                     else self.apply_loglikelihood(data)
+            if self.report:
+                self.indent(1)
+                self.info('Building all LL matrices...')
+            self.pca_ll = self.apply_pca(self.loglikelihood)
+            self.pairwise_ll = pairwise_distances(self.loglikelihood.T.values, metric='cosine')
+            self.pairwise_ll_pca = pairwise_distances(self.pca_ll, metric='euclidean')
+            self.distance_ll = pd.DataFrame(self.pairwise_ll, columns=row_col, index=row_col)
+            self.distance_ll_pca = pd.DataFrame(self.pairwise_ll_pca, columns=row_col, index=row_col)
+            self.similarity_ll = self.distance_ll.apply(lambda x: 1-x)
+            self.ll_plot = PlotSpace(self.pca_ll, self.loglikelihood, self.tf_api, experiment)
+        elif self.report:
+            self.indent(0)
+            self.info('Skipping log-likelihood...')
+
+        self.pmi = precomputed['pmi'] if 'pmi' in precomputed else self.apply_pmi(data)
         
         if self.report:
-            self.indent(0)
+            self.indent(1)
             self.info('FINISHED PMI...')
+            self.indent(0)
+            self.info('Formatting remaining data matrices...')
+        
         
         # apply pca or other data maneuvers
-        self.pca_ll = self.apply_pca(self.loglikelihood)
-        self.pca_ll_3d = self.apply_pca(self.loglikelihood, n=3)
         self.pca_pmi = self.apply_pca(self.pmi)
         self.pca_raw = self.apply_pca(data)
         
         # pairwise distances
-        self.pairwise_ll = pairwise_distances(self.loglikelihood.T.values, metric='cosine')
         self.pairwise_pmi = pairwise_distances(self.pmi.T.values, metric='cosine')
         self.pairwise_raw = pairwise_distances(self.raw.T.values, metric='cosine')
-        self.pairwise_ll_pca = pairwise_distances(self.pca_ll, metric='euclidean')
         self.pairwise_pmi_pca = pairwise_distances(self.pca_pmi, metric='euclidean')
         self.pairwise_raw_pca = pairwise_distances(self.pca_raw, metric='euclidean')
         self.pairwise_jaccard = pairwise_distances((self.raw > 0).T.values, metric='jaccard')
         
         # distance matrices
-        row_col = [f'{w} ({experiment.target2gloss[w]})' for w in self.raw.columns]
-        self.distance_ll = pd.DataFrame(self.pairwise_ll, columns=row_col, index=row_col)
         self.distance_pmi = pd.DataFrame(self.pairwise_pmi, columns=row_col, index=row_col)
         self.distance_raw = pd.DataFrame(self.pairwise_raw, columns=row_col, index=row_col)
-        self.distance_ll_pca = pd.DataFrame(self.pairwise_ll_pca, columns=row_col, index=row_col)
         self.distance_pmi_pca = pd.DataFrame(self.pairwise_pmi_pca, columns=row_col, index=row_col)
         self.distance_raw_pca = pd.DataFrame(self.pairwise_raw_pca, columns=row_col, index=row_col)
         self.distance_jaccard = pd.DataFrame(self.pairwise_jaccard, columns=row_col, index=row_col)
         
         # similarity matrices
-        self.similarity_ll = self.distance_ll.apply(lambda x: 1-x)
         self.similarity_pmi = self.distance_pmi.apply(lambda x: 1-x)
         self.similarity_raw = self.distance_raw.apply(lambda x: 1-x)
         self.similarity_jaccard = self.distance_jaccard.apply(lambda x: 1-x)
         
         # space plots
-        self.ll_plot = PlotSpace(self.pca_ll, self.loglikelihood, self.tf_api, experiment)
         self.pmi_plot = PlotSpace(self.pca_pmi, self.pmi, self.tf_api, experiment)
         self.raw_plot = PlotSpace(self.pca_raw, self.raw, self.tf_api, experiment)
         
@@ -163,12 +191,6 @@ class SemSpace:
         log_likelihood = self.loglikelihood
         
         new_matrix = comatrix.copy()
-        
-        i = 0 
-        if self.report:
-            self.indent(0)
-            self.info('beginning Loglikelihood calculations...')
-            self.indent(1, reset=True)
         
         for target in comatrix.columns:
             for basis in comatrix.index:
@@ -263,6 +285,16 @@ class PlotSpace:
     def annotate_space(self, principal_components):
         '''
         Annotates PCA scatter plots with word lexemes.
+        '''
+        pc1, pc2 = principal_components
+        words = [f'{self.target2gloss[l]}' for l in self.matrix.columns]
+        for i, word in enumerate(words):
+            plt.annotate(word, xy=(self.pca_arrays[i, pc1], self.pca_arrays[i, pc2]))
+            
+    def annotate_verb_space(self, principal_components):
+        '''
+        Annotates PCA scatter plots with verb lexemes + stem.
+        **NB**: This function is currently not used
         '''
         pc1, pc2 = principal_components
         words = [f'{self.target2gloss[l]}.{self.F.vs.v(self.target2node[l])}' for l in self.matrix.columns]

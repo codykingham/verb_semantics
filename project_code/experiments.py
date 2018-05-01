@@ -54,7 +54,7 @@ class Experiment:
             
             # filter for targets
             targets = [target for phrase in L.d(clause, 'phrase') 
-                          for target in self.get_targets(phrase)
+                          for target in self.get_heads(phrase)
                           if self.target_parameters(target)]            
             if not targets: 
                 continue
@@ -66,8 +66,7 @@ class Experiment:
                 self.target2lex[target_token] = L.u(target, 'lex')[0]
                 self.target2node[target_token] = target
                 bases = self.map_context(target)
-                if bases:
-                    target_counts[target_token].update(bases)
+                target_counts[target_token].update(bases)
     
         # filter and arrange data
         target_counts = dict((word, counts) for word, counts in target_counts.items()
@@ -111,7 +110,7 @@ class Experiment:
     / Target Parameters & Methods /
     ''' 
         
-    def get_targets(self, phrase):
+    def get_heads(self, phrase):
         '''
         Extracts a target word based on the
         phrase type using the heads.tf and
@@ -232,6 +231,8 @@ class Experiment:
         tuple of strings
         '''
         
+        self.target = target
+        
         # define shortform TF api methods
         F, E, L = self.F, self.E, self.L
         
@@ -259,7 +260,7 @@ class Experiment:
             basis_function = F.function.v(phrase)
             phrase_bgroup = next((k for k in self.target2basis[phrase_tgroup].keys() if basis_function in k), 0)     
             basis_constructor = self.target2basis[phrase_tgroup][phrase_bgroup]
-            basis = basis_constructor(phrase, target_funct)
+            basis = basis_constructor(phrase, target)
             bases.extend(basis)
 
         # make the subphrase-level basis elements
@@ -267,7 +268,7 @@ class Experiment:
             basis_rela = F.rela.v(subphrase)
             subphrase_bgroup = next((k for k in self.target2basis[subphrase_tgroup].keys() if basis_rela in k), 0)     
             basis_constructor = self.target2basis[subphrase_tgroup][subphrase_bgroup]
-            basis = basis_constructor(subphrase, target_funct)
+            basis = basis_constructor(subphrase, target)
             bases.extend(basis)
         
         return tuple(bases)
@@ -290,7 +291,7 @@ class Experiment:
         boolean on acceptable lexeme
         '''
         
-        restricted_lexemes = {'HJH['}
+        restricted_lexemes = {'HJH[', self.F.lex.v(self.target)}
         lexemes = set(self.F.lex.v(w) for w in self.E.heads.f(phrase) or self.L.d(phrase, 'word'))
         return not restricted_lexemes & lexemes
     
@@ -334,7 +335,7 @@ class Experiment:
     // Basis Constructor Methods //
     '''
         
-    def make_predicate_basis(self, basis_phrase, target_function):
+    def make_predicate_basis(self, basis_phrase, target):
         '''
         Maps a verb to a string basis element, 
         where:
@@ -350,9 +351,12 @@ class Experiment:
         verb = self.E.heads.f(basis_phrase)[0]
         lex = self.F.lex.v(verb)
         stem = self.F.vs.v(verb)
+        target_phrase = self.L.u(target, 'phrase')[0]
+        target_function = self.F.function.v(target_phrase)
+        
         return (f'{target_function}.Pred.{lex}.{stem}',)       
      
-    def make_noun_basis(self, basis_phrase, target_function):  
+    def make_noun_basis(self, basis_phrase, target):  
         '''
         Maps a noun to a string basis element, 
         where:
@@ -364,6 +368,9 @@ class Experiment:
         --output--
         basis element string(s)
         '''
+        
+        target_phrase = self.L.u(target, 'phrase')[0]
+        target_function = self.F.function.v(target_phrase)
         
         if self.F.typ.v(basis_phrase) == 'NP':
             bases_tokens = [make_basis_token(h) for h in self.E.heads.f(phrase)]
@@ -387,7 +394,7 @@ class Experiment:
         
         return self.F.lex.v(basis)
         
-    def make_coordinate_noun_basis(self, basis_subphrase, target_function):
+    def make_coordinate_noun_basis(self, basis_subphrase, target):
         '''
         Maps coordinate nouns to bases, 
         i.e. nouns connected to a target with a conjunction
@@ -400,6 +407,9 @@ class Experiment:
         --output--
         basis element string
         '''
+        
+        target_phrase = self.L.u(target, 'phrase')[0]
+        target_function = self.F.function.v(target_phrase)
         
         # TO-DO: Fix this workaround properly. Should I have a 
         # method with parameters on coordinate noun selection?
@@ -427,8 +437,8 @@ class VerbExperiment1(Experiment):
         '''
         Experiment Configurations
         '''
-        self.min_target_freq = 0
-        self.min_observation_freq = 0
+        self.min_target_freq = 1
+        self.min_observation_freq = 1
         self.target2basis = {
                                 ('Pred', 'PreO', 'PreS', 'PtcO'):
                                     {('PrAd', 'Adju', 'Cmpl', 'Loca', 'Time', 'Objc', 'Subj'): self.make_adverbial_bases},  
@@ -754,4 +764,3 @@ class VerbCmplOnlyMinLex(VerbMinLexBasis2):
                                 ('Pred', 'PreO', 'PreS', 'PtcO'):
                                     {('PrAd', 'Adju', 'Cmpl'): self.make_adverbial_bases},  
                             }
-        
