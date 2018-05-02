@@ -105,7 +105,7 @@ class SemSpace:
             self.indent(0)
             self.info('Skipping log-likelihood...')
 
-        self.pmi = precomputed['pmi'] if 'pmi' in precomputed else self.apply_pmi(data)
+        self.pmi = precomputed['pmi'] if 'pmi' in precomputed else self.new_pmi(data)
         
         if self.report:
             self.indent(1)
@@ -239,6 +239,19 @@ class SemSpace:
             self.indent(0)
             self.info('beginning PMI calculations...')
         return datamatrix.apply(lambda k: self.apply_pmi_column(k, datamatrix))
+        
+    def new_pmi(self, datamatrix):
+        '''
+        Credit: Etienne van de Bijl, 02.05.18
+        '''
+        n = len(datamatrix.columns)
+        sum_r = datamatrix.sum(1)
+        expected = sum_r/n
+        expected = expected.replace(0, np.nan)
+        datamatrix = datamatrix.replace(0, np.nan)
+        pmi = np.log2(datamatrix.div(expected, axis=0))
+        pmi[pmi<0] = 0
+        return pmi.fillna(0)
     
     '''
     // Data Transformations and Cluster Analyses //
