@@ -468,7 +468,7 @@ class VerbExperiment1(Experiment):
                     pdp == 'verb',
                     lex not in {'HJH['}])
     
-    def make_adverbial_bases(self, phrase, target_funct):
+    def make_adverbial_bases(self, phrase, target):
         '''
         Builds a basis string from a supplied
         adverbial phrase. Treats prepositional
@@ -483,6 +483,7 @@ class VerbExperiment1(Experiment):
         
         function = self.F.function.v(phrase)
         heads = self.E.heads.f(phrase)
+        target_funct = self.F.function.v(self.L.u(target, 'phrase')[0])
         
         if self.F.typ.v(phrase) == 'PP':
             preps = [self.F.lex.v(h) for h in heads]
@@ -787,10 +788,27 @@ class CompositeVerb(VerbExperiment1):
         have been normalized per target word
         '''
         
+        self.sim_words = norm_sim_matrix.to_dict()
         super().__init__(tf_api=tf_api)
-        self.sim_matrix = norm_sim_matrix
         
-    def make_adverbial_bases(self, phrase, target_funct):
+    def make_target_token(self, target):
+        '''
+        Maps a target word to its
+        string representation.
+        
+        --input--
+        word node
+        
+        --output--
+        lexeme string
+        '''
+        
+        stem = self.F.vs.v(target)
+        lex = self.F.lex.v(target)
+        
+        return f'{lex}.{stem}'
+        
+    def make_adverbial_bases(self, phrase, target):
         '''
         Builds a basis string from a supplied
         adverbial phrase. Treats prepositional
@@ -807,26 +825,29 @@ class CompositeVerb(VerbExperiment1):
         --output--
         basis string
         '''
-        sim_matrix = self.sim_matrix
+        target_funct = self.F.function.v(self.L.u(target, 'phrase')[0])
+        sim_words = self.sim_words
         function = self.F.function.v(phrase)
         heads = self.E.heads.f(phrase)
         bases = collections.Counter()
 
         if self.F.typ.v(phrase) == 'PP': # modification needed for prepositions, take first head only
             head_obj = self.E.prep_obj.f(heads[0])
-            if not head_obj or not heads[0] in sim_matrix.columns:
+            if not head_obj:
                 return(bases)
-            sim_words = sim_matrix[head_obj].to_dict()
+            heado_lex = self.F.lex.v(head_obj[0])
+            if heado_lex not in sim_words:
+                return(bases)
             prep_lex = self.F.lex.v(heads[0])
-            bases_values = dict((f'{target_funct}.{function}.{prep_lex}_{sw}', value) for sw, value in sim_words.items())
+            bases_values = dict((f'{target_funct}.{function}.{prep_lex}_{sw}', value) for sw, value in sim_words[heado_lex].items())
             bases.update(bases_values)
             
         else:
             for head in heads:
-                if head not in sim_matrix.columns:
-                    return(bases)
-                sim_words = sim_matrix[head].to_dict()
-                bases_values = dict((f'{target_funct}.{function}.{sw}', value) for sw, value in sim_words.items())
+                head_lex = self.F.lex.v(head)
+                if head not in sim_words:
+                    continue
+                bases_values = dict((f'{target_funct}.{function}.{sw}', value) for sw, value in sim_words[head_lex].items())
                 bases.update(bases_values)
                 
         return bases

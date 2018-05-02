@@ -67,7 +67,7 @@ class SemSpace:
         self.report = info
         self.experiment = experiment
         F = experiment.tf_api.F
-        data = experiment.data if not test else experiment.data.head(100)
+        data = experiment.data if not test else experiment.data.head(100)[experiment.data.columns[:100]]
         self.raw = data
         row_col = [f'{w} ({experiment.target2gloss[w]})' for w in self.raw.columns] # for similarity matrix indices/cols
 
@@ -75,17 +75,18 @@ class SemSpace:
         if self.report:
             self.indent(0, reset=True)
             self.info('Applying association measure(s)...')
+            self.indent(1, reset=True)
         
         # adjust raw counts with log-likelihood & pointwise mutual information
         if run_ll:
             if self.report:
                 self.indent(0)
                 self.info('Beginning Loglikelihood calculations...')
-                self.indent(1, reset=True)
+                self.indent(1)
             self.loglikelihood = precomputed['loglikelihood'] if 'loglikelihood' in precomputed\
                                      else self.apply_loglikelihood(data)
             if self.report:
-                self.indent(1)
+                self.indent(1, reset=True)
                 self.info('Building all LL matrices...')
             self.pca_ll = self.apply_pca(self.loglikelihood)
             self.pairwise_ll = pairwise_distances(self.loglikelihood.T.values, metric='cosine')
