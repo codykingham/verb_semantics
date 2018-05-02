@@ -151,33 +151,33 @@ class NounExperiment1(Experiment):
         subphrase_bases.extend([sp for sp in E.mother.t(target)  # handle nomen rectum relations
                                     if self.basis_subphrase_parameters(sp, subphrase_tgroup)])
         
-        bases = []
+        bases = collections.Counter()
         
         # make the phrase-level basis elements
         for phrase in phrase_bases:
             basis_function = F.function.v(phrase)
             phrase_bgroup = next((k for k in self.target2basis[phrase_tgroup].keys() if basis_function in k), 0)     
             basis_constructor = self.target2basis[phrase_tgroup][phrase_bgroup]
-            basis = basis_constructor(phrase, target)
-            bases.extend(basis)
+            these_bases = basis_constructor(phrase, target)
+            bases.update(these_bases)
 
         # make the phrase atom level basis elements
         for phraseA in phraseA_bases:
             basis_rela = F.rela.v(phraseA)
             phraseA_bgroup = next((k for k in self.target2basis[phrase_tgroup].keys() if basis_rela in k), 0)
             basis_constructor = self.target2basis[phrase_tgroup][phraseA_bgroup]
-            basis = basis_constructor(phraseA, target)
-            bases.extend(basis)
+            these_bases = basis_constructor(phraseA, target)
+            bases.update(these_bases)
             
         # make the subphrase-level basis elements
         for subphrase in subphrase_bases:
             basis_rela = F.rela.v(subphrase)
             subphrase_bgroup = next((k for k in self.target2basis[subphrase_tgroup].keys() if basis_rela in k), 0)     
             basis_constructor = self.target2basis[subphrase_tgroup][subphrase_bgroup]
-            basis = basis_constructor(subphrase, target)
-            bases.extend(basis)
+            these_bases = basis_constructor(subphrase, target)
+            bases.update(these_bases)
         
-        return tuple(bases)    
+        return bases
     
     '''
     <><><><>
@@ -225,10 +225,10 @@ class NounExperiment1(Experiment):
                         if self.F.pdp.v(w) in good_sp_heads.get(target_pdp, {})), 0)
         if head:
             basis_rela = self.F.rela.v(basis_subphrase)
-            return (f'.{basis_rela}.{self.F.lex.v(head)}',)
+            return collections.Counter((f'.{basis_rela}.{self.F.lex.v(head)}',))
         
         else:
-            return tuple()
+            return dict()
         
     def make_phraseA_rela_basis(self, basis_phraseA, target):
         '''
@@ -250,10 +250,10 @@ class NounExperiment1(Experiment):
         if head:
             basis_rela = self.F.rela.v(basis_phraseA)
             basis_rela = basis_rela if basis_rela != 'Para' else 'par' # make equal with subphrase parallel code
-            return (f'.{basis_rela}.{self.F.lex.v(head)}',)
+            return collections.Counter((f'.{basis_rela}.{self.F.lex.v(head)}',))
             
         else:
-            return tuple()
+            return dict()
         
     def make_pred_cmpl_basis(self, basis_phrase, target):
         '''
@@ -271,8 +271,8 @@ class NounExperiment1(Experiment):
         if self.E.prep_obj.t(target):
             prep = self.E.prep_obj.t(target)[0]
             prep_lex = self.F.lex.v(prep)
-            return (f'{target_function}_{prep_lex}.Pred.{lex}.{stem}',)
+            return collections.Counter((f'{target_function}_{prep_lex}.Pred.{lex}.{stem}',))
             
         else:
-            return (f'{target_function}.Pred.{lex}.{stem}',) 
+            return collections.Counter((f'{target_function}.Pred.{lex}.{stem}',) )
             

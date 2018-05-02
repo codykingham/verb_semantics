@@ -43,8 +43,7 @@ class SemSpace:
     The class loads and processes the data in one go.
     '''
     
-    def __init__(self, experiment, info=0, test=False, 
-                 run_ll=True, precomputed={}):
+    def __init__(self, experiment, info=True, test=False, run_ll=False):
         '''
         Requires an experiment class (defined below).
         This allows various experiment parameters
@@ -59,12 +58,7 @@ class SemSpace:
         
         "run_ll" toggles whether to run the log-likelihood
         adjustment, which is more time consuming for large
-        data, and which is not being used much in this project yet.
-        
-        "precomputed" is a dictionary with either "loglikelihood"
-        or "pmi" keys with dataframe values. This allows computationally
-        intensive spaces to be saved to disk and loaded at a later time.
-        Pairwise distances will still need calculation, however.
+        data, and which is not being used much in this project anymore.
         '''
         
         self.tf_api = experiment.tf_api
@@ -79,15 +73,14 @@ class SemSpace:
 
 
         if self.report:
-            self.indent(reset=True)
-            self.info('Beginning all calculations...')
+            self.indent(0, reset=True)
+            self.info('Applying association measure(s)...')
         
         # adjust raw counts with log-likelihood & pointwise mutual information
         if run_ll:
-            i = 0 
             if self.report:
                 self.indent(0)
-                self.info('beginning Loglikelihood calculations...')
+                self.info('Beginning Loglikelihood calculations...')
                 self.indent(1, reset=True)
             self.loglikelihood = precomputed['loglikelihood'] if 'loglikelihood' in precomputed\
                                      else self.apply_loglikelihood(data)
@@ -101,17 +94,18 @@ class SemSpace:
             self.distance_ll_pca = pd.DataFrame(self.pairwise_ll_pca, columns=row_col, index=row_col)
             self.similarity_ll = self.distance_ll.apply(lambda x: 1-x)
             self.ll_plot = PlotSpace(self.pca_ll, self.loglikelihood, self.tf_api, experiment)
-        elif self.report:
-            self.indent(0)
-            self.info('Skipping log-likelihood...')
-
-        self.pmi = precomputed['pmi'] if 'pmi' in precomputed else self.new_pmi(data)
         
         if self.report:
             self.indent(1)
-            self.info('FINISHED PMI...')
+            self.info('Applying PPMI...')
+            
+        self.pmi = self.get_pmi(data)
+        
+        if self.report:
+            self.indent(1)
+            self.info('Finished PPMI...')
             self.indent(0)
-            self.info('Formatting remaining data matrices...')
+            self.info('Building pairwise matrices...')
         
         
         # apply pca or other data maneuvers
@@ -127,6 +121,7 @@ class SemSpace:
         
         # distance matrices
         self.distance_pmi = pd.DataFrame(self.pairwise_pmi, columns=row_col, index=row_col)
+        self.dist_pmi_nogloss = pd.DataFrame(self.pairwise_pmi, columns=self.pmi.columns, index=self.pmi.columns)
         self.distance_raw = pd.DataFrame(self.pairwise_raw, columns=row_col, index=row_col)
         self.distance_pmi_pca = pd.DataFrame(self.pairwise_pmi_pca, columns=row_col, index=row_col)
         self.distance_raw_pca = pd.DataFrame(self.pairwise_raw_pca, columns=row_col, index=row_col)
@@ -134,6 +129,8 @@ class SemSpace:
         
         # similarity matrices
         self.similarity_pmi = self.distance_pmi.apply(lambda x: 1-x)
+        self.sim_pmi_nogloss = self.dist_pmi_nogloss.apply(lambda x: 1-x)
+        self.sim_pmi_normalized = self.sim_pmi_nogloss / self.sim_pmi_nogloss.sum()
         self.similarity_raw = self.distance_raw.apply(lambda x: 1-x)
         self.similarity_jaccard = self.distance_jaccard.apply(lambda x: 1-x)
         
@@ -143,7 +140,7 @@ class SemSpace:
         
         if self.report:
             self.indent(0)
-            self.info('data gathering complete!')
+            self.info('space is ready!')
     '''
     -----
     Association Measures:
@@ -195,53 +192,25 @@ class SemSpace:
         for target in comatrix.columns:
             for basis in comatrix.index:
                 k = comatrix[target][basis]
-
                 if not k:
-                    i += 1
-                    if self.report and i % self.report == 0:
-                        self.indent(1)
-                        self.info(f'at iteration {i}')
                     continue
-
                 l = comatrix.loc[basis].sum() - k
                 m = comatrix[target].sum() - k
                 n = comatrix.values.sum() - (k+l+m)
                 ll = self.loglikelihood(k, l, m, n, safe_log)
                 new_matrix[target][basis] = ll
                 
-                # optional: information for large datasets
-                i += 1
-                if self.report and i % self.report == 0:
-                    self.indent(1)
-                    self.info(f'at iteration {i}')
         if self.report:
             self.indent(0)
             self.info(f'FINISHED loglikelihood at iteration {i}')
         
         return new_matrix
-    
-    def apply_pmi_column(self, col, datamatrix):
-
+        
+    def get_pmi(self, datamatrix):
         '''
         Apply PMI to a given column.
-        Method derived from Levshina 2015.
-        '''
-        expected = col * datamatrix.sum(axis=1) / datamatrix.values.sum()
-        pmi = np.log(col / expected).fillna(0)
-        return pmi
-    
-    def apply_pmi(self, datamatrix):
-        '''
-        Apply pmi to a data matrix.
-        Method derived from Levshina 2015.
-        '''
-        if self.report:
-            self.indent(0)
-            self.info('beginning PMI calculations...')
-        return datamatrix.apply(lambda k: self.apply_pmi_column(k, datamatrix))
-        
-    def new_pmi(self, datamatrix):
-        '''
+        Algorithm derived from 
+        Levshina 2015, Linguistics with R, 327.
         Credit: Etienne van de Bijl, 02.05.18
         '''
         n = len(datamatrix.columns)

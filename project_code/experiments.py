@@ -253,25 +253,25 @@ class Experiment:
         subphrase_bases.extend([sp for sp in E.mother.t(target) 
                                     if self.basis_subphrase_parameters(sp, subphrase_tgroup)])
         
-        bases = []
+        bases = collections.Counter()
         
         # make the phrase-level basis elements
         for phrase in phrase_bases:
             basis_function = F.function.v(phrase)
             phrase_bgroup = next((k for k in self.target2basis[phrase_tgroup].keys() if basis_function in k), 0)     
             basis_constructor = self.target2basis[phrase_tgroup][phrase_bgroup]
-            basis = basis_constructor(phrase, target)
-            bases.extend(basis)
+            these_bases = basis_constructor(phrase, target)
+            bases.update(these_bases)
 
         # make the subphrase-level basis elements
         for subphrase in subphrase_bases:
             basis_rela = F.rela.v(subphrase)
             subphrase_bgroup = next((k for k in self.target2basis[subphrase_tgroup].keys() if basis_rela in k), 0)     
             basis_constructor = self.target2basis[subphrase_tgroup][subphrase_bgroup]
-            basis = basis_constructor(subphrase, target)
-            bases.extend(basis)
+            these_bases = basis_constructor(subphrase, target)
+            bases.update(these_bases)
         
-        return tuple(bases)
+        return bases
     
     '''
     // Basis Parameters //
@@ -354,7 +354,7 @@ class Experiment:
         target_phrase = self.L.u(target, 'phrase')[0]
         target_function = self.F.function.v(target_phrase)
         
-        return (f'{target_function}.Pred.{lex}.{stem}',)       
+        return collections.Counter((f'{target_function}.Pred.{lex}.{stem}',))       
      
     def make_noun_basis(self, basis_phrase, target):  
         '''
@@ -379,7 +379,7 @@ class Experiment:
             bases_tokens = [make_basis_token(obj) for prep in self.E.heads.f(phrase)
                                for obj in self.E.prep_obj.f(prep)]
             
-        return tuple(f'{target_function}.{token}' for token in bases_tokens)
+        return collections.Counter(f'{target_function}.{token}' for token in bases_tokens)
     
     def make_basis_token(self, basis):
         '''
@@ -418,10 +418,10 @@ class Experiment:
             head = next(find_quantified(w, self.tf_api) or w
                         for w in self.L.d(basis_subphrase, 'word')
                         if self.F.pdp.v(w) == 'subs')
-            return (f'{target_function}.coor.{self.F.lex.v(head)}',)
+            return collections.Counter((f'{target_function}.coor.{self.F.lex.v(head)}',))
         
         except StopIteration:
-            return tuple()
+            return {}
       
 '''
 Experiments with verb vector spaces:
@@ -489,12 +489,12 @@ class VerbExperiment1(Experiment):
             objs = [self.F.lex.v(obj) for prep in heads for obj in self.E.prep_obj.f(prep)]
             basis_tokens = '|'.join(f'{prep}_{obj}' for prep, obj in zip(preps, objs))
             if basis_tokens:
-                return (f'{target_funct}.{function}.{basis_tokens}',)
+                return collections.Counter((f'{target_funct}.{function}.{basis_tokens}',))
             else:
-                return tuple()
+                return dict()
             
         else:
-            return tuple(f'{target_funct}.{function}.{self.F.lex.v(w)}' for w in heads)
+            return collections.Counter(f'{target_funct}.{function}.{self.F.lex.v(w)}' for w in heads)
     
 class VerbMinLexBasis(VerbExperiment1):
     
@@ -527,10 +527,10 @@ class VerbMinLexBasis(VerbExperiment1):
             objs = [self.F.pdp.v(obj) for prep in heads for obj in self.E.prep_obj.f(prep)]
             basis_tokens = '|'.join(f'{prep}_{obj}' for prep, obj in zip(preps, objs))
             basis_tokens = basis_tokens or '|'.join(self.F.lex.v(h) for h in heads)
-            return (f'{target_funct}.{function}.{basis_tokens}',)
+            return collections.Counter((f'{target_funct}.{function}.{basis_tokens}',))
 
         else:
-            return tuple(f'{target_funct}.{function}.{self.F.lex.v(w)}' for w in heads)
+            return collections.Counter(f'{target_funct}.{function}.{self.F.lex.v(w)}' for w in heads)
         
 class VerbNoSubj(VerbExperiment1):
     
@@ -692,10 +692,10 @@ class VerbMinLexBasis2(VerbExperiment1):
             objs = [self.F.pdp.v(obj) for prep in heads for obj in self.E.prep_obj.f(prep)]
             basis_tokens = '|'.join(f'{prep}_{obj}' for prep, obj in zip(preps, objs))
             basis_tokens = basis_tokens or '|'.join(self.F.lex.v(h) for h in heads)
-            return (f'{target_funct}.{function}.{basis_tokens}',)
+            return collections.Counter((f'{target_funct}.{function}.{basis_tokens}',))
 
         else:
-            return tuple(f'{target_funct}.{function}.{self.F.pdp.v(w)}' for w in heads)
+            return collections.Counter(f'{target_funct}.{function}.{self.F.pdp.v(w)}' for w in heads)
         
 class VerbSubjOnlyMinLex(VerbMinLexBasis2):
     
@@ -764,3 +764,69 @@ class VerbCmplOnlyMinLex(VerbMinLexBasis2):
                                 ('Pred', 'PreO', 'PreS', 'PtcO'):
                                     {('PrAd', 'Adju', 'Cmpl'): self.make_adverbial_bases},  
                             }
+        
+class CompositeVerb(VerbExperiment1):
+    
+    '''
+    In this experiment, we use the 
+    results of a noun vector space to enhance
+    a verb space. This is done by adding
+    the similarity value of all similar terms
+    of a given basis word. The similarity values
+    are normalized so that the total value is no 
+    greater than 1. This distributes the meaning 
+    of the cooccurring word across all of its similar
+    terms. 
+    '''
+    
+    def __init__(self, norm_sim_matrix, tf_api=None):
+        
+        '''
+        norm_sim_matrix is a similarity
+        matrix wherein the similarity ratios
+        have been normalized per target word
+        '''
+        
+        super().__init__(tf_api=tf_api)
+        self.sim_matrix = norm_sim_matrix
+        
+    def make_adverbial_bases(self, phrase, target_funct):
+        '''
+        Builds a basis string from a supplied
+        adverbial phrase. Treats prepositional
+        phrases different from other phrase types.
+        
+        **Special: Uses the results of a 
+        normalized similarity matrix to pull
+        counts for all words which are similar 
+        to the basis element.
+        
+        --input--
+        basis phrase node
+        
+        --output--
+        basis string
+        '''
+        sim_matrix = self.sim_matrix
+        function = self.F.function.v(phrase)
+        heads = self.E.heads.f(phrase)
+        bases = collections.Counter()
+
+        if self.F.typ.v(phrase) == 'PP': # modification needed for prepositions, take first head only
+            head_obj = self.E.prep_obj.f(heads[0])
+            if not head_obj or not heads[0] in sim_matrix.columns:
+                return(bases)
+            sim_words = sim_matrix[head_obj].to_dict()
+            prep_lex = self.F.lex.v(heads[0])
+            bases_values = dict((f'{target_funct}.{function}.{prep_lex}_{sw}', value) for sw, value in sim_words.items())
+            bases.update(bases_values)
+            
+        else:
+            for head in heads:
+                if head not in sim_matrix.columns:
+                    return(bases)
+                sim_words = sim_matrix[head].to_dict()
+                bases_values = dict((f'{target_funct}.{function}.{sw}', value) for sw, value in sim_words.items())
+                bases.update(bases_values)
+                
+        return bases
