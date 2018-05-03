@@ -851,3 +851,25 @@ class CompositeVerb(VerbExperiment1):
                 bases.update(bases_values)
                 
         return bases
+    
+class CompositeVerbSubObj(CompositeVerb):
+    
+    '''
+    In this version of the composite
+    experiment, only subjects and
+    objects are selected as basis elements.
+    '''
+    
+    def __init__(self, sim_matrix, tf_api=None):
+        super().__init__(sim_matrix, tf_api=tf_api)
+        
+    def config(self):
+        '''
+        Experiment Configurations
+        '''
+        self.min_target_freq = 0
+        self.min_observation_freq = 0
+        self.target2basis = {
+                                ('Pred', 'PreO', 'PreS', 'PtcO'):
+                                    {('Subj', 'Objc'): self.make_adverbial_bases},  
+                            }
