@@ -236,7 +236,8 @@ class SemSpace:
         '''
         Apply principle component analysis to a supplied cooccurrence matrix.
         '''
-        pca = PCA(n_components=n)
+        n_components = n if comatrix.shape[0] > n else comatrix.shape[0] - 1
+        pca = PCA(n_components=n_components)
         return pca.fit_transform(comatrix.T.values)
     
     '''

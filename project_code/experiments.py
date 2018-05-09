@@ -867,3 +867,123 @@ class CompositeVerbSubj(CompositeVerb):
                                 ('Pred', 'PreO', 'PreS', 'PtcO'):
                                     {('Subj',): self.make_adverbial_bases},  
                             }
+        
+class VerbFrame(VerbExperiment1):
+    
+    '''
+    Count verbs' subcategorization frames.
+    '''
+    
+    def __init__(self, 
+                 tf_api=None, 
+                 with_lex=False, 
+                 bases=('PrAd', 'Adju', 'Cmpl', 'Loca', 'Time', 'Objc',)):
+        
+        self.with_lex = with_lex
+        self.bases = bases
+        super().__init__(tf_api=tf_api)
+        
+    def config(self):
+        '''
+        Experiment Configurations
+        '''
+        self.min_target_freq = 7
+        self.min_observation_freq = 7
+        self.target2basis = {
+                                ('Pred', 'PreO', 'PreS', 'PtcO'):
+                                    {self.bases: self.make_adverbial_bases}
+                            }
+        
+    def target_word_parameters(self, word):
+        '''
+        Applies word-level parameters on phrase heads.
+        This version checks for frequency,
+        head words, and proper names.
+        
+        --input--
+        phrase node
+        
+        --output--
+        boolean on acceptable word
+        '''
+        
+        # parameter checks
+        language = self.F.language.v(word) # language
+        freq = self.F.freq_lex.v(self.L.u(word, 'lex')[0]) # word frequency
+        pdp = self.F.pdp.v(word) # part of speech
+        
+        return all([language == 'Hebrew', 
+                    freq >= self.min_target_freq,
+                    pdp == 'verb'])
+    
+    def map_context(self, target):
+        '''
+        Maps context elements in relation
+        to a supplied target word to strings.
+        The strings serve as the basis elements
+        which are counted as cooccurrences.
+        
+        --input--
+        word node
+        
+        --output--
+        tuple of strings
+        '''
+        
+        self.target = target
+        
+        # define shortform TF api methods
+        F, E, L = self.F, self.E, self.L
+        
+        # prepare context
+        clause_phrases = L.d(L.u(target, 'clause')[0], 'phrase')
+        target_funct = F.function.v(L.u(target, 'phrase')[0])
+        phrase_tgroup = next((k for k in self.target2basis.keys() if target_funct in k), 0)        
+        phrase_bases = [phrase for phrase in clause_phrases
+                            if self.basis_phrase_parameters(phrase, phrase_tgroup)]
+
+        # return the (sorted) counts
+        bases = ['Pred'] + sorted(self.make_adverbial_bases(phrase) for phrase in phrase_bases) 
+        basis = '|'.join(bases)
+        return {basis : 1}
+    
+    def make_adverbial_bases(self, phrase):
+        '''
+        Builds a basis string from a supplied
+        adverbial phrase. Treats prepositional
+        phrases different from other phrase types.
+        
+        --input--
+        basis phrase node
+        
+        --output--
+        basis string
+        '''
+        
+        function = self.F.function.v(phrase)
+        heads = self.E.heads.f(phrase)
+        token = self.F.pdp.v if not self.with_lex else self.F.lex.v
+        
+        if self.F.typ.v(phrase) == 'PP' and function != 'Objc' and heads:
+            prep = self.F.lex.v(heads[0])
+            #prep_obj = [token(obj) for obj in self.E.prep_obj.f(heads[0])][0]\
+            #                if self.E.prep_obj.f(heads[0]) else ''
+            #prep_obj = prep_obj if prep_obj != 'nmpr' else 'subs'
+            #basis_token = f'{prep}_{prep_obj}' if prep_obj else f'{prep}'
+            return f'{function}.{prep}'
+
+        elif self.F.typ.v(phrase) == 'PP' and function == 'Objc' and heads:
+            prep = heads[0]
+            prep_obj = self.E.prep_obj.f(prep)
+            if prep_obj:
+                this_token = token(prep_obj[0]) if token(prep_obj[0]) != 'nmpr' else 'subs'
+                return f'{function}.{this_token}'
+            else:
+                return ''
+        
+        elif heads:
+            this_token = token(heads[0]) if token(heads[0]) != 'nmpr' else 'subs'
+            return f'{function}.{this_token}'
+        
+        else:
+            return ''
