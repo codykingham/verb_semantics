@@ -114,6 +114,9 @@ class SemSpace:
         self.pca_raw = self.apply_pca(data)
         
         # pairwise distances
+        if self.report:
+            self.indent(1, reset=True)
+            self.info('Building pairwise distances...')
         self.pairwise_pmi = pairwise_distances(self.pmi.T.values, metric='cosine')
         self.pairwise_raw = pairwise_distances(self.raw.T.values, metric='cosine')
         self.pairwise_pmi_pca = pairwise_distances(self.pca_pmi, metric='euclidean')
@@ -129,6 +132,8 @@ class SemSpace:
         self.distance_jaccard = pd.DataFrame(self.pairwise_jaccard, columns=row_col, index=row_col)
         
         # similarity matrices
+        if self.report:
+            self.info('Building pairwise similarities...')
         self.similarity_pmi = self.distance_pmi.apply(lambda x: 1-x)
         self.sim_pmi_nogloss = self.dist_pmi_nogloss.apply(lambda x: 1-x)
         self.sim_pmi_normalized = self.sim_pmi_nogloss / self.sim_pmi_nogloss.sum()

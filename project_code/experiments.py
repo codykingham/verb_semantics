@@ -437,8 +437,8 @@ class VerbExperiment1(Experiment):
         '''
         Experiment Configurations
         '''
-        self.min_target_freq = 1
-        self.min_observation_freq = 1
+        self.min_target_freq = 7
+        self.min_observation_freq = 7
         self.target2basis = {
                                 ('Pred', 'PreO', 'PreS', 'PtcO'):
                                     {('PrAd', 'Adju', 'Cmpl', 'Loca', 'Time', 'Objc', 'Subj'): self.make_adverbial_bases},  
@@ -779,6 +779,7 @@ class CompositeVerb(VerbExperiment1):
         self.sim_words = norm_sim_matrix.to_dict()
         super().__init__(tf_api=tf_api)
         
+        
     def make_adverbial_bases(self, phrase, target):
         '''
         Builds a basis string from a supplied
@@ -794,7 +795,7 @@ class CompositeVerb(VerbExperiment1):
         basis phrase node
         
         --output--
-        basis string
+        dictionary of basis counts
         '''
         target_funct = self.F.function.v(self.L.u(target, 'phrase')[0])
         sim_words = self.sim_words
@@ -816,7 +817,7 @@ class CompositeVerb(VerbExperiment1):
         else:
             for head in heads:
                 head_lex = self.F.lex.v(head)
-                if head not in sim_words:
+                if head_lex not in sim_words:
                     continue
                 bases_values = dict((f'{target_funct}.{function}.{sw}', value) for sw, value in sim_words[head_lex].items())
                 bases.update(bases_values)
@@ -838,90 +839,31 @@ class CompositeVerbSubObj(CompositeVerb):
         '''
         Experiment Configurations
         '''
-        self.min_target_freq = 0
-        self.min_observation_freq = 0
+        self.min_target_freq = 7
+        self.min_observation_freq = 7
         self.target2basis = {
                                 ('Pred', 'PreO', 'PreS', 'PtcO'):
                                     {('Subj', 'Objc'): self.make_adverbial_bases},  
                             }
         
-class CompositeVerb2(VerbExperiment1):
+class CompositeVerbSubj(CompositeVerb):
     
     '''
-    In this experiment, we use the 
-    results of a noun vector space to enhance
-    a verb space. This is done by adding
-    the similarity value of all similar terms
-    of a given basis word. The similarity values
-    are normalized so that the total value is no 
-    greater than 1. This distributes the meaning 
-    of the cooccurring word across all of its similar
-    terms. 
-    
-    Version 2 Update:
-    Count real observations as 1 rather than deriving from 
-    semspace. All noun space observations count as 1.
+    In this version of the composite
+    experiment, only subjects and
+    objects are selected as basis elements.
     '''
     
-    def __init__(self, norm_sim_matrix, tf_api=None):
+    def __init__(self, sim_matrix, tf_api=None):
+        super().__init__(sim_matrix, tf_api=tf_api)
         
+    def config(self):
         '''
-        norm_sim_matrix is a similarity
-        matrix wherein the similarity ratios
-        have been normalized per target word
+        Experiment Configurations
         '''
-        
-        self.sim_words = norm_sim_matrix.to_dict()
-        super().__init__(tf_api=tf_api)
-        
-    def make_adverbial_bases(self, phrase, target):
-        '''
-        Builds a basis string from a supplied
-        adverbial phrase. Treats prepositional
-        phrases different from other phrase types.
-        
-        **Special: Uses the results of a 
-        normalized similarity matrix to pull
-        counts for all words which are similar 
-        to the basis element.
-        
-        --input--
-        basis phrase node
-        
-        --output--
-        basis string
-        '''
-        target_funct = self.F.function.v(self.L.u(target, 'phrase')[0])
-        sim_words = self.sim_words
-        function = self.F.function.v(phrase)
-        heads = self.E.heads.f(phrase)
-        bases = collections.Counter()
-
-        if self.F.typ.v(phrase) == 'PP': # modification needed for prepositions, take first head only
-            head_obj = self.E.prep_obj.f(heads[0])
-            if not head_obj:
-                return(bases)
-            heado_lex = self.F.lex.v(head_obj[0])
-            if heado_lex not in sim_words:
-                return(bases)
-            prep_lex = self.F.lex.v(heads[0])
-            bases_values = dict((f'{target_funct}.{function}.{prep_lex}_{sw}', value) 
-                                    for sw, value in sim_words[heado_lex].items()
-                                    if sw != heado_lex # <- new from version 1
-                               )
-            bases.update(bases_values)
-            bases.update({heado_lex: 1})
-            
-        else:
-            for head in heads:
-                head_lex = self.F.lex.v(head)
-                if head not in sim_words:
-                    continue
-                bases_values = dict((f'{target_funct}.{function}.{sw}', value) 
-                                        for sw, value in sim_words[head_lex].items()
-                                        if sw != head_lex # <- new from version 1
-                                    )
-                bases.update(bases_values)
-                bases.update({head_lex: 1})
-                
-        return bases
+        self.min_target_freq = 7
+        self.min_observation_freq = 7
+        self.target2basis = {
+                                ('Pred', 'PreO', 'PreS', 'PtcO'):
+                                    {('Subj',): self.make_adverbial_bases},  
+                            }
