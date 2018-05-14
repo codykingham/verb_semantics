@@ -943,9 +943,33 @@ class VerbFrame(VerbExperiment1):
                             if self.basis_phrase_parameters(phrase, phrase_tgroup)]
 
         # return the (sorted) counts
-        bases = ['Pred'] + sorted(self.make_adverbial_bases(phrase) for phrase in phrase_bases) 
-        basis = '|'.join(bases)
-        return {basis : 1}
+        bases = self.detach_suffix(target_funct) +\
+                sorted(self.make_adverbial_bases(phrase) for phrase in phrase_bases) 
+        frame = '|'.join(bases)
+        return {frame : 1}
+    
+    def detach_suffix(self, target_funct):
+        '''
+        Converts a PreO or PreS verb tag to Pred + subs.
+        The conversion is made to "subs" even though the
+        object is suffixed. This is so that these forms
+        are considered together with word-level subjects
+        and objects.
+        
+        --input--
+        target function
+        
+        --output--
+        list of frame (phrase function) strings
+        '''
+        
+        convert = {'PreS': ['Pred', 'Subj.subs'],
+                   'PreO': ['Pred', 'Objc.subs'],
+                   'PtcO': ['Pred', 'Objc.subs']
+                  }
+        
+        return convert.get(target_funct, ['Pred'])
+        
     
     def make_adverbial_bases(self, phrase):
         '''

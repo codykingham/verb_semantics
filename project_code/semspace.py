@@ -24,6 +24,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
+from sklearn.decomposition import SparsePCA
 from sklearn.metrics.pairwise import pairwise_distances
 
 if not __package__:
@@ -110,8 +111,9 @@ class SemSpace:
         
         
         # apply pca or other data maneuvers
-        self.pca_pmi = self.apply_pca(self.pmi)
+        self.pca_pmi = self.apply_sparse_pca(self.pmi)
         self.pca_raw = self.apply_pca(data)
+        
         
         # pairwise distances
         if self.report:
@@ -141,8 +143,11 @@ class SemSpace:
         self.similarity_jaccard = self.distance_jaccard.apply(lambda x: 1-x)
         
         # space plots
-        self.pmi_plot = PlotSpace(self.pca_pmi, self.pmi, self.tf_api, experiment)
-        self.raw_plot = PlotSpace(self.pca_raw, self.raw, self.tf_api, experiment)
+        verb_functs = {'Pred', 'PreO', 'PreS', 'PtcO'} # format plots for verbs if space is verb space (add stem to gloss)
+        verb_space = True if verb_functs & set(tag for group in experiment.target2basis
+                                               for tag in group) else False
+        self.pmi_plot = PlotSpace(self.pca_pmi, self.pmi, self.tf_api, experiment, verb_space=verb_space)
+        self.raw_plot = PlotSpace(self.pca_raw, self.raw, self.tf_api, experiment, verb_space=verb_space)
         
         if self.report:
             self.indent(0)
@@ -240,6 +245,13 @@ class SemSpace:
         pca = PCA(n_components=n_components)
         return pca.fit_transform(comatrix.T.values)
     
+    def apply_sparse_pca(self, comatrix, n=10):
+        '''
+        Apply principle component analysis to a supplied cooccurrence matrix.
+        '''
+        pca = SparsePCA(n_components=n)
+        return pca.fit_transform(comatrix.T.values)
+    
     '''
     // Plotting and Visualizations //
     '''
@@ -249,13 +261,14 @@ class PlotSpace:
     A simple visualization class that visualizes
     a semantic space with PCA and with input data.
     '''
-    def __init__(self, pca_arrays, matrix, tf_api, experiment):
+    def __init__(self, pca_arrays, matrix, tf_api, experiment, verb_space=False):
         self.pca_arrays = pca_arrays
         self.matrix = matrix
         self.api = tf_api
         self.F = tf_api.F
         self.target2gloss = experiment.target2gloss
         self.target2node = experiment.target2node
+        self.verb_space = verb_space
             
     def show(self, size=(10, 6), annotate=True, title='', axis=[], principal_components=(0, 1)):
         0
@@ -269,7 +282,8 @@ class PlotSpace:
         if axis:
             plt.axis(axis)
         if annotate:
-            self.annotate_space(principal_components)
+            annotator = self.annotate_space if not self.verb_space else self.annotate_verb_space
+            annotator(principal_components)
             
     def annotate_space(self, principal_components):
         '''
@@ -279,11 +293,10 @@ class PlotSpace:
         words = [f'{self.target2gloss[l]}' for l in self.matrix.columns]
         for i, word in enumerate(words):
             plt.annotate(word, xy=(self.pca_arrays[i, pc1], self.pca_arrays[i, pc2]))
-            
+    
     def annotate_verb_space(self, principal_components):
         '''
         Annotates PCA scatter plots with verb lexemes + stem.
-        **NB**: This function is currently not used
         '''
         pc1, pc2 = principal_components
         words = [f'{self.target2gloss[l]}.{self.F.vs.v(self.target2node[l])}' for l in self.matrix.columns]
