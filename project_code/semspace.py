@@ -34,7 +34,7 @@ else:
     from .kmedoids.kmedoids import kMedoids
     from .helpers import get_lex
 
-    
+
 class SemSpace:
     '''
     This class brings together all of the methods defined in 
@@ -111,7 +111,7 @@ class SemSpace:
         
         
         # apply pca or other data maneuvers
-        self.pca_pmi = self.apply_sparse_pca(self.pmi)
+        self.pca_pmi = self.apply_pca(self.pmi)
         self.pca_raw = self.apply_pca(data)
         
         

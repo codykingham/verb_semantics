@@ -19,7 +19,8 @@ else:
     from .lingo.heads.heads import find_quantified
     
 bhsa_data_paths=['~/github/etcbc/bhsa/tf/c',
-                 '~/github/semantics/project_code/lingo/heads/tf/c']
+                 '~/github/semantics/project_code/lingo/heads/tf/c',
+                 '~/github/semantics/project_code/sdbh']
 
 class Experiment:
     
@@ -101,7 +102,7 @@ class Experiment:
                         function lex vs language
                         pdp freq_lex gloss domain ls
                         heads prep_obj mother rela
-                        typ sp
+                        typ sp sem_domain sem_domain_code
                       ''', silent=True)
         
         self.tf_api = tf_api
@@ -945,7 +946,7 @@ class VerbFrame(VerbExperiment1):
         # return the (sorted) counts
         bases = self.detach_suffix(target_funct) +\
                 sorted(self.make_adverbial_bases(phrase) for phrase in phrase_bases) 
-        frame = '|'.join(bases)
+        frame = '|'.join(b for b in bases if b)
         return {frame : 1}
     
     def detach_suffix(self, target_funct):
@@ -1011,3 +1012,145 @@ class VerbFrame(VerbExperiment1):
         
         else:
             return ''
+        
+        
+class VerbFrameSemantic(VerbFrame):
+    
+    '''
+    Count verbs' subcategorization frames with
+    enhanced semantic data from the Semantic
+    Dictionary of Biblical Hebrew (De Blois, UBS)
+    
+    Excludes verbs with subject/object suffixes 
+    since these require participant tracking data.
+    
+    Minimum word/observation occurrences are set to 10.
+    '''
+    
+    
+    
+    def __init__(self, 
+                 tf_api=None, 
+                 with_lex=False, 
+                 bases=('Subj', 'PrAd', 'Adju', 'Cmpl', 'Loca', 'Time', 'Objc',)):
+        
+        self.with_lex = with_lex
+        self.bases = bases
+        super().__init__(tf_api=tf_api, bases=bases)
+        
+    def config(self):
+        '''
+        Experiment Configurations
+        '''
+        self.min_target_freq = 10
+        self.min_observation_freq = 10
+        self.target2basis = {
+                                ('Pred',):
+                                    {self.bases: self.make_adverbial_bases}
+                            }
+        
+    def filter_semcodes(self, wordnode):
+        '''
+        Retrieves and separates semantic
+        codes from SDBH.
+        
+        --input--
+        code string
+        
+        --output--
+        selected code or None
+        '''
+        
+        if not self.F.sem_domain_code.v(wordnode):
+            return None
+        
+        # code filter
+        codes = [code for code in self.F.sem_domain_code.v(wordnode).split('|')
+                    if code in set(f'1.00100{i}' for i in range(1, 7)) | {'1.002004'}
+                ]
+        
+        if codes:
+            return codes[0]
+        
+        else:
+            return None
+        
+    def code2tag(self, sem_domain_code):
+        '''
+        Maps a semantic domain code
+        to a generalized category.
+        
+        --input--
+        domain code string
+        
+        --output--
+        generalized category string or None
+        '''
+        
+        if not sem_domain_code:
+            return None
+        
+        code = sem_domain_code[:8]
+        
+        if code == '1.001001':
+            return 'animate'
+        
+        elif code in set(f'1.00100{i}' for i in range(2, 7)):
+            return 'inanimate'
+        
+        elif code == '1.002004':
+            return 'event'
+        
+        else:
+            return None
+        
+    def make_adverbial_bases(self, phrase):
+        '''
+        Builds a basis string from a supplied
+        adverbial phrase. Treats prepositional
+        phrases different from other phrase types.
+        
+        --input--
+        basis phrase node
+        
+        --output--
+        basis string
+        '''
+        
+        function = self.F.function.v(phrase)
+        heads = self.E.heads.f(phrase)
+        token = self.filter_semcodes
+        
+        # for prepositional phrases
+        prep_objs = [token(obj) for head in heads
+                        for obj in self.E.prep_obj.f(head)]
+        prep_objs = [self.code2tag(code) for code in prep_objs] or [None]
+
+        # format non-object prepositional phrases 
+        if all([self.F.typ.v(phrase) == 'PP',
+                function != 'Objc', 
+                heads,
+                all(prep_objs)]):
+            
+            preps = [self.F.lex.v(head) for head in heads]
+            basis_tokens = '|'.join(f'{prep}_{obj}' for prep, obj in zip(preps, prep_objs))
+            basis_token = f'{function}.{basis_tokens}'
+            
+            return basis_token
+        
+        # format object prep. phrases
+        elif all([self.F.typ.v(phrase) == 'PP',
+                  function == 'Objc',
+                  heads,
+                  all(prep_objs)]):
+            
+            return f'{function}.{prep_objs[0]}'
+        
+        # format everything else
+        elif heads and token(heads[0]):
+            this_token = self.code2tag(token(heads[0]))
+            return f'{function}.{this_token}'
+        
+        else:
+            return ''
+        
