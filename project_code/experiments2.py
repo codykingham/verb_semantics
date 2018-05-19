@@ -37,6 +37,7 @@ class Experiment:
 
         template - a TF search template (string)
         template_kwargs - dict of keyword arguments for formatting the template (if any)
+        search_filter - list comprehension to filter out certain search results
         target_i - the index of the target word
         bases_i - tuple of basis indexes
         target_tokenizer - a function to construct target tokens, requires target_i
@@ -55,32 +56,30 @@ class Experiment:
         self.target2gloss = dict()
         self.target2lex = dict()
         self.target2node = dict()
-        
-        # get all target/basis data
-        for param in parameters:
-            
-            for templ, templ_kw, target_i, bases_i, target_tokener, basis_tokener in param:
 
-                # run search query on template
-                search_template = templ.format(**templ_kw)
-                sample = sorted(S.search(search_template))
+        for templ, templ_kw, filt, target_i, bases_i, target_tokener, basis_tokener in parameters:
 
-                # make target token
-                for specimen in sample:
-                    clause = specimen[0]
-                    target = specimen[target_i]
-                    target_token = target_tokener(target)
+            # run search query on template
+            search_template = templ.format(**templ_kw)
+            sample = sorted(S.search(search_template))
+            sample = filt(sample) if filt else sample # filter results for not-exist type queries
 
-                    # make bases tokens, map to clause
-                    for basis_i in bases_i:
-                        basis = specimen[basis_i]
-                        basis_token = basis_tokener(basis, target)
-                        experiment_data[target_token][clause].append(basis_token)
+            # make target token
+            for specimen in sample:
+                clause = specimen[0]
+                target = specimen[target_i]
+                target_token = target_tokener(target)
 
-                    # add helper data
-                    self.target2gloss[target_token] = F.gloss.v(L.u(target, 'lex')[0])
-                    self.target2lex[target_token] = L.u(target, 'lex')[0]
-                    self.target2node[target_token] = target
+                # make bases tokens, map to clause
+                for basis_i in bases_i:
+                    basis = specimen[basis_i]
+                    basis_token = basis_tokener(basis, target)
+                    experiment_data[target_token][clause].append(basis_token)
+
+                # add helper data
+                self.target2gloss[target_token] = F.gloss.v(L.u(target, 'lex')[0])
+                self.target2lex[target_token] = L.u(target, 'lex')[0]
+                self.target2node[target_token] = target
                 
         # finalize data
         self.count_experiment(experiment_data)
@@ -120,7 +119,7 @@ class ExperimentFrame(Experiment):
     '''
     
     def __init__(self, parameters, tf=None, min_observation=10):
-        super.__init__(parameters, tf=tf, min_observation=min_observation)
+        super().__init__(parameters, tf=tf, min_observation=min_observation)
         
     def count_experiment(self, experiment_data):
         '''
