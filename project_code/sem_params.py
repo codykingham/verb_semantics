@@ -12,7 +12,7 @@ import re
 
 # Verb Frames, Sem Domain, Subj/Obj Only, noun/prep phrases
 
-good_sem_codes = {'good_codes': '|'.join(set(f'1\.00100{i}.*' for i in range(1, 7)) | {'1\.002004\.*'})}
+good_sem_codes = {'good_codes': '|'.join(set(f'1\.00100{i}[0-9]*' for i in range(1, 7)) | {'1\.002004\[0-9]*'})}
 
 # noun phrases, target=2, basis=4
 VF_SD_SO_NP = '''
@@ -63,7 +63,7 @@ def vfsd_so_null_filter(results):
     Removes matches with subject/object functions.
     '''
     results = [r for r in results 
-               if not {'Subj', 'Objc'} & set(F.function.v(ph) for ph in L.d(r[0], 'phrase'))]
+               if not {'Subj', 'Objc', 'PreO', 'PreS', 'PtcO', 'Rela'} & set(F.function.v(ph) for ph in L.d(r[0], 'phrase'))]
     return results
 
 
@@ -77,11 +77,8 @@ def verb_token(target):
 
 def code2tag(sem_domain_code):
     # map sem domain to manual codes
-    
     good_codes = good_sem_codes['good_codes']
-    
-    
-    code = sem_domain_code[:8]
+    code = re.findall(good_codes, sem_domain_code)[0][:8]
     if code == '1.001001':
         return 'animate'
     elif code in set(f'1.00100{i}' for i in range(2, 7)):
@@ -92,7 +89,8 @@ def code2tag(sem_domain_code):
 def vfsd_so_base_token(basis, target):
     # basis tokenizer
     sem_category = code2tag(F.sem_domain_code.v(basis))
-    return f'{sem_category}'
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    return f'{function}.{sem_category}'
     
 def vfsd_so_base_null_token(basis, target):
     # basis tokenizer for blank frames

@@ -44,7 +44,7 @@ class SemSpace:
     The class loads and processes the data in one go.
     '''
     
-    def __init__(self, experiment, info=True, test=False, run_ll=False):
+    def __init__(self, experiment, info=True, test=False, run_ll=False, verb_space=True):
         '''
         Requires an experiment class (defined below).
         This allows various experiment parameters
@@ -144,8 +144,6 @@ class SemSpace:
         
         # space plots
         verb_functs = {'Pred', 'PreO', 'PreS', 'PtcO'} # format plots for verbs if space is verb space (add stem to gloss)
-        verb_space = True if verb_functs & set(tag for group in experiment.target2basis
-                                               for tag in group) else False
         self.pmi_plot = PlotSpace(self.pca_pmi, self.pmi, self.tf_api, experiment, verb_space=verb_space)
         self.raw_plot = PlotSpace(self.pca_raw, self.raw, self.tf_api, experiment, verb_space=verb_space)
         

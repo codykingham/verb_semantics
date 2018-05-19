@@ -48,6 +48,7 @@ class Experiment:
          
         # Text-Fabric method short forms
         F, E, T, L, S = tf.F, tf.E, tf.T, tf.L, tf.S
+        self.tf_api = tf
         
         # raw experiment_data[target_token][clause][list_of_bases_tokens]
         experiment_data = collections.defaultdict(lambda: collections.defaultdict(list))
