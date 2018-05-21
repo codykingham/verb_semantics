@@ -58,7 +58,7 @@ class Experiment:
         self.target2lex = dict()
         self.target2node = dict()
 
-        for templ, templ_kw, filt, target_i, bases_i, target_tokener, basis_tokener in parameters:
+        for templ, filt, target_i, bases_i, target_tokener, basis_tokener in parameters:
 
             # run search query on template
             search_template = templ.format(**templ_kw)
