@@ -42,24 +42,26 @@ class Experiment:
         bases_i - tuple of basis indexes
         target_tokenizer - a function to construct target tokens, requires target_i
         basis_tokenizer - a function to construct basis tokens, requires basis_i(s)
+        count_instructions - boolean on whether to collapse instances of a basis element at the clause level
         '''
         
         self.min_obs = min_observation # minimum observation requirement
-         
+        
         # Text-Fabric method short forms
         F, E, T, L, S = tf.F, tf.E, tf.T, tf.L, tf.S
         self.tf_api = tf
         
         # raw experiment_data[target_token][clause][list_of_bases_tokens]
         experiment_data = collections.defaultdict(lambda: collections.defaultdict(list))
+        self.collapse_instances = False # count presence/absence of features in a clause, i.e. don't add up multiple instances
         
         # helper data, for SemSpace class
         self.target2gloss = dict()
         self.target2lex = dict()
         self.target2node = dict()
 
-        for templ, filt, target_i, bases_i, target_tokener, basis_tokener in parameters:
-
+        for templ, filt, target_i, bases_i, target_tokener, basis_tokener, count_inst in parameters:
+            
             # run search query on template
             search_template = templ.format(**templ_kw)
             sample = sorted(S.search(search_template))
@@ -82,6 +84,8 @@ class Experiment:
                 self.target2lex[target_token] = L.u(target, 'lex')[0]
                 self.target2node[target_token] = target
                 
+            self.collapse_instances = count_inst
+                
         # finalize data
         self.count_experiment(experiment_data)
     
@@ -103,6 +107,7 @@ class Experiment:
         
         for target, clauses in experiment_data.items():
             for clause, bases in clauses.items():
+                bases = bases if not self.collapse_instances else set(bases)
                 ecounts[target].update(bases)
                 
         counts = dict((target, counts) for target, counts in ecounts.items()

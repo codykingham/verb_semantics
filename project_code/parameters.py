@@ -39,10 +39,14 @@ def sem_domain_tokens(basis, target):
 def lexer(basis, target):
     # basis tokenizer for simple lexemes
     return F.lex.v(basis)
+    
+def nuller(basis, target):
+    # basis tokenizer for blank values
+    return 'ø'
 
 # standard predicate target template
 pred_target = '''
-clause
+clause domain=N
     phrase function={pred_funct}
         target:word pdp=verb
 
@@ -53,142 +57,203 @@ lex freq_lex>9
    lexword = target
 '''
 
+all_preds = 'Pred|PreO|PresS|PtcO'
+
+# - - - - - - Parameters - - - - - - -
 
 
 
-# \\ 1.1.1 Verb Inventory, Subject Only, no sem domains, lexemes
+# \\ 1.1 Verb Inventory, Subject Only, lexemes
 
 vi_s_nsd = pred_target.format(basis='''
 
     phrase typ=NP|PrNP function=Subj
-        -heads> word
+        -heads> word pdp=subs|nmpr
 
 ''', pred_funct='Pred|PreO|PtcO'
 )
 
-params['vbframe_s_nodomain_lex'] = (
-                                    (vi_s_nsd, None, 2, (4,) verb_token, lexer),
-                                )
+params['vbi_s_lex'] = (
+                          (vi_s_nsd, None, 2, (4,), verb_token, lexer, False),
+                      )
 
 
 
 
-# \\ 1.1.2 Verb Inventory, Subject Only, sem domains
+# \\ 1.2 Verb Inventory, Subject Only, sem domains
 
 vi_s_sd = pred_target.format(basis=f'''
 
     phrase typ=NP|PrNP function=Subj
-        -heads> word sem_domain_code~{good_sem_codes}
+        -heads> word pdp=subs|nmpr sem_domain_code~{good_sem_codes}
 
 ''', pred_funct='Pred|PreO|PtcO'
 )
 
-params['vbframe_s_nodomain_lex'] = (
-                                    (vi_s_nsd, None, 2, (4,) verb_token, lexer),
-                                )
+params['vbi_s_domain'] = (
+                             (vi_s_nsd, None, 2, (4,), verb_token, lexer, False),
+                         )
 
 
 
 
+# \\ 2.1 Verb Inventory, Object Only, presence/absence
 
-# \\ 1.2.1 Verb Inventory, Object Only, no sem domains, lexemes
+vi_o_pa = pred_target.format(basis='''
 
-vi_o_nsd = pred_target.format(basis='''
-
-    phrase typ=NP|PrNP function=Objc
-        -heads> word
-
+    phrase function=Objc
+    
 ''', pred_funct='Pred|PreS'
 )
 
-params['vbframe_o_nodomain_lex'] = (
-                                        (vi_o_nsd, None, 2, (4,) verb_token, F.lex.v),
-                                   )
+vi_o_pa_clRela = pred_target.format(basis='''
 
+<mother- clause rela=Objc
 
-
-
-# \\ 1.2.2 Verb Inventory, Object Only, no sem domains, no lex
-
-vi_o_nsd_nl = pred_target.format(basis='''
-
-    phrase typ=NP|PrNP function=Objc
-        -heads> word
-
-''', pred_funct='Pred|PreS'
-)
-
-
-vi_o_nsd_nl_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
+''', pred_funct='Pred|PreS')
+    
+vi_o_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
+vi_o_pa_null = pred_target.format(basis='', pred_funct='Pred|PreS')
 
 def simple_object(basis, target):
     return 'object'
 
-params['vbframe_o_nodomain_nolex'] = (
-                                        (vi_o_nsd_nl, None, 2, (4,) verb_token, simple_object),
-                                        (vi_o_nsd_nl_suffix, None, 2, (2,) verb_token, simple_object)
-                                    )
+def notexist_relative(results):
+    '''
+    this function purposely excludes relative clauses
+    since the database does not properly mark whether
+    the particle serves as the implied object of the clause
+    '''
+    results = [r for r in results
+                  if 'Rela' not in set(F.function.v(ph) for ph in L.d(r[0], 'phrase'))]
+    return results
+
+def notexist_o(results):
+    # filter for absent objects (+omits relatives) within and between clauses
+    obj = {'PreO', 'PtcO', 'Objc', 'Rela'}
+    results = [r for r in results
+                  if not obj & set(F.function.v(ph) for ph in L.d(r[0], 'phrase'))
+                  and 'Objc' not in set(F.rela.v(cl) for cl in E.mother.t(r[0]))]
+    return results
+
+params['vbi_o_pa'] = (
+                         (vi_o_pa, notexist_relative, 2, (3,), verb_token, simple_object, True),
+                         (vi_o_pa_clRela, None, 2, (3), verb_token, simple_object, True)
+                         (vi_o_pa_suffix, notexist_relative, 2, (2,), verb_token, simple_object, True),
+                         (vi_o_pa_null, notexist_o, 2, (2,), verb_token, nuller, True)
+                     )
 
 
 
 
+# \\ 2.2, Verb Inventory, Object Only, lexemes
 
-# \\ 1.2.3 Verb Inventory, Object Only, sem domains (basic)
-
-vi_o_sd = pred_target.format(basis=f'''
+vi_o_lex_np = pred_target.format(basis='''
 
     phrase typ=NP|PrNP function=Objc
-        -heads> word sem_domain_code~{good_sem_codes}
+        -heads> word pdp=subs|nmpr
 
 ''', pred_funct='Pred|PreS'
 )
 
-params['vbframe_o_domain'] = (
-                                (vi_o_sd, None, 2, (4,) verb_token, sem_domain_tokens)
-                             )
+vi_o_lex_pp = pred_target.format(basis='''
+
+    phrase typ=PP function=Objc
+        -heads> word pdp=prep
+        -prep_obj> word pdp=subs|nmpr
+
+''', pred_funct='Pred|PreS'
+)
+
+params['vbi_o_lex'] = (
+                          (vi_o_lex_np, None, 2, (4,), verb_token, lexer, False),
+                          (vi_o_lex_pp, None, 2, (5,), verb_token, lexer, False)
+                      )
 
 
 
 
+# \\ 2.3, Verb Inventory, Object Only, sem domains (basic)
 
-# \\ N. Verb Frames, Sem Domain, Subj/Obj Only \\
+vi_o_sd_np = pred_target.format(basis=f'''
 
-# noun phrases, target=2, basis=4
-VF_SD_SO_NP = pred_target.format(basis=f'''
-        
-    phrase typ=NP|PrNP function=Subj|Objc
-        -heads> word sem_domain_code~{good_sem_codes}
-''', pred_funct='Pred')
+    phrase typ=NP|PrNP function=Objc
+        -heads> word pdp=subs|nmpr sem_domain_code~{good_sem_codes}
 
-# prepositional phrases, target=2, basis=5
-VF_SD_SO_PP = pred_target.format(basis=f'''
+''', pred_funct=all_preds
+)
 
-    p1:phrase typ=PP function=Subj|Objc
+vi_o_sd_pp = pred_target.format(basis=f'''
+
+    phrase typ=PP function=Objc
+        -heads> word pdp=prep
+        -prep_obj> word pdp=subs|nmpr sem_domain_code~{good_sem_codes}
+
+''', pred_funct='Pred|PreS|PreO|PtcO'
+)
+
+params['vbi_o_domain'] = (
+                             (vi_o_sd_np, None, 2, (4,), verb_token, sem_domain_tokens, False),
+                             (vi_o_sd_pp, None, 2, (5,), verb_token, sem_domain_tokens, False)
+                         )
+
+
+
+
+# \\ 3.1, Verb Inventory, Complements, presence/absence
+
+vi_cmp_pa = pred_target.format(basis='''
+
+    phrase function=Cmpl
+
+''', pred_funct=all_preds)
+
+vi_cmp_pa_clRel = pred_target.format(basis='''
+
+<mother- clause rela=Cmpl
+
+''', pred_funct=all_preds)
+
+
+vi_cmp_pa_null = pred_funct.format(basis='', pred_funct='Pred|PreO|PresS|PtcO')
+
+def simple_cmpl_funct(basis, target):
+    return F.function.v(basis)
+
+def simple_cmpl_rela(basis, target):
+    return F.rela.v(basis)
+
+def notexist_cmpl(results):
+    # checks for non-existing complements within and between clauses
+    results = [r for r in results
+                  if 'Cmpl' not in set(F.function.v(ph) for ph in L.d(r[0], 'phrase'))
+                  and 'Cmpl' not in set(F.rela.v(cl) for cl in E.mother.t(r[0]))
+              ]
+
+params['vbi_cmpladj_pa'] = (
+                            (vi_cmp_pa, None, 2, (3,), verb_token, simple_cmpl_funct, True),
+                            (vi_cmp_pa_clRel, None, 2, (3,), verb_token, simple_cmpl_rela, True),
+                            (vi_cmp_pa_null, notexist_cmpl, 3, (3,), verb_token, nuller, True)
+                           )
+
+
+
+
+# \\ 3.2, Verb Inventory, Complements, lexemes
+vi_cmp_lex_pp = pred_target.format(basis='''
+
+    phrase function=Cmpl typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp~^(?!prep)
+
+''', pred_funct=all_preds)
+
+vi_cmp_lex_np = pred_target.format(basis='''
+
+    phrase function=Cmpl typ=NP|PrNP|AdvP
         -heads> word
-        -prep_obj> word sem_domain_code~{good_sem_codes}
-''', pred_funct='Pred')
 
-# verbs with unfulfilled subject/object slots
-VF_SD_SO_null = pred_target.format(basis='', pred_funct='Pred')
+''', pred_funct=all_preds)
 
-def vfsd_so_null_filter(results):
-    '''
-    Removes matches with subject/object functions.
-    '''
-    results = [r for r in results 
-               if not {'Subj', 'Objc', 'PreO', 'PreS', 'PtcO', 'Rela'} & set(F.function.v(ph) for ph in L.d(r[0], 'phrase'))]
-    return results
-
-# Accompanying Tokenizer Functions
-    
-def sem_domain_null(basis, target):
-    # basis tokenizer for blank frames
-    return 'ø'
-    
-# All Parameters
-
-params['vbframe_so_domains'] = (
-                        (VF_SD_SO_NP, None, 2, (4,), verb_token, sem_domain_tokens),
-                        (VF_SD_SO_PP, None, 2, (5,), verb_token, sem_domain_tokens),
-                        (VF_SD_SO_null, vfsd_so_null_filter, 2, (2,), verb_token, sem_domain_null)
-                     )
+# to do: complements with related clauses & verbs
+# to do: write tokenizer that makes a prep_lex + prep_obj string
