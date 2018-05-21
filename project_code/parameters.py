@@ -1,16 +1,19 @@
 '''
-This module contains a group of 
-experiment parameters that can be
+This module contains a set of 
+experiment parameters that will be
 fed to the experiments2 version Experiment
 classes to construct target and basis elements.
+These searches are the primary object of phase 3,
+in which I seek the most informative features 
+for verb clustering.
 '''
 
-from __main__ import F, E, T, L, S
+from __main__ import F, E, T, L, S # Text-Fabric methods
 import re
 
 params = {}
 
-# TODO: ADD REFERENCE CODES!
+# TODO: ADD REFERENCE CODES FOR PROPER NAMES
 good_sem_codes = '|'.join(set(f'1\.00100{i}[0-9]*' for i in range(1, 7)) | {'1\.002004\[0-9]*'})
 
 def verb_token(target):
@@ -20,7 +23,8 @@ def verb_token(target):
     return f'{lex}.{vs}'
 
 def code2tag(sem_domain_code):
-    # map sem domain to manual codes (see next funct) #TODO!!: FIX SEM CODES
+    # map sem domain to custom values 
+    #TODO: FIX SEM CODES
     good_codes = good_sem_codes['good_codes']
     code = re.findall(good_codes, sem_domain_code)[0][:8]
     if code == '1.001001':
@@ -31,7 +35,7 @@ def code2tag(sem_domain_code):
         return 'event'
     
 def sem_domain_tokens(basis, target):
-    # basis tokenizer
+    # basis tokenizer for semantic domains
     sem_category = code2tag(F.sem_domain_code.v(basis))
     function = F.function.v(L.u(basis, 'phrase')[0])
     return f'{function}.{sem_category}'
@@ -46,7 +50,7 @@ def nuller(basis, target):
 
 # standard predicate target template
 pred_target = '''
-clause domain=N
+cl1:clause
     phrase function={pred_funct}
         target:word pdp=verb
 
@@ -65,7 +69,7 @@ all_preds = 'Pred|PreO|PresS|PtcO'
 
 
 
-# \\ 1.1 Verb Inventory, Subject Only, lexemes
+# \\ 1.1 Verb Inventory, Subjects, lexemes
 
 vi_s_nsd = pred_target.format(basis='''
 
@@ -82,7 +86,7 @@ params['vbi_s_lex'] = (
 
 
 
-# \\ 1.2 Verb Inventory, Subject Only, sem domains
+# \\ 1.2 Verb Inventory, Subjects, Semantic Domains
 
 vi_s_sd = pred_target.format(basis=f'''
 
@@ -99,7 +103,7 @@ params['vbi_s_domain'] = (
 
 
 
-# \\ 2.1 Verb Inventory, Object Only, presence/absence
+# \\ 2.1 Verb Inventory, Objects, Presence/Absence
 
 vi_o_pa = pred_target.format(basis='''
 
@@ -110,7 +114,8 @@ vi_o_pa = pred_target.format(basis='''
 
 vi_o_pa_clRela = pred_target.format(basis='''
 
-<mother- clause rela=Objc
+c2:clause rela=Objc
+    c1 <mother- c2
 
 ''', pred_funct='Pred|PreS')
     
@@ -124,7 +129,7 @@ def notexist_relative(results):
     '''
     this function purposely excludes relative clauses
     since the database does not properly mark whether
-    the particle serves as the implied object of the clause
+    the relative serves as the implied object of the verb
     '''
     results = [r for r in results
                   if 'Rela' not in set(F.function.v(ph) for ph in L.d(r[0], 'phrase'))]
@@ -148,7 +153,7 @@ params['vbi_o_pa'] = (
 
 
 
-# \\ 2.2, Verb Inventory, Object Only, lexemes
+# \\ 2.2, Verb Inventory, Objects, Lexemes
 
 vi_o_lex_np = pred_target.format(basis='''
 
@@ -175,7 +180,7 @@ params['vbi_o_lex'] = (
 
 
 
-# \\ 2.3, Verb Inventory, Object Only, sem domains (basic)
+# \\ 2.3, Verb Inventory, Objects, Semantic Domains
 
 vi_o_sd_np = pred_target.format(basis=f'''
 
@@ -202,7 +207,7 @@ params['vbi_o_domain'] = (
 
 
 
-# \\ 3.1, Verb Inventory, Complements, presence/absence
+# \\ 3.1, Verb Inventory, Complements, Presence/Absence
 
 vi_cmp_pa = pred_target.format(basis='''
 
@@ -212,8 +217,9 @@ vi_cmp_pa = pred_target.format(basis='''
 
 vi_cmp_pa_clRel = pred_target.format(basis='''
 
-<mother- clause rela=Cmpl
-
+c2:clause rela=Cmpl
+    c1 <mother- c2
+    
 ''', pred_funct=all_preds)
 
 
@@ -232,17 +238,17 @@ def notexist_cmpl(results):
                   and 'Cmpl' not in set(F.rela.v(cl) for cl in E.mother.t(r[0]))
               ]
 
-params['vbi_cmpladj_pa'] = (
+params['vbi_cmpl_pa'] = (
                             (vi_cmp_pa, None, 2, (3,), verb_token, simple_cmpl_funct, True),
                             (vi_cmp_pa_clRel, None, 2, (3,), verb_token, simple_cmpl_rela, True),
                             (vi_cmp_pa_null, notexist_cmpl, 3, (3,), verb_token, nuller, True)
-                           )
+                        )
 
 
 
 
-# \\ 3.2, Verb Inventory, Complements, lexemes
-vi_cmp_lex_pp = pred_target.format(basis='''
+# \\ 3.2, Verb Inventory, Complements, Lexemes
+vi_cmpl_lex_pp = pred_target.format(basis='''
 
     phrase function=Cmpl typ=PP
         -heads> word pdp=prep
@@ -250,12 +256,35 @@ vi_cmp_lex_pp = pred_target.format(basis='''
 
 ''', pred_funct=all_preds)
 
-vi_cmp_lex_np = pred_target.format(basis='''
+vi_cmpl_lex_np = pred_target.format(basis='''
 
     phrase function=Cmpl typ=NP|PrNP|AdvP
         -heads> word
 
 ''', pred_funct=all_preds)
 
-# to do: complements with related clauses & verbs
-# to do: write tokenizer that makes a prep_lex + prep_obj string
+vi_cmpl_lex_clRela = pred_target.format(basis='''
+
+c2:clause rela=Cmpl
+    phrase typ=VP
+    -heads> word pdp=verb
+    
+c2 -mother> c1
+
+''')
+
+def prep_lexer(basis, target):
+    # makes prep_lex + prep_obj_lex token
+    prep_obj = E.prep_obj.f(basis)[0]
+    return f'{F.lex.v(basis)}_{F.lex.v(prep_obj)}'
+    
+params['vbi_cmpl_lex'] = (
+                             (vi_cmpl_lex_pp, None, 2, (4,), verb_token, prep_lexer, False),
+                             (vi_cmpl_lex_np, None, 2, (4,), verb_token, lexer, False),
+                             (vi_cmpl_lex_clRela, None, 2, (5,), verb_token, lexer, False)
+                         )
+
+
+
+
+# 3.3, Verb Inventory, Complements, Semantic Domains
