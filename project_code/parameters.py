@@ -18,10 +18,10 @@ basis_tokenizer - function to convert bases nodes into strings
 collapse_instance - T/F on whether to count multiple instances of a basis token within a clause
 '''
 
-import re
+import re, collections
 from __main__ import F, E, T, L, S # Text-Fabric methods
 
-params = {} # all parameters stored here
+params = collections.defaultdict(dict) # all parameters stored here
 
 
 # - - - - - - General Functions - - - - - - -
@@ -123,9 +123,9 @@ vi_s_nsd = pred_target.format(basis='''
 ''', pred_funct='Pred|PreO|PtcO'
 )
 
-params['vbi_s_lex'] = (
-                          (vi_s_nsd, None, 2, (4,), verb_token, lexer, False),
-                      )
+params['inventory']['vi_s_lex'] = (
+                                      (vi_s_nsd, None, 2, (4,), verb_token, lexer, False),
+                                  )
 
 
 
@@ -140,9 +140,9 @@ vi_s_sd = pred_target.format(basis=f'''
 ''', pred_funct='Pred|PreO|PtcO'
 )
 
-params['vbi_s_domain'] = (
-                             (vi_s_nsd, None, 2, (4,), verb_token, lexer, False),
-                         )
+params['inventory']['vi_s_domain'] = (
+                                         (vi_s_nsd, None, 2, (4,), verb_token, lexer, False),
+                                     )
 
 
 
@@ -187,12 +187,12 @@ def notexist_o(results):
                   and 'Objc' not in set(F.rela.v(cl) for cl in E.mother.t(r[0]))]
     return results
 
-params['vbi_o_pa'] = (
-                         (vi_o_pa, notexist_relative, 2, (3,), verb_token, simple_object, True),
-                         (vi_o_pa_clRela, None, 2, (3), verb_token, simple_object, True)
-                         (vi_o_pa_suffix, notexist_relative, 2, (2,), verb_token, simple_object, True),
-                         (vi_o_pa_null, notexist_o, 2, (2,), verb_token, nuller, True)
-                     )
+params['inventory']['vi_o_pa'] = (
+                                     (vi_o_pa, notexist_relative, 2, (3,), verb_token, simple_object, True),
+                                     (vi_o_pa_clRela, None, 2, (3), verb_token, simple_object, True)
+                                     (vi_o_pa_suffix, notexist_relative, 2, (2,), verb_token, simple_object, True),
+                                     (vi_o_pa_null, notexist_o, 2, (2,), verb_token, nuller, True)
+                                 )
 
 
 
@@ -216,10 +216,10 @@ vi_o_lex_pp = pred_target.format(basis='''
 ''', pred_funct='Pred|PreS'
 )
 
-params['vbi_o_lex'] = (
-                          (vi_o_lex_np, None, 2, (4,), verb_token, lexer, False),
-                          (vi_o_lex_pp, None, 2, (5,), verb_token, lexer, False)
-                      )
+params['inventory']['vi_o_lex'] = (
+                                      (vi_o_lex_np, None, 2, (4,), verb_token, lexer, False),
+                                      (vi_o_lex_pp, None, 2, (5,), verb_token, lexer, False)
+                                  )
 
 
 
@@ -243,10 +243,10 @@ vi_o_sd_pp = pred_target.format(basis=f'''
 ''', pred_funct='Pred|PreS|PreO|PtcO'
 )
 
-params['vbi_o_domain'] = (
-                             (vi_o_sd_np, None, 2, (4,), verb_token,  domainer, False),
-                             (vi_o_sd_pp, None, 2, (5,), verb_token, domainer, False)
-                         )
+params['inventory']['vi_o_domain'] = (
+                                         (vi_o_sd_np, None, 2, (4,), verb_token,  domainer, False),
+                                         (vi_o_sd_pp, None, 2, (5,), verb_token, domainer, False)
+                                     )
 
 
 
@@ -276,11 +276,11 @@ def notexist_cmpl(results):
                   and 'Cmpl' not in set(F.rela.v(cl) for cl in E.mother.t(r[0]))
               ]
 
-params['vbi_cmpl_pa'] = (
-                            (vi_cmp_pa, None, 2, (3,), verb_token, functioner, True),
-                            (vi_cmp_pa_clRel, None, 2, (3,), verb_token, relationer, True),
-                            (vi_cmp_pa_null, notexist_cmpl, 3, (3,), verb_token, nuller, True)
-                        )
+params['inventory']['vi_cmpl_pa'] = (
+                                        (vi_cmp_pa, None, 2, (3,), verb_token, functioner, True),
+                                        (vi_cmp_pa_clRel, None, 2, (3,), verb_token, relationer, True),
+                                        (vi_cmp_pa_null, notexist_cmpl, 3, (3,), verb_token, nuller, True)
+                                    )
 
 
 
@@ -311,11 +311,11 @@ c2 -mother> c1
 
 ''')
     
-params['vbi_cmpl_lex'] = (
-                             (vi_cmpl_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
-                             (vi_cmpl_lex_np, None, 2, (4,), verb_token, lexer, False),
-                             (vi_cmpl_lex_clRela, None, 2, (5,), verb_token, lexer, False)
-                         )
+params['inventory']['vi_cmpl_lex'] = (
+                                         (vi_cmpl_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
+                                         (vi_cmpl_lex_np, None, 2, (4,), verb_token, lexer, False),
+                                         (vi_cmpl_lex_clRela, None, 2, (5,), verb_token, lexer, False)
+                                     )
 
 
 
@@ -346,11 +346,11 @@ c2 -mother> c1
 
 ''')
     
-params['vbi_cmpl_domain'] = (
-                                 (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
-                                 (vi_cmpl_sd_np, None, 2, (4,), verb_token, domainer, False),
-                                 (vi_cmpl_sd_clRela, None, 2, (5,), verb_token, domainer, False)
-                             )
+params['inventory']['vi_cmpl_domain'] = (
+                                             (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
+                                             (vi_cmpl_sd_np, None, 2, (4,), verb_token, domainer, False),
+                                             (vi_cmpl_sd_clRela, None, 2, (5,), verb_token, domainer, False)
+                                         )
 
 
 
@@ -380,11 +380,11 @@ def notexist_adj(results):
                   and not {'Adju', 'PrAd'} & set(F.rela.v(cl) for cl in E.mother.t(r[0]))
               ]
 
-params['vbi_adj+_pa'] = (
-                            (vi_adj_pa, None, 2, (3,), verb_token, functioner, True),
-                            (vi_adj_pa_clRel, None, 2, (3,), verb_token, relationer, True),
-                            (vi_adj_pa_null, notexist_adj, 3, (3,), verb_token, nuller, True)
-                        )
+params['inventory']['vi_adj+_pa'] = (
+                                        (vi_adj_pa, None, 2, (3,), verb_token, functioner, True),
+                                        (vi_adj_pa_clRel, None, 2, (3,), verb_token, relationer, True),
+                                        (vi_adj_pa_null, notexist_adj, 3, (3,), verb_token, nuller, True)
+                                    )
 
 
 
@@ -416,11 +416,11 @@ c2 -mother> c1
 
 ''')
     
-params['vbi_adj+_lex'] = (
-                             (vi_adj_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
-                             (vi_adj_lex_np, None, 2, (4,), verb_token, lexer, False),
-                             (vi_adj_lex_clRela, None, 2, (5,), verb_token, lexer, False)
-                         )
+params['inventory']['vi_adj+_lex'] = (
+                                         (vi_adj_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
+                                         (vi_adj_lex_np, None, 2, (4,), verb_token, lexer, False),
+                                         (vi_adj_lex_clRela, None, 2, (5,), verb_token, lexer, False)
+                                     )
 
 
 
@@ -453,11 +453,11 @@ c2 -mother> c1
 ''')
 
     
-params['vbi_adj+_domain'] = (
-                                 (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
-                                 (vi_adj_sd_np, None, 2, (4,), verb_token, domainer, False),
-                                 (vi_adj_sd_clRela, None, 2, (5,), verb_token, domainer, False)
-                            )
+params['inventory']['vi_adj+_domain'] = (
+                                             (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
+                                             (vi_adj_sd_np, None, 2, (4,), verb_token, domainer, False),
+                                             (vi_adj_sd_clRela, None, 2, (5,), verb_token, domainer, False)
+                                        )
 
 
 
@@ -495,12 +495,12 @@ def notexist_allargs(results):
                   and not all_args & set(F.rela.v(cl) for cl in E.mother.t(r[0]))]
     return results
 
-params['vf_argAll_pa'] = (
-                              (vf_allarg_pa_np, None, 2, (3,), verb_token, functioner, False),
-                              (vf_allarg_pa_pp, None, 2, (4,), verb_token, prep_o_functioner, False),
-                              (vf_allarg_pa_suffix, None, 2, (2,), verb_token, simple_object, False),
-                              (vf_allarg_pa_null, notexist_allargs, 2, (2,), verb_token, nuller, False)
-                          )
+params['frame']['vf_argAll_pa'] = (
+                                      (vf_allarg_pa_np, None, 2, (3,), verb_token, functioner, False),
+                                      (vf_allarg_pa_pp, None, 2, (4,), verb_token, prep_o_functioner, False),
+                                      (vf_allarg_pa_suffix, None, 2, (2,), verb_token, simple_object, False),
+                                      (vf_allarg_pa_null, notexist_allargs, 2, (2,), verb_token, nuller, False)
+                                  )
 
 
 
@@ -523,10 +523,10 @@ vf_allarg_lex_pp = pred_target.format(basis='''
 
 
 
-params['vf_argAll_lex'] = (
-                              (vf_allarg_lex_np, None, 2, (4,), verb_token, lexer, False),
-                              (vf_allarg_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
-                          )
+params['frame']['vf_argAll_lex'] = (
+                                      (vf_allarg_lex_np, None, 2, (4,), verb_token, lexer, False),
+                                      (vf_allarg_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
+                                   )
 
 
 
@@ -548,24 +548,70 @@ vf_allarg_sd_pp = pred_target.format(basis=f'''
 
 ''', pred_funct='Pred|PreS')
 
-params['vf_argAll_domain'] = (
-                                (vf_allarg_sd_np, None, 2, (4,), verb_token, domainer, False),
-                                (vf_allarg_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
-                             )
+params['frame']['vf_argAll_domain'] = (
+                                          (vf_allarg_sd_np, None, 2, (4,), verb_token, domainer, False),
+                                          (vf_allarg_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
+                                      )
 
 
 
 
-# TODO: 7.1, Verb Frame, Complements, Presence/Absence
-# TODO: 7.2, Verb Frame, Complements, Lexemes
-# TODO: 7.3, Verb Frame, Complements, Semantic Domains
+# 7.1, Verb Frame, Complements, Presence/Absence
+params['frame']['vf_cmpl_pa'] = (
+                                    (vi_cmp_pa, None, 2, (3,), verb_token, functioner, True),
+                                    (vi_cmp_pa_clRel, None, 2, (3,), verb_token, relationer, True),
+                                    (vi_cmp_pa_null, notexist_cmpl, 3, (3,), verb_token, nuller, True)
+                                )
 
 
 
 
-# TODO: 8.1, Verb Frame, Adjuncts, Presence/Absence
-# TODO: 8.2, Verb Frame, Adjuncts, Lexemes
-# TODO: 8.3, Verb Frame, Adjuncts, Semantic Domains
+# 7.2, Verb Frame, Complements, Lexemes
+params['frame']['vf_cmpl_lex'] = (
+                                     (vi_cmpl_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
+                                     (vi_cmpl_lex_np, None, 2, (4,), verb_token, lexer, False),
+                                     (vi_cmpl_lex_clRela, None, 2, (5,), verb_token, lexer, False)
+                                 )
+
+
+
+
+# 7.3, Verb Frame, Complements, Semantic Domains
+params['frame']['vf_cmpl_domain'] = (
+                                        (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
+                                        (vi_cmpl_sd_np, None, 2, (4,), verb_token, domainer, False),
+                                        (vi_cmpl_sd_clRela, None, 2, (5,), verb_token, domainer, False)
+                                    )
+
+
+
+
+# 8.1, Verb Frame, Adjuncts, Presence/Absence
+params['frame']['vf_adj+_pa'] = (
+                                    (vi_adj_pa, None, 2, (3,), verb_token, functioner, True),
+                                    (vi_adj_pa_clRel, None, 2, (3,), verb_token, relationer, True),
+                                    (vi_adj_pa_null, notexist_adj, 3, (3,), verb_token, nuller, True)
+                                )
+
+
+
+
+# 8.2, Verb Frame, Adjuncts, Lexemes
+params['frame']['vf_adj+_lex'] = (
+                                     (vi_adj_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
+                                     (vi_adj_lex_np, None, 2, (4,), verb_token, lexer, False),
+                                     (vi_adj_lex_clRela, None, 2, (5,), verb_token, lexer, False)
+                                  )
+
+
+
+
+# 8.3, Verb Frame, Adjuncts, Semantic Domains
+params['frame']['vf_adj+_domain'] = (
+                                        (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
+                                        (vi_adj_sd_np, None, 2, (4,), verb_token, domainer, False),
+                                        (vi_adj_sd_clRela, None, 2, (5,), verb_token, domainer, False)
+                                    )
 
 
 
@@ -629,15 +675,116 @@ def parallelism_filter(results):
                    and independent(r[4], r[9])]
     return results
     
-params['vd_par_lex'] = (
-                           (vi_par_lex_AB, parallelism_filter, 6, (11,), verb_token, lexer, False),
-                           (vi_par_lex_BC, parallelism_filter, 6, (11,), verb_token, lexer, False)
-                       )
+params['inventory']['vd_par_lex'] = (
+                                         (vi_par_lex_AB, parallelism_filter, 6, (11,), verb_token, lexer, False),
+                                         (vi_par_lex_BC, parallelism_filter, 6, (11,), verb_token, lexer, False)
+                                     )
 
 
 
 
-# TODO: 10.1, Verb Discourse, Context, Window-2 Content words
-# TODO: 10.2, Verb Discourse, Context, Clause Content Words
-# TODO: 10.3, Verb Discourse, Context, Mother-Daughter Chain Content Words
-# TODO: 10.4, Verb Discourse, Context, Chapter Content Words
+# 10.1, Verb Discourse, Context, Window-2 Content words
+
+content_words = 'subs|nmpr|verb|advb|adjv'
+
+vd_con_window = pred_target.format(basis='', pred_funct=all_preds)
+
+def select_window(results):
+    
+    '''
+    Changes the basis result to 2 
+    word nodes on the left or right
+    of the target verb.
+    '''
+    
+    new_results = []
+    
+    for r in results:
+        sentence = L.u(r[0], 'sentence')[0]
+        target = r[2]
+        sent_words = L.d(sentence, 'word')
+        window = tuple(w for w in range(target-2, target+3) 
+                           if w != target
+                           and w in sent_words
+                           and F.pdp.v(w) in content_words)
+        result = list(r) + [window]
+        new_results.append(tuple(result))
+        
+    return tuple(new_results)
+        
+def multiple_lexer(bases, target):
+    # returns multiple lexeme bases elements in a tuple
+    return tuple(F.lex.v(w) for w in bases)
+    
+params['inventory']['vd_con_window'] = (
+                                           (vd_con_window, select_window, 2, (-1,), verb_token, multiple_lexer, False),
+                                       )
+
+
+
+
+# 10.2, Verb Discourse, Context, Clause Content Words
+
+vd_con_clause = pred_target.format(basis='', pred_funct=all_preds)
+
+def select_cl_words(results):
+    '''
+    adds all content clause words to end of results
+    '''
+    new_results = []
+    
+    # get matching clause words
+    for r in results:
+        target = r[2]
+        clause_words = tuple(w for w in L.d(r[0], 'word')
+                           if F.pdp.v(w) in content_words
+                           and w != target)
+        result = list(r) + [clause_words]
+        new_results.append(tuple(result))
+    
+    return tuple(new_results)
+
+params['inventory']['vd_con_clause'] = (
+                                           (vd_con_clause, select_cl_words, 2, (-1,), verb_token, multiple_lexer, False),
+                                       )
+
+
+
+
+# 10.3, Verb Discourse, Context, Mother-Daughter Chain Content Words
+
+vd_con_chain = pred_target.format(basis='', pred_funct=all_preds)
+
+def climb_chain(clause_atom, chain_list):
+    '''
+    Recursive function to iterate through
+    clause atom mother-daughter chains.
+    '''
+    for daughter in E.mother.t(clause_atom):
+        chain_list.append(daughter)
+        climb_chain(daughter, chain_list)
+
+def select_chain_words(results):
+    
+    '''
+    Selects words from a chain of 
+    related clause atoms, related 
+    via the mother-daughter relation.
+    '''
+    new_results = []
+    
+    for r in results:
+        target = r[2]
+        clause_atom = L.d(r[0], 'clause_atom')[0]
+        clAt_chain = []
+        climb_chain(clause_atom, clAt_chain) # climb down the chain
+        chain_words = tuple(w for atom in clAt_chain 
+                                for w in L.d(atom, 'word')
+                                if w != target and F.pdp.v(w) in content_words)
+        result = list(r) + [chain_words]
+
+    return tuple(new_results)
+
+params['inventory']['vd_con_chain'] = (
+                                          (vd_con_chain, select_chain_words, 2, (-1,), verb_token, multiple_lexer, True),
+                                      )

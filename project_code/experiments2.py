@@ -27,7 +27,7 @@ import pandas as pd
 
 class Experiment:
     
-    def __init__(self, parameters, tf=None, min_observation=10):
+    def __init__(self, parameters, tf=None, min_observation=10, frame=False):
         '''
         Parameters is a tuple of tuples.
         Tuples consist of:
@@ -42,7 +42,7 @@ class Experiment:
         bases_i - tuple of basis indexes
         target_tokenizer - a function to construct target tokens, requires target_i
         basis_tokenizer - a function to construct basis tokens, requires basis_i(s)
-        count_instructions - boolean on whether to collapse instances of a basis element at the clause level
+        count_instances - boolean on whether to collapse instances of a basis element at the result level
         '''
         
         self.min_obs = min_observation # minimum observation requirement
@@ -54,6 +54,7 @@ class Experiment:
         # raw experiment_data[target_token][clause][list_of_bases_tokens]
         experiment_data = collections.defaultdict(lambda: collections.defaultdict(list))
         self.collapse_instances = False # count presence/absence of features in a clause, i.e. don't add up multiple instances
+        count_experiment = self.inventory_count if not frame else self.frame_count
         
         # helper data, for SemSpace class
         self.target2gloss = dict()
@@ -77,7 +78,8 @@ class Experiment:
                 for basis_i in bases_i:
                     basis = specimen[basis_i]
                     basis_token = basis_tokener(basis, target)
-                    experiment_data[target_token][clause].append(basis_token)
+                    basis_tokens = (basis_token,) if type(basis_token) == str else basis_token
+                    experiment_data[target_token][clause].extend(basis_tokens)
 
                 # add helper data
                 self.target2gloss[target_token] = F.gloss.v(L.u(target, 'lex')[0])
@@ -87,10 +89,10 @@ class Experiment:
             self.collapse_instances = count_inst
                 
         # finalize data
-        self.count_experiment(experiment_data)
+        count_experiment(experiment_data)
     
     
-    def count_experiment(self, experiment_data):
+    def inventory_count(self, experiment_data):
         '''
         Counts experiment data into a dataframe from an
         experiment data dictionary structured as:
@@ -115,25 +117,17 @@ class Experiment:
         
         self.data = pd.DataFrame(counts).fillna(0)
         self.raw_data = experiment_data
-        
-        
-class ExperimentFrame(Experiment):
+       
     
-    '''
-    Identical to Experiment except
-    it builds frames as basis elements.
-    '''
-    
-    def __init__(self, parameters, tf=None, min_observation=10):
-        super().__init__(parameters, tf=tf, min_observation=min_observation)
-        
-    def count_experiment(self, experiment_data):
+    def frame_count(self, experiment_data):
         '''
-        Counts experiment data into a dataframe from an
+        Counts frame experiment data into a dataframe from an
         experiment data dictionary structured as:
         experiment_data[target_token][clause][list_of_bases_tokens]
         
-        *special*: Counts clauses as a single frame.
+        Rather than counting individual instances of bases in a result,
+        the frame_count sorts and assembles all the basis elements into
+        a single string (i.e. "frame") which is then counted.
         
         --input--
         dict
