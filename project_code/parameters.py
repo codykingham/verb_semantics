@@ -13,8 +13,7 @@ import re
 
 params = {}
 
-# TODO: ADD REFERENCE CODES FOR PROPER NAMES
-good_sem_codes = '|'.join(set(f'1\.00100{i}[0-9]*' for i in range(1, 7)) | {'1\.002004\[0-9]*'})
+good_sem_codes = '1\.00[1-3][0-9]*' # SDBH codes: objects, events, referents
 
 def verb_token(target):
     # standard verb target tokenizer
@@ -23,30 +22,61 @@ def verb_token(target):
     return f'{lex}.{vs}'
 
 def code2tag(sem_domain_code):
-    # map sem domain to custom values 
-    #TODO: FIX SEM CODES
-    good_codes = good_sem_codes['good_codes']
-    code = re.findall(good_codes, sem_domain_code)[0][:8]
-    if code == '1.001001':
+    '''
+    Maps SDBH semantic domains to three basic codes:
+    animate, inanimate, and events. These codes are
+    of interest to the semantic content of a verb.
+    '''
+
+    code = next(re.findall(good_sem_codes, sem_domain_code))
+    
+    animate = '|'.join(('1\.001001[0-9]*', 
+                        '1\.00300100[3,5-6]', 
+                        '1\.00300101[0,3]'))   
+    inanimate = '|'.join(('1\.00100[2-6][0-9]*',
+                          '1\.00300100[1-2, 4, 7-9]',
+                          '1\.00300101[1-2]'))
+    events = '|'.join(('1\.002[1-9]*',
+                       '1\.003002[1-9]*'))
+    
+    if re.search(animate, code):
         return 'animate'
-    elif code in set(f'1.00100{i}' for i in range(2, 7)):
+    elif re.search(inanimate, code):
         return 'inanimate'
-    elif code == '1.002004':
+    elif re.search(events, code):
         return 'event'
     
-def sem_domain_tokens(basis, target):
+def domainer(basis, target):
     # basis tokenizer for semantic domains
     sem_category = code2tag(F.sem_domain_code.v(basis))
-    function = F.function.v(L.u(basis, 'phrase')[0])
-    return f'{function}.{sem_category}'
+    return sem_category
+
+def prep_o_domainer(basis, target):
+    # makes prep_domain + prep_obj_domain tokens
+    prep_obj = E.prep_obj.f(basis)[0]
+    prep_o_domain = code2tag[F.sem_domain_code.v(prep_obj)]
+    return f'{F.lex.v(basis)}_{prep_o_domain}'
 
 def lexer(basis, target):
     # basis tokenizer for simple lexemes
     return F.lex.v(basis)
+
+def prep_o_lexer(basis, target):
+    # makes prep_lex + prep_obj_lex token
+    prep_obj = E.prep_obj.f(basis)[0]
+    return f'{F.lex.v(basis)}_{F.lex.v(prep_obj)}'
     
 def nuller(basis, target):
     # basis tokenizer for blank values
     return 'ø'
+
+def functioner(basis, target):
+    # function basis tokens
+    return F.function.v(basis)
+
+def relationer(basis, target):
+    # clause relation basis tokens
+    return F.rela.v(basis)
 
 # standard predicate target template
 pred_target = '''
@@ -69,7 +99,7 @@ all_preds = 'Pred|PreO|PresS|PtcO'
 
 
 
-# \\ 1.1 Verb Inventory, Subjects, lexemes
+# 1.1 Verb Inventory, Subjects, lexemes
 
 vi_s_nsd = pred_target.format(basis='''
 
@@ -86,7 +116,7 @@ params['vbi_s_lex'] = (
 
 
 
-# \\ 1.2 Verb Inventory, Subjects, Semantic Domains
+# 1.2 Verb Inventory, Subjects, Semantic Domains
 
 vi_s_sd = pred_target.format(basis=f'''
 
@@ -103,7 +133,7 @@ params['vbi_s_domain'] = (
 
 
 
-# \\ 2.1 Verb Inventory, Objects, Presence/Absence
+# 2.1 Verb Inventory, Objects, Presence/Absence
 
 vi_o_pa = pred_target.format(basis='''
 
@@ -153,7 +183,7 @@ params['vbi_o_pa'] = (
 
 
 
-# \\ 2.2, Verb Inventory, Objects, Lexemes
+# 2.2, Verb Inventory, Objects, Lexemes
 
 vi_o_lex_np = pred_target.format(basis='''
 
@@ -180,7 +210,7 @@ params['vbi_o_lex'] = (
 
 
 
-# \\ 2.3, Verb Inventory, Objects, Semantic Domains
+# 2.3, Verb Inventory, Objects, Semantic Domains
 
 vi_o_sd_np = pred_target.format(basis=f'''
 
@@ -200,14 +230,14 @@ vi_o_sd_pp = pred_target.format(basis=f'''
 )
 
 params['vbi_o_domain'] = (
-                             (vi_o_sd_np, None, 2, (4,), verb_token, sem_domain_tokens, False),
-                             (vi_o_sd_pp, None, 2, (5,), verb_token, sem_domain_tokens, False)
+                             (vi_o_sd_np, None, 2, (4,), verb_token,  domainer, False),
+                             (vi_o_sd_pp, None, 2, (5,), verb_token, domainer, False)
                          )
 
 
 
 
-# \\ 3.1, Verb Inventory, Complements, Presence/Absence
+# 3.1, Verb Inventory, Complements, Presence/Absence
 
 vi_cmp_pa = pred_target.format(basis='''
 
@@ -225,12 +255,6 @@ c2:clause rela=Cmpl
 
 vi_cmp_pa_null = pred_funct.format(basis='', pred_funct='Pred|PreO|PresS|PtcO')
 
-def simple_cmpl_funct(basis, target):
-    return F.function.v(basis)
-
-def simple_cmpl_rela(basis, target):
-    return F.rela.v(basis)
-
 def notexist_cmpl(results):
     # checks for non-existing complements within and between clauses
     results = [r for r in results
@@ -239,15 +263,15 @@ def notexist_cmpl(results):
               ]
 
 params['vbi_cmpl_pa'] = (
-                            (vi_cmp_pa, None, 2, (3,), verb_token, simple_cmpl_funct, True),
-                            (vi_cmp_pa_clRel, None, 2, (3,), verb_token, simple_cmpl_rela, True),
+                            (vi_cmp_pa, None, 2, (3,), verb_token, functioner, True),
+                            (vi_cmp_pa_clRel, None, 2, (3,), verb_token, relationer, True),
                             (vi_cmp_pa_null, notexist_cmpl, 3, (3,), verb_token, nuller, True)
                         )
 
 
 
 
-# \\ 3.2, Verb Inventory, Complements, Lexemes
+# 3.2, Verb Inventory, Complements, Lexemes
 vi_cmpl_lex_pp = pred_target.format(basis='''
 
     phrase function=Cmpl typ=PP
@@ -272,14 +296,9 @@ c2:clause rela=Cmpl
 c2 -mother> c1
 
 ''')
-
-def prep_lexer(basis, target):
-    # makes prep_lex + prep_obj_lex token
-    prep_obj = E.prep_obj.f(basis)[0]
-    return f'{F.lex.v(basis)}_{F.lex.v(prep_obj)}'
     
 params['vbi_cmpl_lex'] = (
-                             (vi_cmpl_lex_pp, None, 2, (4,), verb_token, prep_lexer, False),
+                             (vi_cmpl_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
                              (vi_cmpl_lex_np, None, 2, (4,), verb_token, lexer, False),
                              (vi_cmpl_lex_clRela, None, 2, (5,), verb_token, lexer, False)
                          )
@@ -288,3 +307,226 @@ params['vbi_cmpl_lex'] = (
 
 
 # 3.3, Verb Inventory, Complements, Semantic Domains
+vi_cmpl_sd_pp = pred_target.format(basis=f'''
+
+    phrase function=Cmpl typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp~^(?!prep) sem_domain_code~{good_sem_codes}
+
+''', pred_funct=all_preds)
+
+vi_cmpl_sd_np = pred_target.format(basis=f'''
+
+    phrase function=Cmpl typ=NP|PrNP|AdvP
+        -heads> word sem_domain_code~{good_sem_codes}
+
+''', pred_funct=all_preds)
+
+vi_cmpl_sd_clRela = pred_target.format(basis=f'''
+
+c2:clause rela=Cmpl
+    phrase typ=VP
+    -heads> word pdp=verb sem_domain_code~{good_sem_codes}
+    
+c2 -mother> c1
+
+''')
+    
+params['vbi_cmpl_domain'] = (
+                                 (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
+                                 (vi_cmpl_sd_np, None, 2, (4,), verb_token, domainer, False),
+                                 (vi_cmpl_sd_clRela, None, 2, (5,), verb_token, domainer, False)
+                             )
+
+
+
+
+# 4.1, Verb Inventory, Adjuncts +(Location, Time, PrAd), Presence/Absence
+
+vi_adj_pa = pred_target.format(basis='''
+
+    phrase function=Adju|Time|Loca|PrAd
+
+''', pred_funct=all_preds)
+
+vi_adj_pa_clRel = pred_target.format(basis='''
+
+c2:clause rela=Adju|PrAd
+    c1 <mother- c2
+    
+''', pred_funct=all_preds)
+
+
+vi_adj_pa_null = pred_funct.format(basis='', pred_funct='Pred|PreO|PresS|PtcO')
+
+def notexist_adj(results):
+    # checks for non-existing complements within and between clauses
+    results = [r for r in results
+                  if not {'Adju', 'Time', 'Loca', 'PrAd'} & set(F.function.v(ph) for ph in L.d(r[0], 'phrase'))
+                  and not {'Adju', 'PrAd'} & set(F.rela.v(cl) for cl in E.mother.t(r[0]))
+              ]
+
+params['vbi_adj+_pa'] = (
+                            (vi_adj_pa, None, 2, (3,), verb_token, functioner, True),
+                            (vi_adj_pa_clRel, None, 2, (3,), verb_token, relationer, True),
+                            (vi_adj_pa_null, notexist_adj, 3, (3,), verb_token, nuller, True)
+                        )
+
+
+
+
+# 4.2, Verb Inventory, Adjuncts+, Lexemes
+
+vi_adj_lex_pp = pred_target.format(basis='''
+
+    phrase function=Adju|Time|Loca|PrAd typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp~^(?!prep)
+
+''', pred_funct=all_preds)
+
+vi_adj_lex_np = pred_target.format(basis='''
+
+    phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
+        -heads> word
+
+''', pred_funct=all_preds)
+
+vi_adj_lex_clRela = pred_target.format(basis='''
+
+c2:clause rela=Adju|PrAd
+    phrase typ=VP
+    -heads> word pdp=verb
+    
+c2 -mother> c1
+
+''')
+    
+params['vbi_adj+_lex'] = (
+                             (vi_adj_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
+                             (vi_adj_lex_np, None, 2, (4,), verb_token, lexer, False),
+                             (vi_adj_lex_clRela, None, 2, (5,), verb_token, lexer, False)
+                         )
+
+
+
+
+# 4.3, Verb Inventory, Adjuncts+, Semantic Domains
+
+vi_adj_sd_pp = pred_target.format(basis=f'''
+
+    phrase function=Adju|Time|Loca|PrAd typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp~^(?!prep) sem_domain_code~{good_sem_codes}
+
+''', pred_funct=all_preds)
+
+vi_adj_sd_np = pred_target.format(basis=f'''
+
+    phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
+        -heads> word sem_domain_code~{good_sem_codes}
+
+''', pred_funct=all_preds)
+
+vi_adj_sd_clRela = pred_target.format(basis=f'''
+
+c2:clause rela=Adju|PrAd
+    phrase typ=VP
+        -heads> word pdp=verb sem_domain_code~{good_sem_codes}
+    
+c2 -mother> c1
+
+''')
+
+    
+params['vbi_adj+_domain'] = (
+                                 (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
+                                 (vi_adj_sd_np, None, 2, (4,), verb_token, domainer, False),
+                                 (vi_adj_sd_clRela, None, 2, (5,), verb_token, domainer, False)
+                            )
+
+
+
+# 5.1, Verb Frames, All Arguments, Lexemes
+
+vf_allarg_lex_np = pred_target.format(basis='''
+
+    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
+        -heads> word
+
+''', pred_funct='Pred|PreS')
+
+vf_allarg_lex_pp = pred_target.format(basis='''
+
+    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp~^(?!prep)
+
+''', pred_funct='Pred|PreS')
+
+params['vf_arg_lex_all'] = (
+                               (vf_arg_lex_np, None, 2, (4,), verb_token, lexer, False),
+                            )
+
+
+# 6.1, Verb Inventory, Parallelism, Lexemes
+
+poetry = '|'.join(F.book.v(book) for book in F.otype.s('book') if 426595<book<426618) # Isaiah-Lamentations
+
+vi_par_lex_AB = '''
+
+book book={poetry}
+    verse
+        half_verse label={half1}
+            == clause domain=D|Q
+                == clause_atom
+                phrase function=Pred|PreS|PreO|PtcO
+                    target:word pdp=verb
+
+        half_verse label={half2}
+            == clause domain=D|Q
+                == clause_atom
+                phrase function=Pred|PreS|PreO|PtcO
+                    basis:word pdp=verb
+            
+lex freq_lex>9
+   lexword:word 
+   lexword = target
+'''.format(poetry=poetry, half1='A', half2='B')
+
+
+vi_par_lex_BC = vi_par_lex_AB.format(poetry=poetry, half1='B', half2='C')
+
+
+def close_length(clause1, clause2):
+    '''
+    Checks the length of 2 clauses for
+    proximity in word-length. 
+    '''
+    min_proximity = 3
+    len_cl1 = len(L.d(clause1, 'word'))
+    len_cl2 = len(L.d(clause2, 'word'))
+    return abs(len_cl1 - len_cl2) <= min_proximity
+    
+def independent(clauseAt1, clauseAt2):
+    '''
+    Checks clause atom rela codes to ensure
+    that both clauses are independent.
+    '''
+    ind_codes = list(range(100, 168)) + list(range(200, 202))\
+                + list(range(400, 488))
+    
+    return all([F.code.v(clauseAt1) in ind_codes,
+                F.code.v(clauseAt2) in ind_codes])
+
+def parallelism_filter(results):
+    # filters for parallelisms
+    results = [r for r in results 
+                   if close_length(r[3], r[8])
+                   and independent(r[4], r[9])]
+    return results
+    
+params['vbi_par_lex'] = (
+                            (vi_par_lex_AB, parallelism_filter, 6, (11,), verb_token, lexer, False),
+                            (vi_par_lex_BC, parallelism_filter, 6, (11,), verb_token, lexer, False)
+                        )
