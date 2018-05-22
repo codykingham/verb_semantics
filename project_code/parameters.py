@@ -1,17 +1,31 @@
 '''
 This module contains a set of 
 experiment parameters that will be
-fed to the experiments2 version Experiment
-classes to construct target and basis elements.
-These searches are the primary object of phase 3,
+fed to the experiments2 classes 
+to construct target and basis elements.
+These searches are the primary task of phase 3,
 in which I seek the most informative features 
 for verb clustering.
+
+Each parameter consists of the following arguments:
+(template, target_i, (bases_i's,), target_tokenizer, bases_tokenizer, collapse_instance)
+
+template - string of a Text-Fabric search template
+target_i - index of a target word in search result
+bases_i's - tuple of basis indices in search result
+target_tokenizer - function to convert target node into string 
+basis_tokenizer - function to convert bases nodes into strings
+collapse_instance - T/F on whether to count multiple instances of a basis token within a clause
 '''
 
-from __main__ import F, E, T, L, S # Text-Fabric methods
 import re
+from __main__ import F, E, T, L, S # Text-Fabric methods
 
-params = {}
+params = {} # all parameters stored here
+
+
+# - - - - - - General Functions - - - - - - -
+
 
 good_sem_codes = '1\.00[1-3][0-9]*' # SDBH codes: objects, events, referents
 
@@ -542,12 +556,26 @@ params['vf_argAll_domain'] = (
 
 
 
-# 6.1, Verb Inventory, Parallelism, Lexemes
+# TODO: 7.1, Verb Frame, Complements, Presence/Absence
+# TODO: 7.2, Verb Frame, Complements, Lexemes
+# TODO: 7.3, Verb Frame, Complements, Semantic Domains
+
+
+
+
+# TODO: 8.1, Verb Frame, Adjuncts, Presence/Absence
+# TODO: 8.2, Verb Frame, Adjuncts, Lexemes
+# TODO: 8.3, Verb Frame, Adjuncts, Semantic Domains
+
+
+
+
+# 9.1, Verb Discourse, Parallelism, Lexemes
 
 poetry = '|'.join(F.book.v(book) for book in F.otype.s('book') 
                       if 426595 < book < 426618) # Isaiah-Lamentations
 
-vi_par_lex = '''
+vd_par_lex = '''
 
 book book={poetry}
     verse
@@ -569,8 +597,8 @@ lex freq_lex>9
    
 '''
 
-vi_par_lex_AB = vi_par_lex.format(poetry=poetry, half1='A', half2='B')
-vi_par_lex_BC = vi_par_lex.format(poetry=poetry, half1='B', half2='C')
+vd_par_lex_AB = vd_par_lex.format(poetry=poetry, half1='A', half2='B')
+vd_par_lex_BC = vd_par_lex.format(poetry=poetry, half1='B', half2='C')
 
 
 def close_length(clause1, clause2):
@@ -601,7 +629,15 @@ def parallelism_filter(results):
                    and independent(r[4], r[9])]
     return results
     
-params['vbi_par_lex'] = (
-                            (vi_par_lex_AB, parallelism_filter, 6, (11,), verb_token, lexer, False),
-                            (vi_par_lex_BC, parallelism_filter, 6, (11,), verb_token, lexer, False)
-                        )
+params['vd_par_lex'] = (
+                           (vi_par_lex_AB, parallelism_filter, 6, (11,), verb_token, lexer, False),
+                           (vi_par_lex_BC, parallelism_filter, 6, (11,), verb_token, lexer, False)
+                       )
+
+
+
+
+# TODO: 10.1, Verb Discourse, Context, Window-2 Content words
+# TODO: 10.2, Verb Discourse, Context, Clause Content Words
+# TODO: 10.3, Verb Discourse, Context, Mother-Daughter Chain Content Words
+# TODO: 10.4, Verb Discourse, Context, Chapter Content Words
