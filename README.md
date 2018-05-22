@@ -1,5 +1,5 @@
-# Verb Semantics
-## An Empirical, Text-Linguistic Approach
+# Natural Verb Clusters in Biblical Hebrew 
+## An Empirical, Text-Linguistic Approach to the Verb's Semantic Categorization
 
 New description coming soon. This project is entering into phase 3. See [phase 2 readme](phase2/readme.md) for a description of the next steps.
 
