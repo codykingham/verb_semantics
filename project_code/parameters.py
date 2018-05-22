@@ -447,7 +447,50 @@ params['vbi_adj+_domain'] = (
 
 
 
-# 5.1, Verb Frames, All Arguments, Lexemes
+
+# 5.2, Verb Frames, All Arguments, Presence/Absence
+
+vf_allarg_pa_np = pred_target.format(basis='''
+
+    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
+
+''', pred_funct=all_preds)
+
+vf_allarg_pa_pp = pred_target.format(basis='''
+
+    phrase function=Cmpl|Adju|Time|Loca|PrAd typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp~^(?!prep)
+
+''', pred_funct=all_preds)
+
+vf_allarg_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
+
+vf_allarg_pa_null = pred_target.format(basis='', pred_funct=all_preds)
+
+def prep_o_functioner(basis, target):
+    # builds prep_lex + function basis tokens
+    prep_lex = F.lex.v(basis)
+    basis_function = F.function.v(L.u(basis, 'phrase')[0])
+    return f'{prep_lex}_{basis_function}'
+
+def notexist_allargs(results):
+    all_args = {'Objc', 'Cmpl', 'Adju', 'Time', 'Loca', 'PrAd', 'Rela'}
+    results = [r for r in results
+                  if not all_args & set(F.function.v(ph) for ph in L.d(r[0], 'phrase'))
+                  and not all_args & set(F.rela.v(cl) for cl in E.mother.t(r[0]))]
+    return results
+
+params['vf_argAll_pa'] = (
+                              (vf_allarg_pa_np, None, 2, (3,), verb_token, functioner, False),
+                              (vf_allarg_pa_pp, None, 2, (4,), verb_token, prep_o_functioner, False),
+                              (vf_allarg_pa_suffix, None, 2, (2,), verb_token, simple_object, False),
+                              (vf_allarg_pa_null, notexist_allargs, 2, (2,), verb_token, nuller, False)
+                          )
+
+
+
+# 5.2, Verb Frames, All Arguments, Lexemes
 
 vf_allarg_lex_np = pred_target.format(basis='''
 
@@ -464,16 +507,47 @@ vf_allarg_lex_pp = pred_target.format(basis='''
 
 ''', pred_funct='Pred|PreS')
 
-params['vf_arg_lex_all'] = (
-                               (vf_arg_lex_np, None, 2, (4,), verb_token, lexer, False),
-                            )
+
+
+params['vf_argAll_lex'] = (
+                              (vf_allarg_lex_np, None, 2, (4,), verb_token, lexer, False),
+                              (vf_allarg_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
+                          )
+
+
+
+
+# 5.3, Verb Frames, All Arguments, Semantic Domains
+
+vf_allarg_sd_np = pred_target.format(basis=f'''
+
+    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
+        -heads> word sem_domain_code~{good_sem_codes}
+
+''', pred_funct='Pred|PreS')
+
+vf_allarg_sd_pp = pred_target.format(basis=f'''
+
+    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp~^(?!prep) sem_domain_code~{good_sem_codes}
+
+''', pred_funct='Pred|PreS')
+
+params['vf_argAll_domain'] = (
+                                (vf_allarg_sd_np, None, 2, (4,), verb_token, domainer, False),
+                                (vf_allarg_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
+                             )
+
+
 
 
 # 6.1, Verb Inventory, Parallelism, Lexemes
 
-poetry = '|'.join(F.book.v(book) for book in F.otype.s('book') if 426595<book<426618) # Isaiah-Lamentations
+poetry = '|'.join(F.book.v(book) for book in F.otype.s('book') 
+                      if 426595 < book < 426618) # Isaiah-Lamentations
 
-vi_par_lex_AB = '''
+vi_par_lex = '''
 
 book book={poetry}
     verse
@@ -492,10 +566,11 @@ book book={poetry}
 lex freq_lex>9
    lexword:word 
    lexword = target
-'''.format(poetry=poetry, half1='A', half2='B')
+   
+'''
 
-
-vi_par_lex_BC = vi_par_lex_AB.format(poetry=poetry, half1='B', half2='C')
+vi_par_lex_AB = vi_par_lex.format(poetry=poetry, half1='A', half2='B')
+vi_par_lex_BC = vi_par_lex.format(poetry=poetry, half1='B', half2='C')
 
 
 def close_length(clause1, clause2):
