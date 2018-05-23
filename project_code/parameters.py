@@ -703,7 +703,7 @@ params['inventory']['vd_par_lex'] = (
 
 # 10.1, Verb Discourse, Context, Window-2 Content words
 
-content_words = 'subs|nmpr|verb|advb|adjv'
+content_words = {'subs', 'nmpr', 'verb', 'advb', 'adjv'}
 
 vd_con_window = pred_target.format(basis='', pred_funct=all_preds)
 
