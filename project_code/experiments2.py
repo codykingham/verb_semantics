@@ -61,11 +61,10 @@ class Experiment:
         self.target2lex = dict()
         self.target2node = dict()
 
-        for templ, filt, target_i, bases_i, target_tokener, basis_tokener, count_inst in parameters:
+        for search_templ, filt, target_i, bases_i, target_tokener, basis_tokener, count_inst in parameters:
             
             # run search query on template
-            search_template = templ.format(**templ_kw)
-            sample = sorted(S.search(search_template))
+            sample = sorted(S.search(search_templ))
             sample = filt(sample) if filt else sample # filter results for not-exist type queries
 
             # make target token
@@ -140,6 +139,7 @@ class Experiment:
         
         for target, clauses in experiment_data.items():
             for clause, bases in clauses.items():
+                bases = bases if not self.collapse_instances else set(bases)
                 frame = '|'.join(sorted(bases))
                 ecounts[target][frame] += 1
                 
