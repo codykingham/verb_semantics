@@ -22,7 +22,7 @@ However, the rejection of the form-to-function method, or at least its undergird
 
 The branch of cognitive linguistics which makes use of a form-to-function philosophy has taken a different moniker: empirical cognitive linguistics (Geeraerts 2010; Gries and Divjak 2010; Levshina and Heylen 2014). Like the Scheider school of form-to-function methodology, empirical cognitive linguistics seeks to utilize explicit, corpus-driven data rather than introspection for its conclusions. This likewise employs distributional statistics. This present study likewise adopts the term "empirical" with respect to the question of the Hebrew verb's semantic categorization.
 
-*[to be continued]*   
+*[to be continued; bibliography to follow]*   
 
 ### Data
 The data used for the analysis is the [ETCBC](http://www.etcbc.nl)'s [BHSA](https://github.com/ETCBC/bhsa) in [Text-Fabric representation](https://github.com/Dans-labs/text-fabric/wiki). 
