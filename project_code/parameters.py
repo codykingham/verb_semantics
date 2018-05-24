@@ -48,6 +48,7 @@ def code2tag(sem_domain_code):
     code = re.findall(long_sem, sem_domain_code) or\
            re.findall(short_sem, sem_domain_code)
     code = code[0]
+
     
     animate = '|'.join(('1\.001001[0-9]*', 
                         '1\.00300100[3,5-6]', 
@@ -106,7 +107,7 @@ def relationer(basis, target):
 pred_target = '''
 c1:clause
     phrase function={pred_funct}
-        target:word pdp=verb
+        target:word pdp=verb language=Hebrew
 
 {basis}
 
@@ -125,7 +126,7 @@ all_preds = 'Pred|PreO|PresS|PtcO'
 
 # 1.1 Verb Inventory, Subjects, lexemes
 
-vi_s_nsd = pred_target.format(basis='''
+vi_s_lex = pred_target.format(basis='''
 
     phrase typ=NP|PrNP function=Subj
         -heads> word pdp=subs|nmpr
@@ -134,7 +135,7 @@ vi_s_nsd = pred_target.format(basis='''
 )
 
 params['inventory']['vi_s_lex'] = (
-                                      (vi_s_nsd, None, 2, (4,), verb_token, lexer, False),
+                                      (vi_s_lex, None, 2, (4,), verb_token, lexer, False),
                                   )
 
 
@@ -151,7 +152,7 @@ vi_s_sd = pred_target.format(basis=f'''
 )
 
 params['inventory']['vi_s_domain'] = (
-                                         (vi_s_nsd, None, 2, (4,), verb_token, domainer, False),
+                                         (vi_s_sd, None, 2, (4,), verb_token, domainer, False),
                                      )
 
 
@@ -647,7 +648,7 @@ book book={poetry}
             == clause domain=D|Q
                 == clause_atom
                 phrase function=Pred|PreS|PreO|PtcO
-                    target:word pdp=verb
+                    target:word pdp=verb language=Hebrew
 
         half_verse label={half2}
             == clause domain=D|Q
