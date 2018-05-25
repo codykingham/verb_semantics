@@ -27,7 +27,7 @@ params = collections.defaultdict(dict) # all parameters stored here
 # - - - - - - General Functions - - - - - - -
 
 
-good_sem_codes = '1\.00[1-3][0-9]*' # SDBH codes: objects, events, referents
+good_sem_codes = '1\.00[1-3][0-9]*|2\.[0-9]*' # SDBH codes: objects, events, referents, contexts
 
 def verb_token(target):
     # standard verb target tokenizer
@@ -35,7 +35,7 @@ def verb_token(target):
     lex = F.lex.v(target)
     return f'{lex}.{vs}'
 
-def code2tag(sem_domain_code):
+def code2tag(code):
     '''
     Maps SDBH semantic domains to three basic codes:
     animate, inanimate, and events. These codes are
@@ -43,33 +43,41 @@ def code2tag(sem_domain_code):
     '''
 
     # get best code; more specific ones first
-    long_sem = '1\.00[1-3][0-9][0-9]*'
-    short_sem = '1\.00[1-3][0-9]*'
-    code = re.findall(long_sem, sem_domain_code) or\
-           re.findall(short_sem, sem_domain_code)
-    code = code[0]
+#    pref_code = '1\.001[0-9]*|2\.075[0-9]*' # prefer object codes + a custom code for human matches
+#    long_sem = '1\.00[1-3][0-9][0-9]*' # prefer longer codes
+#    short_sem = '1\.00[1-3][0-9]*'
+#    frame_code = '2\.[0-9]*' # last resort, there are only a few of these in the dataset
+#    code = re.findall(pref_code, sem_domain_code) or\
+#           re.findall(long_sem, sem_domain_code) or\
+#           re.findall(short_sem, sem_domain_code) or\
+#            re.findall(frame_code, sem_domain_code)
+#    
+#    code = code[0]
 
     
     animate = '|'.join(('1\.001001[0-9]*', 
-                        '1\.00300100[3,5-6]', 
-                        '1\.00300101[0,3]'))   
+                        '1\.00300100[3,6]', 
+                        '1\.00300101[0,3]',
+                        '2\.075[0-9]*'
+                       ))
     inanimate = '|'.join(('1\.00100[2-6][0-9]*',
                           '1\.00300100[1-2, 4, 7-9]',
                           '1\.00300101[1-2]',
                           '1\.00[1,3]$',
-                          '1\.003001'))
-    events = '|'.join(('1\.002[1-9]*',
-                       '1\.003002[1-9]*',
-                       '1\.002$'))
+                          '1\.003001', 
+                          '1\.002[1-9]*', # <- events counted as inanimate(as of 25 May 2018)
+                          '1\.003002[1-9]*', # event references
+                          '1\.002$', # events, shortform
+                          '1\.003001005', # names of groups (!)
+                          '2\.[0-9]*' # frames
+                         ))
     
     if re.search(animate, code):
         return 'animate'
     elif re.search(inanimate, code):
         return 'inanimate'
-    elif re.search(events, code):
-        return 'event'
     else:
-        raise Exception(sem_domain_code, code)
+        raise Exception(code)
     
 def domainer(basis, target):
     # basis tokenizer for semantic domains

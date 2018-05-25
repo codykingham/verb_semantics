@@ -60,12 +60,15 @@ class Experiment:
         self.target2gloss = dict()
         self.target2lex = dict()
         self.target2node = dict()
+        self.basis2clause = collections.defaultdict(list)
+        self.queryresults = list()
 
         for search_templ, filt, target_i, bases_i, target_tokener, basis_tokener, count_inst in parameters:
             
             # run search query on template
             sample = sorted(S.search(search_templ))
             sample = filt(sample) if filt else sample # filter results for not-exist type queries
+            self.queryresults.append(sample)
 
             # make target token
             for specimen in sample:
@@ -111,6 +114,10 @@ class Experiment:
                 bases = bases if not self.collapse_instances else set(bases)
                 ecounts[target].update(bases)
                 
+                # helper data for tracing back a feature to its clauses
+                for basis in bases:
+                    self.basis2clause[basis].append((clause,)) # tupled for B.show
+                
         counts = dict((target, counts) for target, counts in ecounts.items()
                                 if sum(counts.values()) >= self.min_obs)
         
@@ -143,6 +150,9 @@ class Experiment:
                 frame = '|'.join(sorted(bases))
                 ecounts[target][frame] += 1
                 
+                # helper data for tracing back a feature to its clauses
+                self.basis2clause[frame].append((clause,)) # tupled for B.show
+                 
         counts = dict((target, counts) for target, counts in ecounts.items()
                                 if sum(counts.values()) >= self.min_obs)
         
