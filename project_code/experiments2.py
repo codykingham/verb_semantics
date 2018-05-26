@@ -56,7 +56,7 @@ class Experiment:
         self.collapse_instances = False # count presence/absence of features in a clause, i.e. don't add up multiple instances
         count_experiment = self.inventory_count if not frame else self.frame_count
         
-        # helper data, for SemSpace class
+        # helper data, for mappings between bases and TF data
         self.target2gloss = dict()
         self.target2lex = dict()
         self.target2node = dict()
@@ -83,7 +83,8 @@ class Experiment:
                     basis_token = basis_tokener(basis, target)
                     basis_tokens = (basis_token,) if type(basis_token) == str else basis_token
                     experiment_data[target_token][clause].extend(basis_tokens)
-                    # add helper data 1
+                    
+                    # add helper data 1, basis to results mapping
                     for bt in basis_tokens:
                         self.basis2result[bt].append(specimen)
 

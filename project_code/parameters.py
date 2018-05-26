@@ -816,3 +816,56 @@ def select_chain_words(results):
 params['inventory']['vd_con_chain'] = (
                                           (vd_con_chain, select_chain_words, 2, (-1,), verb_token, multiple_lexer, True),
                                       )
+
+
+
+
+# 10.4, Verb Discourse, Domain, Simple
+
+vd_domain_simple = pred_target.format(basis='', pred_funct=all_preds)
+
+def notexist_unknown_dom(results):
+    # filters out unknown domains
+    results = [r for r in results if F.domain.v(r[0]) != '?']
+    return results
+    
+def discourse_domainer(basis, target):
+    # returns simple domain tag: i.e. N/D/Q
+    return F.domain.v(basis)
+
+params['inventory']['vd_domain_simple'] = (
+                                              (vd_domain_simple, notexist_unknown_dom, 2, (0,), verb_token, discourse_domainer, True),
+                                          )
+
+
+
+
+# 10.5, Verb Discourse, Domain, Embedding
+
+def notexist_unknown_txt(results):
+    # filters out unknown domains
+    results = [r for r in results if '?' not in F.txt.v(r[0])]
+    return results
+    
+def discourse_txter(basis, target):
+    # returns simple domain tag: i.e. N/D/Q
+    return F.txt.v(basis)
+
+params['inventory']['vd_domain_embed'] = (
+                                              (vd_domain_simple, notexist_unknown_txt, 2, (0,), verb_token, discourse_txter, True),
+                                          )
+
+
+
+
+# 11.1, Verb Grammar, Tense
+
+vg_tense = pred_target.format(basis='', pred_funct=all_preds)
+
+def tenser(basis, target):
+    # makes tense basis tokens
+    return F.vt.v(basis)
+
+params['inventory']['vg_tense'] = (
+                                      (vg_tense, None, 2, (2,), verb_token, tenser, True),
+                                  )
