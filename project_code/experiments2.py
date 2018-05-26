@@ -62,6 +62,7 @@ class Experiment:
         self.target2node = dict()
         self.basis2clause = collections.defaultdict(list)
         self.queryresults = list()
+        self.basis2result = collections.defaultdict(list)
 
         for search_templ, filt, target_i, bases_i, target_tokener, basis_tokener, count_inst in parameters:
             
@@ -82,8 +83,11 @@ class Experiment:
                     basis_token = basis_tokener(basis, target)
                     basis_tokens = (basis_token,) if type(basis_token) == str else basis_token
                     experiment_data[target_token][clause].extend(basis_tokens)
+                    # add helper data 1
+                    for bt in basis_tokens:
+                        self.basis2result[bt].append(specimen)
 
-                # add helper data
+                # add helper data 2
                 self.target2gloss[target_token] = F.gloss.v(L.u(target, 'lex')[0])
                 self.target2lex[target_token] = L.u(target, 'lex')[0]
                 self.target2node[target_token] = target
