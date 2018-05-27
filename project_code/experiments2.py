@@ -60,20 +60,18 @@ class Experiment:
         self.target2gloss = dict()
         self.target2lex = dict()
         self.target2node = dict()
-        self.basis2clause = collections.defaultdict(list)
-        self.queryresults = list()
-        self.basis2result = collections.defaultdict(list)
+        self.clause2basis2result = collections.defaultdict(lambda: collections.defaultdict(list))
 
         for search_templ, filt, target_i, bases_i, target_tokener, basis_tokener, count_inst in parameters:
             
             # run search query on template
             sample = sorted(S.search(search_templ))
             sample = filt(sample) if filt else sample # filter results for not-exist type queries
-            self.queryresults.append(sample)
 
             # make target token
             for specimen in sample:
-                clause = specimen[0]
+                clause = specimen[0] if F.otype.v(specimen[0]) == 'clause'\
+                             else next(r for r in specimen if F.otype.v(r) == 'clause')
                 target = specimen[target_i]
                 target_token = target_tokener(target)
 
@@ -86,7 +84,7 @@ class Experiment:
                     
                     # add helper data 1, basis to results mapping
                     for bt in basis_tokens:
-                        self.basis2result[bt].append(specimen)
+                        self.clause2basis2result[clause][bt].append(specimen)
 
                 # add helper data 2
                 self.target2gloss[target_token] = F.gloss.v(L.u(target, 'lex')[0])
@@ -119,15 +117,18 @@ class Experiment:
                 bases = bases if not self.collapse_instances else set(bases)
                 ecounts[target].update(bases)
                 
-                # helper data for tracing back a feature to its clauses
-                for basis in bases:
-                    self.basis2clause[basis].append((clause,)) # tupled for B.show
-                
         counts = dict((target, counts) for target, counts in ecounts.items()
                                 if sum(counts.values()) >= self.min_obs)
         
         self.data = pd.DataFrame(counts).fillna(0)
         self.raw_data = experiment_data
+        
+        # assemble helper data: mapping from basis to list of search results
+        self.basis2result = collections.defaultdict(list)
+        for clause, bases in self.clause2basis2result.items():
+            for basis, results in bases.items():
+                for result in results:
+                    self.basis2result[basis].append(result)
        
     
     def frame_count(self, experiment_data):
@@ -149,15 +150,22 @@ class Experiment:
         
         ecounts = collections.defaultdict(lambda: collections.Counter())
         
+        # helper data
+        self.basis2result = collections.defaultdict(list)
+        
         for target, clauses in experiment_data.items():
             for clause, bases in clauses.items():
                 bases = bases if not self.collapse_instances else set(bases)
                 frame = '|'.join(sorted(bases))
                 ecounts[target][frame] += 1
                 
-                # helper data for tracing back a feature to its clauses
-                self.basis2clause[frame].append((clause,)) # tupled for B.show
-                 
+                # helper data; combine all search results into a single result mapped to the frame
+                frame_results = set()
+                for basis, results in self.clause2basis2result[clause].items():
+                    for result in results:
+                        frame_results |= set(result)
+                self.basis2result[frame].append(tuple(frame_results))
+                
         counts = dict((target, counts) for target, counts in ecounts.items()
                                 if sum(counts.values()) >= self.min_obs)
         

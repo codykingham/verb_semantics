@@ -186,7 +186,7 @@ vi_o_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
 vi_o_pa_null = pred_target.format(basis='', pred_funct='Pred|PreS')
 
 def simple_object(basis, target):
-    return 'object'
+    return 'Objc'
 
 def notexist_relative(results):
     '''
@@ -487,7 +487,7 @@ params['inventory']['vi_adj+_domain'] = (
 
 vf_allarg_pa_np = pred_target.format(basis='''
 
-    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
+    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ~^(?!PP)
 
 ''', pred_funct=all_preds)
 
@@ -495,13 +495,18 @@ vf_allarg_pa_pp = pred_target.format(basis='''
 
     phrase function=Cmpl|Adju|Time|Loca|PrAd typ=PP
         -heads> word pdp=prep
-        -prep_obj> word pdp~^(?!prep)
+
+''', pred_funct=all_preds)
+
+vf_allarg_pa_pp_obj = pred_target.format(basis='''
+
+    phrase function=Objc typ=PP
 
 ''', pred_funct=all_preds)
 
 vf_allarg_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
 
-vf_allarg_pa_null = pred_target.format(basis='', pred_funct=all_preds)
+vf_allarg_pa_null = pred_target.format(basis='', pred_funct='Pred|PreS')
 
 def prep_o_functioner(basis, target):
     # builds prep_lex + function basis tokens
@@ -517,10 +522,11 @@ def notexist_allargs(results):
     return results
 
 params['frame']['vf_argAll_pa'] = (
-                                      (vf_allarg_pa_np, None, 2, (3,), verb_token, functioner, True),
-                                      (vf_allarg_pa_pp, None, 2, (4,), verb_token, prep_o_functioner, True),
-                                      (vf_allarg_pa_suffix, None, 2, (2,), verb_token, simple_object, True),
-                                      (vf_allarg_pa_null, notexist_allargs, 2, (2,), verb_token, nuller, True)
+                                      (vf_allarg_pa_np, None, 2, (3,), verb_token, functioner, False),
+                                      (vf_allarg_pa_pp, None, 2, (4,), verb_token, prep_o_functioner, False),
+                                      (vf_allarg_pa_pp_obj, None, 3, (3,), verb_token, functioner, False),
+                                      (vf_allarg_pa_suffix, None, 2, (2,), verb_token, simple_object, False),
+                                      (vf_allarg_pa_null, notexist_allargs, 2, (2,), verb_token, nuller, False)
                                   )
 
 
@@ -536,7 +542,15 @@ vf_allarg_lex_np = pred_target.format(basis='''
 
 vf_allarg_lex_pp = pred_target.format(basis='''
 
-    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=PP
+    phrase function=Cmpl|Adju|Time|Loca|PrAd typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp~^(?!prep)
+
+''', pred_funct='Pred|PreS')
+
+vf_allarg_lex_pp_obj = pred_target.format(basis='''
+
+    phrase function=Objc typ=PP
         -heads> word pdp=prep
         -prep_obj> word pdp~^(?!prep)
 
@@ -553,10 +567,58 @@ def funct_prep_o_lexer(basis, target):
     prep_obj = E.prep_obj.f(basis)[0]
     return f'{function}.{F.lex.v(basis)}_{F.lex.v(prep_obj)}'
 
-
+def notexist_badPhrases(results):
+    '''
+    Filter out clauses with undesirable argument phrases.
+    These are:
+    • Phrases with suffixes (can't measure their lexical referent)
+    • Phrases with bad prepositional objects (have no valid lexical referent)
+    • Phrases with an invalid phrase type (only a handfull of examples).
+    If would be ideal for the Search templates to already have operators
+    where I could explicitly exclude these examples. Those operators, "quantifiers",
+    are currently still in the works.
+    
+    The most efficient way to do this right now is to use templates
+    to find undesirable clause nodes. I do that below and filter the
+    results accordingly.
+    '''
+    
+    suffixed_phrases = S.search('''
+    
+clause
+    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=PP
+    -heads> word pdp=prep prs~^(?!absent)
+    
+    ''', shallow=True)
+    
+    bad_prep_obj = S.search('''
+    
+clause
+     phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp=prep
+    
+    ''', shallow=True)
+    
+    good_types = {'NP', 'PrNP', 'AdvP', 'PP'}
+    bad_types = '|'.join(typ for typ,count in F.typ.freqList(nodeTypes={'phrase'}) if typ not in good_types)
+    
+    bad_phrase_types = S.search(f'''
+    
+clause
+    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ={bad_types}
+    
+    ''', shallow=True)
+    
+    new_results = [r for r in results if r[0] not in suffixed_phrases|bad_prep_obj|bad_phrase_types]
+    
+    return new_results
+    
+    
 params['frame']['vf_argAll_lex'] = (
-                                      (vf_allarg_lex_np, None, 2, (4,), verb_token, funct_lexer, False),
-                                      (vf_allarg_lex_pp, None, 2, (4,), verb_token, funct_prep_o_lexer, False),
+                                      (vf_allarg_lex_np, notexist_badPhrases, 2, (4,), verb_token, funct_lexer, False),
+                                      (vf_allarg_lex_pp_obj, notexist_badPhrases, 2, (4,), verb_token, funct_lexer, False),
+                                      (vf_allarg_lex_pp, notexist_badPhrases, 2, (4,), verb_token, funct_prep_o_lexer, False),
                                    )
 
 
@@ -592,6 +654,10 @@ def funct_prep_o_domainer(basis, target):
     function = F.function.v(L.u(basis, 'phrase')[0])
     return f'{function}.{F.lex.v(basis)}_{prep_o_domain}'
 
+    
+todo: Add a not-exist function for bad frame phrases.
+Even better: figure out a way to do all of this more efficiently
+than I have done above for the allArg_lex arguments. There it has become too verbose I think, but perhaps not.
     
 params['frame']['vf_argAll_domain'] = (
                                           (vf_allarg_sd_np, None, 2, (4,), verb_token, funct_domainer, False),
