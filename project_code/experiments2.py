@@ -62,10 +62,12 @@ class Experiment:
         self.target2node = dict()
         self.clause2basis2result = collections.defaultdict(lambda: collections.defaultdict(list))
 
-        for search_templ, filt, target_i, bases_i, target_tokener, basis_tokener, count_inst in parameters:
+        for search_templ, filt_param, target_i, bases_i, target_tokener, basis_tokener, count_inst in parameters:
             
             # run search query on template
-            sample = sorted(S.search(search_templ))
+            filt = filt_param if type(filt_param) != tuple else filt_param[0] # configure filter function
+            search_sets = None if type(filt_parapm) != tuple else filt_param[1] # configure search sets
+            sample = sorted(S.search(search_templ, sets=search_sets))
             sample = filt(sample) if filt else sample # filter results for not-exist type queries
 
             # make target token
