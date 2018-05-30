@@ -29,7 +29,6 @@ params = collections.defaultdict(dict) # all parameters will be stored here
 
 
 # standard predicate target template
-
 pred_target = '''
 c1:clause
     phrase function={pred_funct}
@@ -172,128 +171,63 @@ def rela_lexer(basis, target):
     return f'{rela}.{F.lex.v(basis)}'
 
 '''
-The following search templates are specialized for
-selecting carefully defined clause relations. These
-templates have been crafted to select elements from the 
-clauses which can easily be lexicalized as basis strings.
-It excludes a small numer of clause relations that cannot 
-easily be lexicalized, such as verbless clauses without conjunction
-elements (i.e. כאשר)
+The following functions, sets, and search templates
+are stock templates for identifyings and processing 
+clauses with relations of either Objc, Adju, or Cmpl.
+These templates and the helper sets/functions filter out
+undesirable clause types like Ellpisis or interrogative clauses.
+These types are "undesirable" because their lexical content is not
+easily captured for lexeme experiments.
 '''
+
+def filterPreC(results):
+    '''
+    Filters results with predicate complement basis
+    from clause types that are not participial.
+    '''
+    new_results = [r for r in results
+                       if not all([re.search('^(?!Ptcp)', F.typ.v(r[3])), F.function.v(r[5]) == 'PreC'])]
+    return new_results
     
+
+# search sets for use with these templates, e.g. S.search(template, sets=RelaSets) 
+RelaSets = {'clauseNoCP' : set(cl for cl in F.otype.s('clause') if 'CP' not in set(F.typ.v(ph) for ph in L.d(cl, 'phrase'))),
+            'phraseNoPrep': set(ph for ph in F.otype.s('phrase') if 'prep' not in set(F.pdp.v(w) for w in L.d(ph, 'word')))}
+    
+# the search templates in this section are for use with the pred_target template
+    
+# TODO: Add PreC requirement
 clR_vc_CP = '''
 
-#target @ 3
-#basis @ 7
-
-s1:sentence
-    c1:clause
-        phrase function={pred_funct}
-            target:word pdp=verb language=Hebrew
-    c2:clause
-        p1:phrase typ=CP
-    p2:phrase
-    
-    either:
-        clause kind=VC rela={relas} typ#Ptcp
-            p3:phrase function=Pred|PreS|PreO
-            p3 = p2
-    or:
-        clause kind=VC rela={relas} typ=Ptcp
-            p3:phrase function=PreC|PtcO
-            p3 = p2
-    end:
-    
+# MUST BE USED WITH filterPreC function
+c2:clause kind=VC rela={relas}
+    phrase typ=CP
+    < phrase function=Pred|PreS|PreO|PtcO|PreC
         basis:word pdp=verb {reqs}
 
-lex freq_lex>9
-   lexword:word 
-   lexword = target
-
 c1 <mother- c2
-c2 [[ p2
-p1 < p2
 '''
 
+# TODO: Add PreC requirement
 clR_vc_prep = '''
 
-#target @ 3
-#basis @ 7
-
-s1:sentence
-    c1:clause
-        phrase function={pred_funct}
-            target:word pdp=verb language=Hebrew
-    c2:clause
-        no:
-            ^ phrase typ=CP
-        end:
-    p2:phrase
-    
-    either:
-        clause kind=VC rela={relas} typ#Ptcp
-            p3:phrase function=Pred|PreS|PreO
-            p3 = p2
-    or:
-        clause kind=VC rela={relas} typ=Ptcp
-            p3:phrase function=PreC|PtcO
-            p3 = p2
-    end:
-    
+# MUST BE USED WITH filterPreC function
+c2:clauseNoCP kind=VC rela={relas}
+    phrase function=Pred|PreS|PreO|PtcO|PreC
         word pdp=prep
-        basis:word pdp=verb {reqs} 
-
-lex freq_lex>9
-   lexword:word 
-   lexword = target
+        basis:word pdp=verb {reqs}
 
 c1 <mother- c2
-c2 [[ p2
 '''
 
 clR_vc_verb = '''
 
-#target @ 3
-#basis @ 6
-
-s1:sentence
-    c1:clause
-        phrase function={pred_funct}
-            target:word pdp=verb language=Hebrew
-    c2:clause
-        no:
-            ^ phrase typ=CP
-        end:
-        no:
-            ^ word pdp=prin|inrg
-        end:
-        
-    p2:phrase
-    
-either:
-    clause kind=VC rela={relas} typ#Ptcp
-        p3:phrase function=Pred|PreS|PreO
-            no:
-                ^ word pdp=prep
-            end:
-        p3 = p2
-or:
-    clause kind=VC rela={relas} typ=Ptcp
-        p3:phrase function=PreC|PtcO
-            no:
-                ^ word pdp=prep
-            end:
-        p3 = p2
-end:
-    
+# MUST BE USED WITH filterPreC function
+c2:clauseNoCP kind=VC rela={relas}
+    phraseNoPrep function=Pred|PreS|PreO|PtcO|PreC
         basis:word pdp=verb {reqs}
 
-lex freq_lex>9
-   lexword:word 
-   lexword = target
-
 c1 <mother- c2
-c2 [[ p2
 '''
 
 clR_nc_CP = '''
@@ -894,12 +828,12 @@ params['frame']['vf_argAll_pa'] = (
 
 # 5.2, Verb Frames, All Arguments, Lexemes
 
-vf_allarg_lex_np = pred_target.format(basis='''
+vf_allarg_lex_np = pred_targetVFl.format(basis='''
     phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
         -heads> word
 ''', pred_funct='Pred|PreS')
 
-vf_allarg_lex_pp = pred_target.format(basis='''
+vf_allarg_lex_pp = pred_targetVFl.format(basis='''
     phrase function=Cmpl|Adju|Time|Loca|PrAd typ=PP
         -heads> word pdp=prep
         -prep_obj> word
@@ -962,64 +896,62 @@ combines this filter with another, filterPreC, which is required for the first
 three clause relation patterns.
 '''
     
-params = ((vf_args_cr_vc_CP, filterPreC),
-          (vf_args_cr_vc_prep, filterPreC),
-          (vf_args_cr_vc_verb, filterPreC),
-          (vf_args_cr_nc_CP, None),
-          (vf_args_cr_nc_Prec_adv, None),
-          (vf_args_cr_nc_Prec_prep, None))
 
-def get_goodDaughters(params):
+vf_args_lex_templates = (vf_args_cr_vc_CP,
+                         vf_args_cr_vc_prep,
+                         vf_args_cr_vc_verb, 
+                         vf_args_cr_nc_CP, 
+                         vf_args_cr_nc_Prec_adv,
+                         vf_args_cr_nc_Prec_prep)
+
+def goodClauseSets(templates, daughter_relas):
     '''
     Runs all of the experiments
     and maps acceptable daughters
     to a dictionary by their relation.
+    Outputs a set of good clauses.
+    To be used with TF search
+    quantifiers.
     '''
     goodDaughters = collections.defaultdict(set)
-    covered_clauses = set()
-    for template, filt in params:
-        results = [r for r in S.search(template, sets=sets)]
-        results = results if not filt else filt(results)
-        for res in results:
-            rela = F.rela.v(res[3])
-            good_Daughters[rela].add(res[3])
-    return goodDaughters
-
-goodDaughters = get_goodDaughters(params)
-
-def filterAllClauses(results):
-    '''
-    Applies the goodDaughters dict
-    as a filter. All applicable daughteres
-    for a given clause must be validated.
-    '''
-    new_results = []
-    for res in results:
-        mother = res[0]
-        daughters = [d for d in E.mother.t(mother) if F.rela.v(r) in {'Objc', 'Adju', 'Cmpl'}]
-        daught_is_good = [d in goodDaughters[F.rela.v(d)] for d in daughters]
-        if all(daught_is_good):
-            new_results.append(res)
+    goodSets = set()
     
-def filterRela(results):
+    # run templates; gather daughters
+    for template in templates:
+        results = list(S.search(template))
+        for result in results:
+            good_daughters[F.rela.v(result[3])].add(result[3])
+    
+    # run master template to gather all good clauses
+    # good clause is any clause who has all approved daughters
+    for mclause, dclause in list(S.search(f'c1:clause \n<mother-c2:clause rela={daughter_relas}')):
+        daughters_good = [d in goodDaughters[F.rela.v(d)] for d in E.mother.t(mclause)]
+        if all(daughters_good):
+            goodSets.add(mclause)
+        
+    goodSets |= PUT NO RELATION CLAUSE SEARCH TEMPLATE HERE
+    
+    return goodSets
+    
+goodFrameClauseLex_set = goodClauseSets(vf_args_lex_templates, 'Objc|Adju|Cmpl') # create the sets
+    
+def FrameArgsClauseLex(results):
     '''
     Applies both the daughter filter
     and the PreC filter.
     '''
-    new_results = filterPreC(results)
-    new_results2 = filterAllClauses(new_results)
-    return new_results2
+    return tuple(r for r in results if r[0] in goodFrameClauseLex_set)
     
 params['frame']['vf_argAll_lex'] = (
-                                        (vf_allarg_lex_np, filterAllClauses, 2, (4,), verb_token, funct_lexer, False),
-                                        (vf_allarg_lex_pp_obj, filterAllclauses, 2, (4,), verb_token, funct_lexer, False),
-                                        (vf_allarg_lex_pp, filterAllClauses, 2, (4,), verb_token, funct_prep_o_lexer, False),
-                                        (vf_args_cr_vc_CP, filterPreC, 2, (6,), verb_token, rela_conj_lexer, False),
-                                        (vf_args_cr_vc_prep, (filterRela, RelaSets), 2, (6,), verb_token, rela_prep_lexer, False),
-                                        (vf_args_cr_vc_verb, (filterRela, RelaSets), 2, (5,), verb_token, rela_lexer, False),
-                                        (vf_args_cr_nc_CP, filterRela, 2, (6,), verb_token, rela_conj_lexer, False),
-                                        (vf_args_cr_nc_Prec_adv, (filterRela, RelaSets), 2, (5,), verb_token, rela_lexer, False),
-                                        (vf_args_cr_nc_Prec_prep, (filterRela, RelaSets), 2, (6,), verb_token, rela_prep_lexer, False),
+                                        (vf_allarg_lex_np, FrameArgsClauseLex, 2, (4,), verb_token, funct_lexer, False),
+                                        (vf_allarg_lex_pp_obj, FrameArgsClauseLex, 2, (4,), verb_token, funct_lexer, False),
+                                        (vf_allarg_lex_pp, FrameArgsClauseLex, 2, (4,), verb_token, funct_prep_o_lexer, False),
+                                        (vf_args_cr_vc_CP, FrameArgsClauseLex, 2, (6,), verb_token, rela_conj_lexer, False),
+                                        (vf_args_cr_vc_prep, FrameArgsClauseLex, 2, (6,), verb_token, rela_prep_lexer, False),
+                                        (vf_args_cr_vc_verb, FrameArgsClauseLex, 2, (5,), verb_token, rela_lexer, False),
+                                        (vf_args_cr_nc_CP, FrameArgsClauseLex, 2, (6,), verb_token, rela_conj_lexer, False),
+                                        (vf_args_cr_nc_Prec_adv, FrameArgsClauseLex, 2, (5,), verb_token, rela_lexer, False),
+                                        (vf_args_cr_nc_Prec_prep, FrameArgsClauseLex, 2, (6,), verb_token, rela_prep_lexer, False),
                                     )
 
 
@@ -1057,38 +989,21 @@ vf_argsSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas
 vf_argsSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl|Adju', reqs='sem_domain_code~{good_sem_codes}'),
                                               pred_funct='Pred|PreS')
 
-# run experiments for good daughters check (see explanation above)
-paramsSD = ((vf_argsSD_cr_vc_CP, filterPreC),
-           (vf_argsSD_cr_vc_prep, filterPreC),
-           (vf_argsSD_cr_vc_verb, filterPreC),
-           (vf_argsSD_cr_nc_CP, None),
-           (vf_argsSD_cr_nc_Prec_adv, None),
-           (vf_argsSD_cr_nc_Prec_prep, None))
+paramsSD = (vf_argsSD_cr_vc_CP,
+            vf_argsSD_cr_vc_prep,
+            vf_argsSD_cr_vc_verb,
+            vf_argsSD_cr_nc_CP,
+            vf_argsSD_cr_nc_Prec_adv,
+            vf_argsSD_cr_nc_Prec_prep)
 
-goodDaughtersSD = get_goodDaughters(paramsSD)
-
-def filterAllClausesSD(results):
-    '''
-    Applies the goodDaughters dict
-    as a filter. All applicable daughteres
-    for a given clause must be validated.
-    '''
-    new_results = []
-    for res in results:
-        mother = res[0]
-        daughters = [d for d in E.mother.t(mother) if F.rela.v(r) in {'Objc', 'Adju', 'Cmpl'}]
-        daught_is_good = [d in goodDaughtersSD[F.rela.v(d)] for d in daughters]
-        if all(daught_is_good):
-            new_results.append(res)
+goodFrameClauseSD_set = goodClauseSets(paramsSD, 'Objc|Cmpl|Adju')
             
-def filterRelaSD(results):
+def frameArgsClauseSD(results):
     '''
     Applies both the daughter filter
     and the PreC filter.
     '''
-    new_results = filterPreC(results)
-    new_results2 = filterAllClausesSD(new_results)
-    return new_results2
+    return tuple(r for r in results if r[0] in goodFrameClauseSD_set)
 
 def funct_domainer(basis, target):
     # basis tokenizer for semantic domains + functions
@@ -1126,14 +1041,14 @@ def rela_domainer(basis, target):
     return f'{rela}.{sem_category}'
     
 params['frame']['vf_argAll_domain'] = (
-                                          (vf_allarg_sd_np, filterAllClausesSD, 2, (4,), verb_token, funct_domainer, False),
-                                          (vf_allarg_sd_pp, filterAllClausesSD, 2, (4,), verb_token, funct_prep_o_domainer, False),
-                                          (vf_args_cr_vc_CP, filterPreC, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_args_cr_vc_prep, (filterRelaSD, RelaSets), 2, (6,), verb_token, rela_prep_domainer, False),
-                                          (vf_args_cr_vc_verb, (filterRelaSD, RelaSets), 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_args_cr_nc_CP, filterRelaSD, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_args_cr_nc_Prec_adv, (filterRelaSD, RelaSets), 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_args_cr_nc_Prec_prep, (filterRelaSD, RelaSets), 2, (6,), verb_token, rela_prep_domainer, False),
+                                          (vf_allarg_sd_np, frameArgsClauseSD, 2, (4,), verb_token, funct_domainer, False),
+                                          (vf_allarg_sd_pp, frameArgsClauseSD, 2, (4,), verb_token, funct_prep_o_domainer, False),
+                                          (vf_args_cr_vc_CP, frameArgsClauseSD, 2, (6,), verb_token, rela_conj_domainer, False),
+                                          (vf_args_cr_vc_prep, frameArgsClauseSD, 2, (6,), verb_token, rela_prep_domainer, False),
+                                          (vf_args_cr_vc_verb, frameArgsClauseSD, 2, (5,), verb_token, rela_domainer, False),
+                                          (vf_args_cr_nc_CP, frameArgsClauseSD, 2, (6,), verb_token, rela_conj_domainer, False),
+                                          (vf_args_cr_nc_Prec_adv, frameArgsClauseSD, 2, (5,), verb_token, rela_domainer, False),
+                                          (vf_args_cr_nc_Prec_prep, frameArgsClauseSD, 2, (6,), verb_token, rela_prep_domainer, False),
                                       )
 
 
@@ -1177,20 +1092,47 @@ def rela_domainer2(basis, target):
     return f'{rela}.{sem_domain}'
 
 params['frame']['vf_argAll_domain2'] = (
-                                          (vf_allarg_sd_np, filterAllClauses, 2, (4,), verb_token, funct_domainer2, False),
-                                          (vf_allarg_sd_pp, filterAllClauses, 2, (4,), verb_token, funct_prep_o_domainer2, False),
-                                          (vf_args_cr_vc_CP, filterPreC, 2, (6,), verb_token, rela_conj_domainer2, False),
-                                          (vf_args_cr_vc_prep, (filterRela, RelaSets), 2, (6,), verb_token, rela_prep_domainer2, False),
-                                          (vf_args_cr_vc_verb, (filterRela, RelaSets), 2, (5,), verb_token, rela_domainer2, False),
-                                          (vf_args_cr_nc_CP, filterRela, 2, (6,), verb_token, rela_conj_domainer2, False),
-                                          (vf_args_cr_nc_Prec_adv, (filterRela, RelaSets), 2, (5,), verb_token, rela_domainer2, False),
-                                          (vf_args_cr_nc_Prec_prep, (filterRela, RelaSets), 2, (6,), verb_token, rela_prep_domainer2, False),
+                                          (vf_allarg_sd_np, frameArgsClauseSD, 2, (4,), verb_token, funct_domainer2, False),
+                                          (vf_allarg_sd_pp, frameArgsClauseSD, 2, (4,), verb_token, funct_prep_o_domainer2, False),
+                                          (vf_args_cr_vc_CP, frameArgsClauseSD, 2, (6,), verb_token, rela_conj_domainer2, False),
+                                          (vf_args_cr_vc_prep, frameArgsClauseSD, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                          (vf_args_cr_vc_verb, frameArgsClauseSD, 2, (5,), verb_token, rela_domainer2, False),
+                                          (vf_args_cr_nc_CP, frameArgsClauseSD, 2, (6,), verb_token, rela_conj_domainer2, False),
+                                          (vf_args_cr_nc_Prec_adv, frameArgsClauseSD, 2, (5,), verb_token, rela_domainer2, False),
+                                          (vf_args_cr_nc_Prec_prep, frameArgsClauseSD, 2, (6,), verb_token, rela_prep_domainer2, False),
                                       )
 
 
 ''''
 
 # 6.1, Verb Frame, Objects, Lexemes 
+
+vf_objc_lex_np = pred_targetVFl.format(basis='''
+    phrase function=Objc
+        -heads> word
+''', pred_funct='Pred|PreS')
+
+vf_objc_lex_pp = pred_targetVFl.format(basis='''
+    phrase function=Cmpl|Adju|Time|Loca|PrAd typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word
+''', pred_funct='Pred|PreS')
+
+vf_objc_lex_pp_obj = pred_target.format(basis='''
+    phrase function=Objc typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word
+''', pred_funct='Pred|PreS')
+
+    
+# Clause Relations
+vf_args_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc|Cmpl|Adju', reqs=''), 
+                                      pred_funct='Pred|PreS')
+vf_args_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc|Cmpl|Adju', reqs=''),
+                                        pred_funct='Pred|PreS')
+vf_args_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc|Cmpl|Adju', reqs=''),
+                                        pred_funct='Pred|PreS')
+vf_args_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Cmpl|Adju', reqs=''),
 
 # 6.2, Verb Frame, Objects, Semantic Domains
 
