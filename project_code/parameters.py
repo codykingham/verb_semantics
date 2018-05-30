@@ -187,9 +187,7 @@ clR_vc_CP = '''
 #basis @ 7
 
 s1:sentence
-    c1:clause
-        phrase function={pred_funct}
-            target:word pdp=verb language=Hebrew
+
     c2:clause
         p1:phrase typ=CP
     p2:phrase
@@ -206,11 +204,8 @@ s1:sentence
     
         basis:word pdp=verb {reqs}
 
-lex freq_lex>9
-   lexword:word 
-   lexword = target
-
 c1 <mother- c2
+s1 [[ c1
 c2 [[ p2
 p1 < p2
 '''
@@ -221,9 +216,6 @@ clR_vc_prep = '''
 #basis @ 7
 
 s1:sentence
-    c1:clause
-        phrase function={pred_funct}
-            target:word pdp=verb language=Hebrew
     c2:clause
         no:
             ^ phrase typ=CP
@@ -243,11 +235,8 @@ s1:sentence
         word pdp=prep
         basis:word pdp=verb {reqs} 
 
-lex freq_lex>9
-   lexword:word 
-   lexword = target
-
 c1 <mother- c2
+s1 [[ c1
 c2 [[ p2
 '''
 
@@ -257,9 +246,6 @@ clR_vc_verb = '''
 #basis @ 6
 
 s1:sentence
-    c1:clause
-        phrase function={pred_funct}
-            target:word pdp=verb language=Hebrew
     c2:clause
         no:
             ^ phrase typ=CP
@@ -288,10 +274,7 @@ end:
     
         basis:word pdp=verb {reqs}
 
-lex freq_lex>9
-   lexword:word 
-   lexword = target
-
+s1 [[ c1
 c1 <mother- c2
 c2 [[ p2
 '''
@@ -305,9 +288,14 @@ c2:clause kind=NC rela={relas}
 c1 <mother- c2
 '''
 
-# USE WITH ONLY ADJU/CMPL RELAS ONLY FROM THIS POINT ON
 clR_nc_PreC_adv = '''
-c2:clauseNoCP kind=NC rela={relas}
+
+#only for use with adj/cmpl relations 
+
+c2:clause kind=NC rela={relas}
+    no:
+        ^ phrase typ=CP
+    end:
     phrase function=PreC typ=AdvP
         -heads> word {reqs}
 
@@ -315,7 +303,13 @@ c1 <mother- c2
 '''
 
 clR_nc_PreC_prep = '''
-c2:clauseNoCP kind=NC rela={relas}
+
+#only for use with adj/cmpl functions 
+
+c2:clause kind=NC rela={relas}
+    no:
+        ^ phrase typ=CP
+    end:
     phrase function=PreC typ=PP
         -heads> word pdp=prep
         -prep_obj> word {reqs}
@@ -369,8 +363,13 @@ params['inventory']['vi_s_domain'] = (
 
 vi_o_pa = pred_target.format(basis='''
 
+c2:clause
+    no:
+        ^ phrase function=Rela
+    end:
     phrase function=Objc
-    
+        
+c1 = c2
 ''', pred_funct='Pred|PreS'
 )
 
@@ -382,20 +381,22 @@ c2:clause rela=Objc
 ''', pred_funct='Pred|PreS')
     
 vi_o_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
-vi_o_pa_null = pred_target.format(basis='', pred_funct='Pred|PreS')
+
+vi_o_pa_null = pred_target.format(basis='''
+
+c2:clause
+    no:
+        <mother- clause rela=Objc
+    end:
+    no:
+        ^ phrase function=Objc|PtcO
+    end:
+
+c1 = c2
+''', pred_funct='Pred|PreS')
 
 def simple_object(basis, target):
     return 'Objc'
-
-def notexist_relative(results):
-    '''
-    this function purposely excludes relative clauses
-    since the database does not properly mark whether
-    the relative serves as the implied object of the verb
-    '''
-    results = [r for r in results
-                  if 'Rela' not in set(F.function.v(ph) for ph in L.d(r[0], 'phrase'))]
-    return results
 
 def notexist_o(results):
     # filter for absent objects (+omits relatives) within and between clauses
@@ -406,7 +407,7 @@ def notexist_o(results):
     return results
 
 params['inventory']['vi_o_pa'] = (
-                                     (vi_o_pa, notexist_relative, 2, (3,), verb_token, simple_object, True),
+                                     (vi_o_pa, None, 2, (3,), verb_token, simple_object, True),
                                      (vi_o_pa_clRela, None, 2, (3,), verb_token, simple_object, True),
                                      (vi_o_pa_suffix, notexist_relative, 2, (2,), verb_token, simple_object, True),
                                      (vi_o_pa_null, notexist_o, 2, (2,), verb_token, nuller, True)
