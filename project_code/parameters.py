@@ -30,11 +30,45 @@ params = collections.defaultdict(dict) # all parameters will be stored here
 
 # standard predicate target template
 
-pred_target = '''
+# this predicate target template is no longer used since
+# it does not account for predicate participles.
+pred_target_OLD = '''
 c1:clause
-    phrase function={pred_funct}
-        target:word pdp=verb language=Hebrew
+either:
+    c2:clause typ#Ptcp
+        phrase function={pred_funct}
+            target:word pdp=verb language=Hebrew
+    c2 = c1
+or:
+    c2:clause typ=Ptcp
+        phrase function=PreC|{pred_funct}
+    
+{basis}
 
+lex freq_lex>9
+   lexword:word 
+   lexword = target
+'''
+
+pred_target = '''
+
+c1:clause
+    p1:phrase
+
+    either:
+        clause typ#Ptcp
+            p:phrase function={pred_funct}
+                -heads> word pdp=verb language=Hebrew
+            p = p1
+    or:
+        clause typ=Ptcp
+            p:phrase function=PreC|{pred_funct}
+                -heads> word pdp=verb language=Hebrew
+            p = p1
+    end:
+
+        target:word pdp=verb
+    
 {basis}
 
 lex freq_lex>9
@@ -183,15 +217,11 @@ elements (i.e. כאשר)
     
 clR_vc_CP = '''
 
-#target @ 3
-#basis @ 7
+#basis @ 6
 
-s1:sentence
-
-    c2:clause
-        p1:phrase typ=CP
+c2:clause
+    p1:phrase typ=CP
     p2:phrase
-    
     either:
         clause kind=VC rela={relas} typ#Ptcp
             p3:phrase function=Pred|PreS|PreO
@@ -201,82 +231,72 @@ s1:sentence
             p3:phrase function=PreC|PtcO
             p3 = p2
     end:
-    
+
         basis:word pdp=verb {reqs}
 
 c1 <mother- c2
-s1 [[ c1
 c2 [[ p2
 p1 < p2
 '''
 
 clR_vc_prep = '''
 
-#target @ 3
-#basis @ 7
+#basis @ 6
 
-s1:sentence
-    c2:clause
-        no:
-            ^ phrase typ=CP
-        end:
+c2:clause
+no:
+    ^ phrase typ=CP
+end:
     p2:phrase
-    
     either:
         clause kind=VC rela={relas} typ#Ptcp
-            p3:phrase function=Pred|PreS|PreO
-            p3 = p2
+            p:phrase function=Pred|PreS|PreO
+            p = p2
     or:
         clause kind=VC rela={relas} typ=Ptcp
-            p3:phrase function=PreC|PtcO
-            p3 = p2
+            p:phrase function=PreC|PtcO
+            p = p2
     end:
     
         word pdp=prep
-        basis:word pdp=verb {reqs} 
+        < word pdp=verb {reqs} 
 
 c1 <mother- c2
-s1 [[ c1
-c2 [[ p2
 '''
 
 clR_vc_verb = '''
 
-#target @ 3
-#basis @ 6
+#basis @ 5
 
-s1:sentence
-    c2:clause
-        no:
-            ^ phrase typ=CP
-        end:
-        no:
-            ^ word pdp=prin|inrg
-        end:
-        
+c2:clause
+no:
+    ^ phrase typ=CP
+end:
+no:
+    ^ word pdp=prin|inrg
+end:
+
     p2:phrase
     
-either:
-    clause kind=VC rela={relas} typ#Ptcp
-        p3:phrase function=Pred|PreS|PreO
+    either:
+        clause kind=VC rela={relas} typ#Ptcp
+            p:phrase function=Pred|PreS|PreO
             no:
                 ^ word pdp=prep
             end:
-        p3 = p2
-or:
-    clause kind=VC rela={relas} typ=Ptcp
-        p3:phrase function=PreC|PtcO
+            p = p2
+    or:
+        clause kind=VC rela={relas} typ=Ptcp
+            p:phrase function=PreC|PtcO
             no:
                 ^ word pdp=prep
             end:
-        p3 = p2
-end:
+            p = p2
+    end:
     
         basis:word pdp=verb {reqs}
 
-s1 [[ c1
 c1 <mother- c2
-c2 [[ p2
 '''
 
 clR_nc_CP = '''
@@ -293,9 +313,9 @@ clR_nc_PreC_adv = '''
 #only for use with adj/cmpl relations 
 
 c2:clause kind=NC rela={relas}
-    no:
-        ^ phrase typ=CP
-    end:
+no:
+    ^ phrase typ=CP
+end:
     phrase function=PreC typ=AdvP
         -heads> word {reqs}
 
@@ -307,9 +327,9 @@ clR_nc_PreC_prep = '''
 #only for use with adj/cmpl functions 
 
 c2:clause kind=NC rela={relas}
-    no:
-        ^ phrase typ=CP
-    end:
+no:
+    ^ phrase typ=CP
+end:
     phrase function=PreC typ=PP
         -heads> word pdp=prep
         -prep_obj> word {reqs}
@@ -372,21 +392,36 @@ c2:clause rela=Objc
 c1 <mother- c2
 
 ''', pred_funct=all_preds)
-    
-vi_o_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
 
 vi_o_pa_null = pred_target.format(basis='''
 
 c2:clause
-    no:
-        <mother- clause rela=Objc
-    end:
-    no:
-        ^ phrase function=Objc|PtcO|Rela
-    end:
+no:
+    <mother- clause rela=Objc
+end:
+no:
+    ^ phrase function=Objc|PtcO|Rela
+end:
+no:
+    ^ ca:clause_atom
+    speech:clause_atom code=999
+    ca <mother- speech
+end:
 
 c1 = c2
 ''', pred_funct='Pred|PreS')
+
+vi_o_pa_speech = pred_target.format(basis='''
+
+    ca1:clause_atom
+    
+ca2:clause_atom code=999
+
+ca1 <mother- ca2
+ca1 [[ p1
+''', pred_funct=all_preds)
+
+vi_o_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
 
 def simple_object(basis, target):
     return 'Objc'
@@ -395,6 +430,7 @@ params['inventory']['vi_o_pa'] = (
                                      (vi_o_pa, None, 2, (3,), verb_token, simple_object, True),
                                      (vi_o_pa_clRela, None, 2, (3,), verb_token, simple_object, True),
                                      (vi_o_pa_suffix, None, 2, (2,), verb_token, simple_object, True),
+                                     (vi_o_pa_speech, None, 2, (2,), verb_token, simple_object, True),
                                      (vi_o_pa_null, None, 2, (2,), verb_token, nuller, True)
                                  )
 
@@ -443,9 +479,9 @@ def conj_lexer(basis, target):
 params['inventory']['vi_o_lex'] = (
                                       (vi_o_lex_np, None, 2, (4,), verb_token, lexer, False),
                                       (vi_o_lex_pp, None, 2, (5,), verb_token, lexer, False),
-                                      (vi_objc_cr_vc_CP, None, 3, (7,), verb_token, conj_lexer, False),
-                                      (vi_objc_cr_vc_prep, None, 3, (7,), verb_token, prep_verber, False),
-                                      (vi_objc_cr_vc_verb, None, 3, (6,), verb_token, lexer, False),
+                                      (vi_objc_cr_vc_CP, None, 3, (6,), verb_token, conj_lexer, False),
+                                      (vi_objc_cr_vc_prep, None, 3, (6,), verb_token, prep_verber, False),
+                                      (vi_objc_cr_vc_verb, None, 3, (5,), verb_token, lexer, False),
                                       (vi_objc_cr_nc_CP, None, 2, (6,), verb_token, conj_lexer, False),
                                   )
 
@@ -498,9 +534,9 @@ def conj_domainer(basis, target):
 params['inventory']['vi_o_domain'] = (
                                          (vi_o_sd_np, None, 2, (4,), verb_token,  domainer, False),
                                          (vi_o_sd_pp, None, 2, (5,), verb_token, domainer, False),
-                                         (vi_objcSD_cr_vc_CP, None, 3, (7,), verb_token, conj_domainer, False),
-                                         (vi_objcSD_cr_vc_prep, None, 3, (7,), verb_token, prep_verbDomainer, False),
-                                         (vi_objcSD_cr_vc_verb, None, 3, (6,), verb_token, domainer, False),
+                                         (vi_objcSD_cr_vc_CP, None, 3, (6,), verb_token, conj_domainer, False),
+                                         (vi_objcSD_cr_vc_prep, None, 3, (6,), verb_token, prep_verbDomainer, False),
+                                         (vi_objcSD_cr_vc_verb, None, 3, (5,), verb_token, domainer, False),
                                          (vi_objcSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer, False),
                                      )
 
@@ -537,9 +573,9 @@ def conj_domainer2(basis, target):
 params['inventory']['vi_o_domain2'] = (
                                          (vi_o_sd_np, None, 2, (4,), verb_token,  domainer2, False),
                                          (vi_o_sd_pp, None, 2, (5,), verb_token, domainer2, False),
-                                         (vi_objcSD_cr_vc_CP, None, 3, (7,), verb_token, conj_domainer2, False),
-                                         (vi_objcSD_cr_vc_prep, None, 3, (7,), verb_token, prep_verbDomainer2, False),
-                                         (vi_objcSD_cr_vc_verb, None, 3, (6,), verb_token, domainer2, False),
+                                         (vi_objcSD_cr_vc_CP, None, 3, (6,), verb_token, conj_domainer2, False),
+                                         (vi_objcSD_cr_vc_prep, None, 3, (6,), verb_token, prep_verbDomainer2, False),
+                                         (vi_objcSD_cr_vc_verb, None, 3, (5,), verb_token, domainer2, False),
                                          (vi_objcSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
                                      )
 
@@ -619,9 +655,9 @@ vi_cmpl_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas
 params['inventory']['vi_cmpl_lex'] = (
                                          (vi_cmpl_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
                                          (vi_cmpl_lex_np, None, 2, (4,), verb_token, lexer, False),
-                                         (vi_cmpl_cr_vc_CP, None, 3, (7,), verb_token, conj_lexer, False),
-                                         (vi_cmpl_cr_vc_prep, None, 3, (7,), verb_token, prep_verber, False),
-                                         (vi_cmpl_cr_vc_verb, None, 3, (6,), verb_token, lexer, False),
+                                         (vi_cmpl_cr_vc_CP, None, 3, (6,), verb_token, conj_lexer, False),
+                                         (vi_cmpl_cr_vc_prep, None, 3, (6,), verb_token, prep_verber, False),
+                                         (vi_cmpl_cr_vc_verb, None, 3, (5,), verb_token, lexer, False),
                                          (vi_cmpl_cr_nc_CP, None, 2, (6,), verb_token, conj_lexer, False),
                                          (vi_cmpl_cr_nc_Prec_adv, None, 2, (5,), verb_token, lexer, False),
                                          (vi_cmpl_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verber, False),
@@ -663,9 +699,9 @@ vi_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(rel
 params['inventory']['vi_cmpl_domain'] = (
                                              (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
                                              (vi_cmpl_sd_np, None, 2, (4,), verb_token, domainer, False),
-                                             (vi_cmplSD_cr_vc_CP, None, 3, (7,), verb_token, conj_domainer, False),
-                                             (vi_cmplSD_cr_vc_prep, None, 3, (7,), verb_token, prep_verbDomainer, False),
-                                             (vi_cmplSD_cr_vc_verb, None, 3, (6,), verb_token, domainer, False),
+                                             (vi_cmplSD_cr_vc_CP, None, 3, (6,), verb_token, conj_domainer, False),
+                                             (vi_cmplSD_cr_vc_prep, None, 3, (6,), verb_token, prep_verbDomainer, False),
+                                             (vi_cmplSD_cr_vc_verb, None, 3, (5,), verb_token, domainer, False),
                                              (vi_cmplSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer, False),
                                              (vi_cmplSD_cr_nc_Prec_adv, None, 2, (5,), verb_token, domainer, False),
                                              (vi_cmplSD_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
@@ -678,9 +714,9 @@ params['inventory']['vi_cmpl_domain'] = (
 params['inventory']['vi_cmpl_domain2'] = (
                                              (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer2, False),
                                              (vi_cmpl_sd_np, None, 2, (4,), verb_token, domainer2, False),
-                                             (vi_cmplSD_cr_vc_CP, None, 3, (7,), verb_token, conj_domainer2, False),
-                                             (vi_cmplSD_cr_vc_prep, None, 3, (7,), verb_token, prep_verbDomainer2, False),
-                                             (vi_cmplSD_cr_vc_verb, None, 3, (6,), verb_token, domainer2, False),
+                                             (vi_cmplSD_cr_vc_CP, None, 3, (6,), verb_token, conj_domainer2, False),
+                                             (vi_cmplSD_cr_vc_prep, None, 3, (6,), verb_token, prep_verbDomainer2, False),
+                                             (vi_cmplSD_cr_vc_verb, None, 3, (5,), verb_token, domainer2, False),
                                              (vi_cmplSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
                                              (vi_cmplSD_cr_nc_Prec_adv, None, 2, (5,), verb_token, domainer2, False),
                                              (vi_cmplSD_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verbDomainer2, False),
@@ -763,9 +799,9 @@ vi_adj_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas=
 params['inventory']['vi_adj+_lex'] = (
                                          (vi_adj_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
                                          (vi_adj_lex_np, None, 2, (4,), verb_token, lexer, False),
-                                         (vi_adj_cr_vc_CP, None, 3, (7,), verb_token, conj_lexer, False),
-                                         (vi_adj_cr_vc_prep, None, 3, (7,), verb_token, prep_verber, False),
-                                         (vi_adj_cr_vc_verb, None, 3, (6,), verb_token, lexer, False),
+                                         (vi_adj_cr_vc_CP, None, 3, (6,), verb_token, conj_lexer, False),
+                                         (vi_adj_cr_vc_prep, None, 3, (6,), verb_token, prep_verber, False),
+                                         (vi_adj_cr_vc_verb, None, 3, (5,), verb_token, lexer, False),
                                          (vi_adj_cr_nc_CP, None, 2, (6,), verb_token, conj_lexer, False),
                                          (vi_adj_cr_nc_Prec_adv, None, 2, (5,), verb_token, lexer, False),
                                          (vi_adj_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verber, False),
@@ -809,9 +845,9 @@ vi_adjSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(rela
 params['inventory']['vi_adj+_domain'] = (
                                              (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
                                              (vi_adj_sd_np, None, 2, (4,), verb_token, domainer, False),
-                                             (vi_adjSD_cr_vc_CP, None, 3, (7,), verb_token, conj_domainer, False),
-                                             (vi_adjSD_cr_vc_prep, None, 3, (7,), verb_token, prep_verbDomainer, False),
-                                             (vi_adjSD_cr_vc_verb, None, 3, (6,), verb_token, domainer, False),
+                                             (vi_adjSD_cr_vc_CP, None, 3, (6,), verb_token, conj_domainer, False),
+                                             (vi_adjSD_cr_vc_prep, None, 3, (6,), verb_token, prep_verbDomainer, False),
+                                             (vi_adjSD_cr_vc_verb, None, 3, (5,), verb_token, domainer, False),
                                              (vi_adjSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer, False),
                                              (vi_adjSD_cr_nc_Prec_adv, None, 2, (5,), verb_token, domainer, False),
                                              (vi_adjSD_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
@@ -825,21 +861,26 @@ params['inventory']['vi_adj+_domain'] = (
 params['inventory']['vi_adj+_domain2'] = (
                                              (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer2, False),
                                              (vi_adj_sd_np, None, 2, (4,), verb_token, domainer2, False),
-                                             (vi_adjSD_cr_vc_CP, None, 3, (7,), verb_token, conj_domainer2, False),
-                                             (vi_adjSD_cr_vc_prep, None, 3, (7,), verb_token, prep_verbDomainer2, False),
-                                             (vi_adjSD_cr_vc_verb, None, 3, (6,), verb_token, domainer2, False),
+                                             (vi_adjSD_cr_vc_CP, None, 3, (6,), verb_token, conj_domainer2, False),
+                                             (vi_adjSD_cr_vc_prep, None, 3, (6,), verb_token, prep_verbDomainer2, False),
+                                             (vi_adjSD_cr_vc_verb, None, 3, (5,), verb_token, domainer2, False),
                                              (vi_adjSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
                                              (vi_adjSD_cr_nc_Prec_adv, None, 2, (5,), verb_token, domainer2, False),
                                              (vi_adjSD_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verbDomainer2, False),
                                         )
 
 
-# PICKUP HERE
+
 
 # 5.1, Verb Frames, All Arguments, Presence/Absence
 
 vf_allarg_pa_np = pred_target.format(basis='''
 
+c2:clause
+no:
+    ^ phrase function=Rela
+end:
+    
     p1:phrase
     either:
         p2:phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ#PP
@@ -849,18 +890,46 @@ vf_allarg_pa_np = pred_target.format(basis='''
         p1 = p2
     end:
     
+c1 = c2
 ''', pred_funct=all_preds)
 
 vf_allarg_pa_pp = pred_target.format(basis='''
 
+c2:clause
+no:
+    ^ phrase function=Cmpl|Adju|Time|Loca|PrAd typ=PP
+        -heads> word pdp#prep
+end:
+no:
+    ^ phrase function=Rela
+end:
+
     phrase function=Cmpl|Adju|Time|Loca|PrAd typ=PP
         -heads> word pdp=prep
 
+c1 = c2
 ''', pred_funct=all_preds)
 
-vf_allarg_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
+vf_allarg_pa_null = pred_target.format(basis='''
 
-vf_allarg_pa_null = pred_target.format(basis='', pred_funct='Pred|PreS')
+c2:clause
+no:
+    <mother- clause rela=Objc|Cmpl|Adju|PrAd
+end:
+no:
+    ^ phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd|Rela
+end:
+no:
+    ^ ca:clause_atom
+    speech:clause_atom code=999
+    ca <mother- speech
+end:
+
+c1 = c2
+''', pred_funct='Pred|PreS')
+
+vf_allarg_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
+vf_allarg_pa_speech = vi_o_pa_speech
 
 def prep_o_functioner(basis, target):
     # builds prep_lex + function basis tokens
@@ -868,18 +937,12 @@ def prep_o_functioner(basis, target):
     basis_function = F.function.v(L.u(basis, 'phrase')[0])
     return f'{prep_lex}_{basis_function}'
 
-def notexist_allargs(results):
-    all_args = {'Objc', 'Cmpl', 'Adju', 'Time', 'Loca', 'PrAd', 'Rela'}
-    results = [r for r in results
-                  if not all_args & set(F.function.v(ph) for ph in L.d(r[0], 'phrase'))
-                  and not all_args & set(F.rela.v(cl) for cl in E.mother.t(r[0]))]
-    return results
-
 params['frame']['vf_argAll_pa'] = (
                                       (vf_allarg_pa_np, None, 2, (3,), verb_token, functioner, False),
                                       (vf_allarg_pa_pp, None, 2, (4,), verb_token, prep_o_functioner, False),
                                       (vf_allarg_pa_suffix, None, 2, (2,), verb_token, simple_object, False),
-                                      (vf_allarg_pa_null, notexist_allargs, 2, (2,), verb_token, nuller, False)
+                                      (vf_allarg_pa_speech, None, 2, (2,), verb_token, simple_object, False),
+                                      (vf_allarg_pa_null, None, 2, (2,), verb_token, nuller, False)
                                   )
 
 
@@ -887,21 +950,62 @@ params['frame']['vf_argAll_pa'] = (
 
 # 5.2, Verb Frames, All Arguments, Lexemes
 
-vf_allarg_lex_np = pred_target.format(basis='''
+# a set of conditions that must hold true
+# for all frame elements that are selected
+# at the clause level
+vf_all_arg_conditions = '''
+
+c2:clause
+no:
+   ^ phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ#NP|PrNP|AdvP|PP
+end:
+
+all:
+    ^ phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ#PP
+have:
+      -heads> word
+end:
+
+all:
+  ^ phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=PP
+have:
+    all:
+        -heads> word
+    have:
+        -prep_obj> word
+    end:
+end:
+
+c1 = c2
+'''
+
+vf_allarg_lex_np = pred_target.format(basis=f'''
+
+{vf_all_arg_conditions}
+
     phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
         -heads> word
+        
 ''', pred_funct='Pred|PreS')
 
 vf_allarg_lex_pp = pred_target.format(basis='''
+
+{vf_all_arg_conditions}
+
     phrase function=Cmpl|Adju|Time|Loca|PrAd typ=PP
         -heads> word pdp=prep
         -prep_obj> word
+        
 ''', pred_funct='Pred|PreS')
 
 vf_allarg_lex_pp_obj = pred_target.format(basis='''
+
+{vf_all_arg_conditions}
+
     phrase function=Objc typ=PP
         -heads> word pdp=prep
         -prep_obj> word
+     
 ''', pred_funct='Pred|PreS')
 
     
@@ -938,70 +1042,89 @@ we must exclude the entire clause. Examples of "uncapturable
 elements" are daughter clauses that are verbless without a 
 conjunction. It is not possible to condense these down into
 a lexical token, as can be done with כאשר + verb, for instance.
-Thus, these kinds of clauses must be excluded.
+Thus, not only these clauses, but also their mothers, must be excluded.
 
 In order to know which clauses should be excluded, we have
-to run the experiment twice so that every clause relation can be
+to run the whole experiment twice so that every clause relation can be
 checked and validated. The first time we run it here in this module.
-Two functions fulfill that role:
-    get_goodDaughters
-    filterAllClauses
-    filterRela
-Good daughters runs the experiments and returns a dictionary
-of mappings from clause relations to a set of good daughter clauses.
-That set will be used for the filter which is fed to the Experiment class,
-filterAllClauses, which applies a filter for good daughters. Another function 
-combines this filter with another, filterPreC, which is required for the first
-three clause relation patterns.
-'''
-    
-params = ((vf_args_cr_vc_CP, filterPreC),
-          (vf_args_cr_vc_prep, filterPreC),
-          (vf_args_cr_vc_verb, filterPreC),
-          (vf_args_cr_nc_CP, None),
-          (vf_args_cr_nc_Prec_adv, None),
-          (vf_args_cr_nc_Prec_prep, None))
 
-def get_goodDaughters(params):
+The second time the queries are run in the Experiment class to produce results.
+The results are then crossreferenced against the first run to make sure that all
+elligible functions are present in the complete result.
+'''
+
+
+                 (vf_args_cr_vc_CP, 'daughter'),
+                 (vf_args_cr_vc_prep, 'daughter'),
+                 (vf_args_cr_vc_verb, 'daughter'),
+                 (vf_args_cr_nc_CP, 'daughter'),
+                 (vf_args_cr_nc_Prec_adv, 'daughter'),
+                 (vf_args_cr_nc_Prec_prep, 'daughter')
+                )
+
+def getGoodClauses(params, ri=0, experiment=''):
     '''
     Runs all of the experiments
-    and maps acceptable daughters
+    and maps acceptable mother and daughters
     to a dictionary by their relation.
     '''
-    goodDaughters = collections.defaultdict(set)
-    covered_clauses = set()
-    for template, filt in params:
-        results = [r for r in S.search(template, sets=sets)]
-        results = results if not filt else filt(results)
-        for res in results:
-            rela = F.rela.v(res[3])
-            good_Daughters[rela].add(res[3])
-    return goodDaughters
-
-goodDaughters = get_goodDaughters(params)
-
-def filterAllClauses(results):
-    '''
-    Applies the goodDaughters dict
-    as a filter. All applicable daughteres
-    for a given clause must be validated.
-    '''
-    new_results = []
-    for res in results:
-        mother = res[0]
-        daughters = [d for d in E.mother.t(mother) if F.rela.v(r) in {'Objc', 'Adju', 'Cmpl'}]
-        daught_is_good = [d in goodDaughters[F.rela.v(d)] for d in daughters]
-        if all(daught_is_good):
-            new_results.append(res)
+    print(f'Preparing base data for {experiment}')
+    good_set = set()
     
-def filterRela(results):
-    '''
-    Applies both the daughter filter
-    and the PreC filter.
-    '''
-    new_results = filterPreC(results)
-    new_results2 = filterAllClauses(new_results)
-    return new_results2
+    # prepare & record results
+    for template in params:
+        results = set(S.search(template))
+        good_set |= set(r[ri] for r in results) 
+    return good_set
+    
+goodDaughters = getGoodClauses((vf_allarg_lex_np,
+                                vf_allarg_lex_pp, 
+                                vf_allarg_lex_pp_obj), ri=0, experiment='vf_allarg_lex_mothers')
+goodMothers = getGoodClauses((vf_args_cr_vc_CP,
+                              vf_args_cr_vc_prep, 
+                              vf_args_cr_vc_verb,
+                              vf_args_cr_nc_CP
+                              vf_args_cr_nc_Prec_adv
+                              vf_args_cr_nc_Prec_prep), ri=0, experiment='vf_allarg_lex_mothers')
+
+class validateFrame:
+    
+    def __init__(self, mother_templates=tuple(), 
+                       daughter_templates=tuple(), 
+                       mother_ri = 0
+                       daughter_ri = 1,
+                       exp_name = ''):
+    
+    print(f'Preparing frame validation data for {exp_name}...')
+    
+    self.good_mothers = set()
+    self.good_daughters = collections.defaultdict(set)
+    
+    for mom in mother_templates:
+        results = set(S.search(template))
+        self.good_mothers |= set(r[mother_ri] for r in results) 
+        
+    for daught in daughter_templates:
+        results = set(S.search(template))
+        for r in results:
+            rela = F.rela.v(r[daughter_ri])
+            self.good_daughters[rela] = r[daughter_ri]
+            
+    print(f'\tFrame validation data prep complete.')
+    
+    def validate_mothers(self, results):
+        return tuple(r for r in results if r[0] in self.good_mothers)
+        
+    def validate_daughters(self, results):
+        check_relas = set(self.good_daughters.keys())
+        validated_results = []
+        for r in results:
+            if all([d in self.good_daughters[F.rela.v(d)] for d in E.mother.t(r[0])
+                        if F.rela.v(r) in check_relas]):
+                validated_results.append(r)
+        return validated_results
+    
+    
     
 params['frame']['vf_argAll_lex'] = (
                                         (vf_allarg_lex_np, filterAllClauses, 2, (4,), verb_token, funct_lexer, False),
