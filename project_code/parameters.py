@@ -479,9 +479,9 @@ def conj_lexer(basis, target):
 params['inventory']['vi_o_lex'] = (
                                       (vi_o_lex_np, None, 2, (4,), verb_token, lexer, False),
                                       (vi_o_lex_pp, None, 2, (5,), verb_token, lexer, False),
-                                      (vi_objc_cr_vc_CP, None, 3, (6,), verb_token, conj_lexer, False),
-                                      (vi_objc_cr_vc_prep, None, 3, (6,), verb_token, prep_verber, False),
-                                      (vi_objc_cr_vc_verb, None, 3, (5,), verb_token, lexer, False),
+                                      (vi_objc_cr_vc_CP, None, 2, (6,), verb_token, conj_lexer, False),
+                                      (vi_objc_cr_vc_prep, None, 2, (6,), verb_token, prep_verber, False),
+                                      (vi_objc_cr_vc_verb, None, 2, (5,), verb_token, lexer, False),
                                       (vi_objc_cr_nc_CP, None, 2, (6,), verb_token, conj_lexer, False),
                                   )
 
@@ -534,9 +534,9 @@ def conj_domainer(basis, target):
 params['inventory']['vi_o_domain'] = (
                                          (vi_o_sd_np, None, 2, (4,), verb_token,  domainer, False),
                                          (vi_o_sd_pp, None, 2, (5,), verb_token, domainer, False),
-                                         (vi_objcSD_cr_vc_CP, None, 3, (6,), verb_token, conj_domainer, False),
-                                         (vi_objcSD_cr_vc_prep, None, 3, (6,), verb_token, prep_verbDomainer, False),
-                                         (vi_objcSD_cr_vc_verb, None, 3, (5,), verb_token, domainer, False),
+                                         (vi_objcSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer, False),
+                                         (vi_objcSD_cr_vc_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
+                                         (vi_objcSD_cr_vc_verb, None, 2, (5,), verb_token, domainer, False),
                                          (vi_objcSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer, False),
                                      )
 
@@ -573,9 +573,9 @@ def conj_domainer2(basis, target):
 params['inventory']['vi_o_domain2'] = (
                                          (vi_o_sd_np, None, 2, (4,), verb_token,  domainer2, False),
                                          (vi_o_sd_pp, None, 2, (5,), verb_token, domainer2, False),
-                                         (vi_objcSD_cr_vc_CP, None, 3, (6,), verb_token, conj_domainer2, False),
-                                         (vi_objcSD_cr_vc_prep, None, 3, (6,), verb_token, prep_verbDomainer2, False),
-                                         (vi_objcSD_cr_vc_verb, None, 3, (5,), verb_token, domainer2, False),
+                                         (vi_objcSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
+                                         (vi_objcSD_cr_vc_prep, None, 2, (6,), verb_token, prep_verbDomainer2, False),
+                                         (vi_objcSD_cr_vc_verb, None, 2, (5,), verb_token, domainer2, False),
                                          (vi_objcSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
                                      )
 
@@ -655,9 +655,9 @@ vi_cmpl_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas
 params['inventory']['vi_cmpl_lex'] = (
                                          (vi_cmpl_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
                                          (vi_cmpl_lex_np, None, 2, (4,), verb_token, lexer, False),
-                                         (vi_cmpl_cr_vc_CP, None, 3, (6,), verb_token, conj_lexer, False),
-                                         (vi_cmpl_cr_vc_prep, None, 3, (6,), verb_token, prep_verber, False),
-                                         (vi_cmpl_cr_vc_verb, None, 3, (5,), verb_token, lexer, False),
+                                         (vi_cmpl_cr_vc_CP, None, 2, (6,), verb_token, conj_lexer, False),
+                                         (vi_cmpl_cr_vc_prep, None, 2, (6,), verb_token, prep_verber, False),
+                                         (vi_cmpl_cr_vc_verb, None, 2, (5,), verb_token, lexer, False),
                                          (vi_cmpl_cr_nc_CP, None, 2, (6,), verb_token, conj_lexer, False),
                                          (vi_cmpl_cr_nc_Prec_adv, None, 2, (5,), verb_token, lexer, False),
                                          (vi_cmpl_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verber, False),
@@ -699,9 +699,9 @@ vi_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(rel
 params['inventory']['vi_cmpl_domain'] = (
                                              (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
                                              (vi_cmpl_sd_np, None, 2, (4,), verb_token, domainer, False),
-                                             (vi_cmplSD_cr_vc_CP, None, 3, (6,), verb_token, conj_domainer, False),
-                                             (vi_cmplSD_cr_vc_prep, None, 3, (6,), verb_token, prep_verbDomainer, False),
-                                             (vi_cmplSD_cr_vc_verb, None, 3, (5,), verb_token, domainer, False),
+                                             (vi_cmplSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer, False),
+                                             (vi_cmplSD_cr_vc_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
+                                             (vi_cmplSD_cr_vc_verb, None, 2, (5,), verb_token, domainer, False),
                                              (vi_cmplSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer, False),
                                              (vi_cmplSD_cr_nc_Prec_adv, None, 2, (5,), verb_token, domainer, False),
                                              (vi_cmplSD_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
@@ -714,9 +714,9 @@ params['inventory']['vi_cmpl_domain'] = (
 params['inventory']['vi_cmpl_domain2'] = (
                                              (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer2, False),
                                              (vi_cmpl_sd_np, None, 2, (4,), verb_token, domainer2, False),
-                                             (vi_cmplSD_cr_vc_CP, None, 3, (6,), verb_token, conj_domainer2, False),
-                                             (vi_cmplSD_cr_vc_prep, None, 3, (6,), verb_token, prep_verbDomainer2, False),
-                                             (vi_cmplSD_cr_vc_verb, None, 3, (5,), verb_token, domainer2, False),
+                                             (vi_cmplSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
+                                             (vi_cmplSD_cr_vc_prep, None, 2, (6,), verb_token, prep_verbDomainer2, False),
+                                             (vi_cmplSD_cr_vc_verb, None, 2, (5,), verb_token, domainer2, False),
                                              (vi_cmplSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
                                              (vi_cmplSD_cr_nc_Prec_adv, None, 2, (5,), verb_token, domainer2, False),
                                              (vi_cmplSD_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verbDomainer2, False),
@@ -799,9 +799,9 @@ vi_adj_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas=
 params['inventory']['vi_adj+_lex'] = (
                                          (vi_adj_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
                                          (vi_adj_lex_np, None, 2, (4,), verb_token, lexer, False),
-                                         (vi_adj_cr_vc_CP, None, 3, (6,), verb_token, conj_lexer, False),
-                                         (vi_adj_cr_vc_prep, None, 3, (6,), verb_token, prep_verber, False),
-                                         (vi_adj_cr_vc_verb, None, 3, (5,), verb_token, lexer, False),
+                                         (vi_adj_cr_vc_CP, None, 2, (6,), verb_token, conj_lexer, False),
+                                         (vi_adj_cr_vc_prep, None, 2, (6,), verb_token, prep_verber, False),
+                                         (vi_adj_cr_vc_verb, None, 2, (5,), verb_token, lexer, False),
                                          (vi_adj_cr_nc_CP, None, 2, (6,), verb_token, conj_lexer, False),
                                          (vi_adj_cr_nc_Prec_adv, None, 2, (5,), verb_token, lexer, False),
                                          (vi_adj_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verber, False),
@@ -845,9 +845,9 @@ vi_adjSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(rela
 params['inventory']['vi_adj+_domain'] = (
                                              (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
                                              (vi_adj_sd_np, None, 2, (4,), verb_token, domainer, False),
-                                             (vi_adjSD_cr_vc_CP, None, 3, (6,), verb_token, conj_domainer, False),
-                                             (vi_adjSD_cr_vc_prep, None, 3, (6,), verb_token, prep_verbDomainer, False),
-                                             (vi_adjSD_cr_vc_verb, None, 3, (5,), verb_token, domainer, False),
+                                             (vi_adjSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer, False),
+                                             (vi_adjSD_cr_vc_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
+                                             (vi_adjSD_cr_vc_verb, None, 2, (5,), verb_token, domainer, False),
                                              (vi_adjSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer, False),
                                              (vi_adjSD_cr_nc_Prec_adv, None, 2, (5,), verb_token, domainer, False),
                                              (vi_adjSD_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
@@ -861,9 +861,9 @@ params['inventory']['vi_adj+_domain'] = (
 params['inventory']['vi_adj+_domain2'] = (
                                              (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer2, False),
                                              (vi_adj_sd_np, None, 2, (4,), verb_token, domainer2, False),
-                                             (vi_adjSD_cr_vc_CP, None, 3, (6,), verb_token, conj_domainer2, False),
-                                             (vi_adjSD_cr_vc_prep, None, 3, (6,), verb_token, prep_verbDomainer2, False),
-                                             (vi_adjSD_cr_vc_verb, None, 3, (5,), verb_token, domainer2, False),
+                                             (vi_adjSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
+                                             (vi_adjSD_cr_vc_prep, None, 2, (6,), verb_token, prep_verbDomainer2, False),
+                                             (vi_adjSD_cr_vc_verb, None, 2, (5,), verb_token, domainer2, False),
                                              (vi_adjSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
                                              (vi_adjSD_cr_nc_Prec_adv, None, 2, (5,), verb_token, domainer2, False),
                                              (vi_adjSD_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verbDomainer2, False),
@@ -1051,54 +1051,30 @@ checked and validated. The first time we run it here in this module.
 The second time the queries are run in the Experiment class to produce results.
 The results are then crossreferenced against the first run to make sure that all
 elligible functions are present in the complete result.
+
+The class validateFrame completes this task. The data is prepared
+within the module and is then called to filter the final results.
 '''
 
-
-                 (vf_args_cr_vc_CP, 'daughter'),
-                 (vf_args_cr_vc_prep, 'daughter'),
-                 (vf_args_cr_vc_verb, 'daughter'),
-                 (vf_args_cr_nc_CP, 'daughter'),
-                 (vf_args_cr_nc_Prec_adv, 'daughter'),
-                 (vf_args_cr_nc_Prec_prep, 'daughter')
-                )
-
-def getGoodClauses(params, ri=0, experiment=''):
-    '''
-    Runs all of the experiments
-    and maps acceptable mother and daughters
-    to a dictionary by their relation.
-    '''
-    print(f'Preparing base data for {experiment}')
-    good_set = set()
-    
-    # prepare & record results
-    for template in params:
-        results = set(S.search(template))
-        good_set |= set(r[ri] for r in results) 
-    return good_set
-    
-goodDaughters = getGoodClauses((vf_allarg_lex_np,
-                                vf_allarg_lex_pp, 
-                                vf_allarg_lex_pp_obj), ri=0, experiment='vf_allarg_lex_mothers')
-goodMothers = getGoodClauses((vf_args_cr_vc_CP,
-                              vf_args_cr_vc_prep, 
-                              vf_args_cr_vc_verb,
-                              vf_args_cr_nc_CP
-                              vf_args_cr_nc_Prec_adv
-                              vf_args_cr_nc_Prec_prep), ri=0, experiment='vf_allarg_lex_mothers')
-
 class validateFrame:
+    '''
+    This class prepares frame validation data
+    and then filters results based on the prepared
+    data.
+    '''
     
     def __init__(self, mother_templates=tuple(), 
                        daughter_templates=tuple(), 
                        mother_ri = 0
-                       daughter_ri = 1,
+                       daughter_ri = 3,
                        exp_name = ''):
     
     print(f'Preparing frame validation data for {exp_name}...')
     
     self.good_mothers = set()
     self.good_daughters = collections.defaultdict(set)
+    self.daughter_ri = daughter_ri
+    self.mother_ri = mother_ri
     
     for mom in mother_templates:
         results = set(S.search(template))
@@ -1112,34 +1088,58 @@ class validateFrame:
             
     print(f'\tFrame validation data prep complete.')
     
-    def validate_mothers(self, results):
-        return tuple(r for r in results if r[0] in self.good_mothers)
-        
-    def validate_daughters(self, results):
+    def mothers(self, results):
+        '''
+        Checks both a mother and her daughters
+        for validity.
+        '''
         check_relas = set(self.good_daughters.keys())
         validated_results = []
         for r in results:
-            if all([d in self.good_daughters[F.rela.v(d)] for d in E.mother.t(r[0])
-                        if F.rela.v(r) in check_relas]):
+            mother = r[self.mother_ri]
+            check_mother_daughters = all([d in self.good_daughters[F.rela.v(d)] for d in E.mother.t(mother)
+                                              if F.rela.v(d) in check_relas])
+            if mother in good_mothers and check_mother_daughters:
+                validated_results.append(r)
+        return validated_results
+                
+    def daughters(self, results):
+        '''
+        Checks daughters for validity.
+        '''
+        check_relas = set(self.good_daughters.keys())
+        validated_results = []
+        for r in results:
+            if all([d in self.good_daughters[F.rela.v(d)] for d in E.mother.t(r[0]) # NB: Assume mother is i=0
+                        if F.rela.v(d) in check_relas]):
                 validated_results.append(r)
         return validated_results
     
-    
+valLex = validateFrame(mothers=(vf_allarg_lex_np,
+                                vf_allarg_lex_pp, 
+                                vf_allarg_lex_pp_obj),
+                       daughters = (vf_args_cr_vc_CP,
+                                   vf_args_cr_vc_prep, 
+                                   vf_args_cr_vc_verb,
+                                   vf_args_cr_nc_CP,
+                                   vf_args_cr_nc_Prec_adv,
+                                   vf_args_cr_nc_Prec_prep)
+                       exp_name='vf_allarg_lex')
     
 params['frame']['vf_argAll_lex'] = (
-                                        (vf_allarg_lex_np, filterAllClauses, 2, (4,), verb_token, funct_lexer, False),
-                                        (vf_allarg_lex_pp_obj, filterAllclauses, 2, (4,), verb_token, funct_lexer, False),
-                                        (vf_allarg_lex_pp, filterAllClauses, 2, (4,), verb_token, funct_prep_o_lexer, False),
-                                        (vf_args_cr_vc_CP, filterPreC, 2, (6,), verb_token, rela_conj_lexer, False),
-                                        (vf_args_cr_vc_prep, (filterRela, RelaSets), 2, (6,), verb_token, rela_prep_lexer, False),
-                                        (vf_args_cr_vc_verb, (filterRela, RelaSets), 2, (5,), verb_token, rela_lexer, False),
-                                        (vf_args_cr_nc_CP, filterRela, 2, (6,), verb_token, rela_conj_lexer, False),
-                                        (vf_args_cr_nc_Prec_adv, (filterRela, RelaSets), 2, (5,), verb_token, rela_lexer, False),
-                                        (vf_args_cr_nc_Prec_prep, (filterRela, RelaSets), 2, (6,), verb_token, rela_prep_lexer, False),
+                                        (vf_allarg_lex_np, valLex.mothers, 2, (4,), verb_token, funct_lexer, False),
+                                        (vf_allarg_lex_pp_obj, valLex.mothers, 2, (4,), verb_token, funct_lexer, False),
+                                        (vf_allarg_lex_pp, valLex.mothers, 2, (4,), verb_token, funct_prep_o_lexer, False),
+                                        (vf_args_cr_vc_CP, valLex.daughters, 2, (6,), verb_token, rela_conj_lexer, False),
+                                        (vf_args_cr_vc_prep, valLex.daughters, 2, (6,), verb_token, rela_prep_lexer, False),
+                                        (vf_args_cr_vc_verb, valLex.daughters, 2, (5,), verb_token, rela_lexer, False),
+                                        (vf_args_cr_nc_CP, valLex.daughters, 2, (6,), verb_token, rela_conj_lexer, False),
+                                        (vf_args_cr_nc_Prec_adv, valLex.daughters, 2, (5,), verb_token, rela_lexer, False),
+                                        (vf_args_cr_nc_Prec_prep, valLex.daughters, 2, (6,), verb_token, rela_prep_lexer, False),
                                     )
 
 
-
+# PICKUP HERE
 
 # 5.3, Verb Frames, All Arguments, Semantic Domains
 
