@@ -19,8 +19,15 @@ basis_tokenizer - function to convert bases nodes into strings
 collapse_instance - T/F on whether to count multiple instances of a basis token within a clause
 '''
 
-import re, collections
+import re, collections, dill
 from __main__ import F, E, T, L, S # Text-Fabric methods
+from __main__ import cached_data
+
+if cached_data:
+    with open('VF_cache.dill', 'rb') as infile:
+        cache = dill.load(infile)
+else:
+    cache = {}
 
 params = collections.defaultdict(dict) # all parameters will be stored here
 
@@ -1082,17 +1089,21 @@ def funct_prep_o_lexer(basis, target):
     function = F.function.v(L.u(basis, 'phrase')[0])
     prep_obj = E.prep_obj.f(basis)[0]
     return f'{function}.{F.lex.v(basis)}_{F.lex.v(prep_obj)}'
-    
-valLex = validateFrame(mother_templates=(vf_allarg_lex_np,
-                                         vf_allarg_lex_pp, 
-                                         vf_allarg_lex_pp_obj),
-                       daughter_templates = (vf_args_cr_vc_CP,
-                                             vf_args_cr_vc_prep, 
-                                             vf_args_cr_vc_verb,
-                                             vf_args_cr_nc_CP,
-                                             vf_args_cr_nc_Prec_adv,
-                                             vf_args_cr_nc_Prec_prep),
-                       exp_name='vf_allarg_lex')
+
+if not cached_data:
+    valLex = validateFrame(mother_templates=(vf_allarg_lex_np,
+                                             vf_allarg_lex_pp, 
+                                             vf_allarg_lex_pp_obj),
+                           daughter_templates = (vf_args_cr_vc_CP,
+                                                 vf_args_cr_vc_prep, 
+                                                 vf_args_cr_vc_verb,
+                                                 vf_args_cr_nc_CP,
+                                                 vf_args_cr_nc_Prec_adv,
+                                                 vf_args_cr_nc_Prec_prep),
+                           exp_name='vf_allarg_lex')
+    cache['valLex'] = valLex
+else:
+    valLex = cache['valLex']
     
 params['frame']['vf_argAll_lex'] = (
                                         (vf_allarg_lex_np, valLex.daughters, 2, (5,), verb_token, funct_lexer, False),
@@ -1162,17 +1173,20 @@ vf_argsSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas
 vf_argsSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl|Adju',
                                               reqs='sem_domain_code~{good_sem_codes}'),
                                               pred_funct='Pred|PreS')
-
-valSD = validateFrame(mother_templates=(vf_allarg_sd_np,
-                                        vf_allarg_sd_pp, 
-                                        vf_allarg_sd_pp_obj),
-                      daughter_templates = (vf_argsSD_cr_vc_CP,
-                                            vf_argsSD_cr_vc_prep, 
-                                            vf_argsSD_cr_vc_verb,
-                                            vf_argsSD_cr_nc_CP,
-                                            vf_argsSD_cr_nc_Prec_adv,
-                                            vf_argsSD_cr_nc_Prec_prep),
-                      exp_name='vf_allarg_sd')
+if not cached_data:
+    valSD = validateFrame(mother_templates=(vf_allarg_sd_np,
+                                            vf_allarg_sd_pp, 
+                                            vf_allarg_sd_pp_obj),
+                          daughter_templates = (vf_argsSD_cr_vc_CP,
+                                                vf_argsSD_cr_vc_prep, 
+                                                vf_argsSD_cr_vc_verb,
+                                                vf_argsSD_cr_nc_CP,
+                                                vf_argsSD_cr_nc_Prec_adv,
+                                                vf_argsSD_cr_nc_Prec_prep),
+                          exp_name='vf_allarg_sd')
+    cache['valSD'] = valSD
+else:
+    valSD = cache['valSD']
 
 def funct_domainer(basis, target):
     # basis tokenizer for semantic domains + functions
@@ -1361,14 +1375,18 @@ vf_obj_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc', re
                                         pred_funct='Pred|PreS')
 vf_obj_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs=''),
                                       pred_funct='Pred|PreS')
-    
-valObjLex = validateFrame(mother_templates=(vf_obj_lex_np,
-                                            vf_obj_lex_pp),
-                       daughter_templates = (vf_obj_cr_vc_CP,
-                                             vf_obj_cr_vc_prep, 
-                                             vf_obj_cr_vc_verb,
-                                             vf_obj_cr_nc_CP),
-                       exp_name='vf_obj_lex')
+
+if not cached_data:
+    valObjLex = validateFrame(mother_templates=(vf_obj_lex_np,
+                                                vf_obj_lex_pp),
+                           daughter_templates = (vf_obj_cr_vc_CP,
+                                                 vf_obj_cr_vc_prep, 
+                                                 vf_obj_cr_vc_verb,
+                                                 vf_obj_cr_nc_CP),
+                           exp_name='vf_obj_lex')
+    cache['valObjLex'] = valObjLex
+else:
+    valObjLex = cache['valObjLex']
     
 params['frame']['vf_obj_lex'] = (
                                     (vf_obj_lex_np, valObjLex.daughters, 2, (5,), verb_token, funct_lexer, False),
@@ -1420,15 +1438,17 @@ vf_objSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc',
                                                                reqs='sem_domain_code~{good_sem_codes}'),
                                                                pred_funct='Pred|PreS')
 
-
-valObjSD = validateFrame(mother_templates=(vf_obj_sd_np,
-                                           vf_obj_sd_pp),
-                         daughter_templates = (vf_objSD_cr_vc_CP,
-                                               vf_objSD_cr_vc_prep, 
-                                               vf_objSD_cr_vc_verb,
-                                               vf_objSD_cr_nc_CP),
-                         exp_name='vf_obj_sd')
-
+if not cached_data:
+    valObjSD = validateFrame(mother_templates=(vf_obj_sd_np,
+                                               vf_obj_sd_pp),
+                             daughter_templates = (vf_objSD_cr_vc_CP,
+                                                   vf_objSD_cr_vc_prep, 
+                                                   vf_objSD_cr_vc_verb,
+                                                   vf_objSD_cr_nc_CP),
+                             exp_name='vf_obj_sd')
+    cache['valObjSD'] = valObjSD
+else:
+    valObjSD = cache['valObjSD']
     
 params['frame']['vf_obj_domain'] = (
                                           (vf_obj_sd_np, valObjSD.daughters, 2, (5,), verb_token, funct_domainer, False),
@@ -1527,16 +1547,19 @@ vf_cmpl_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='
                                             pred_funct=all_preds)
 vf_cmpl_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl', reqs=''),
                                              pred_funct=all_preds)
-    
-valCmplLex = validateFrame(mother_templates=(vf_cmpl_lex_np,
-                                             vf_cmpl_lex_pp),
-                           daughter_templates = (vf_cmpl_cr_vc_CP,
-                                                 vf_cmpl_cr_vc_prep, 
-                                                 vf_cmpl_cr_vc_verb,
-                                                 vf_cmpl_cr_nc_CP,
-                                                 vf_cmpl_cr_nc_Prec_adv,
-                                                 vf_cmpl_cr_nc_Prec_prep),
-                           exp_name='vf_cmpl_lex')
+if not cached_data:
+    valCmplLex = validateFrame(mother_templates=(vf_cmpl_lex_np,
+                                                 vf_cmpl_lex_pp),
+                               daughter_templates = (vf_cmpl_cr_vc_CP,
+                                                     vf_cmpl_cr_vc_prep, 
+                                                     vf_cmpl_cr_vc_verb,
+                                                     vf_cmpl_cr_nc_CP,
+                                                     vf_cmpl_cr_nc_Prec_adv,
+                                                     vf_cmpl_cr_nc_Prec_prep),
+                               exp_name='vf_cmpl_lex')
+    cache['valCmplLex'] = valCmplLex
+else:
+    valCmplLex = cache['valCmplLex']
     
 params['frame']['vf_cmpl_lex'] = (
                                         (vf_cmpl_lex_np, valCmplLex.daughters, 2, (5,), verb_token, funct_lexer, False),
@@ -1596,16 +1619,19 @@ vf_cmplSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas
 vf_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl|Adju',
                                                                              reqs='sem_domain_code~{good_sem_codes}'),
                                                                              pred_funct=all_preds)
-
-valCmplSD = validateFrame(mother_templates=(vf_cmpl_sd_np,
-                                            vf_cmpl_sd_pp),
-                      daughter_templates = (vf_cmplSD_cr_vc_CP,
-                                            vf_cmplSD_cr_vc_prep, 
-                                            vf_cmplSD_cr_vc_verb,
-                                            vf_cmplSD_cr_nc_CP,
-                                            vf_cmplSD_cr_nc_Prec_adv,
-                                            vf_cmplSD_cr_nc_Prec_prep),
-                      exp_name='vf_cmpl_sd')
+if not cached_data:
+    valCmplSD = validateFrame(mother_templates=(vf_cmpl_sd_np,
+                                                vf_cmpl_sd_pp),
+                          daughter_templates = (vf_cmplSD_cr_vc_CP,
+                                                vf_cmplSD_cr_vc_prep, 
+                                                vf_cmplSD_cr_vc_verb,
+                                                vf_cmplSD_cr_nc_CP,
+                                                vf_cmplSD_cr_nc_Prec_adv,
+                                                vf_cmplSD_cr_nc_Prec_prep),
+                          exp_name='vf_cmpl_sd')
+    cache['valCmplSD'] = valCmplSD
+else:
+    valCmplSD = cache['valCmplSD']
 
     
 params['frame']['vf_cmpl_domain'] = (
@@ -1713,16 +1739,19 @@ vf_adju_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='
                                             pred_funct=all_preds)
 vf_adju_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Adju|PrAd', reqs=''),
                                              pred_funct=all_preds)
-    
-valAdjuLex = validateFrame(mother_templates=(vf_adju_lex_np,
-                                             vf_adju_lex_pp),
-                           daughter_templates = (vf_adju_cr_vc_CP,
-                                                 vf_adju_cr_vc_prep, 
-                                                 vf_adju_cr_vc_verb,
-                                                 vf_adju_cr_nc_CP,
-                                                 vf_adju_cr_nc_Prec_adv,
-                                                 vf_adju_cr_nc_Prec_prep),
-                           exp_name='vf_adju_lex')
+if not cached_data:
+    valAdjuLex = validateFrame(mother_templates=(vf_adju_lex_np,
+                                                 vf_adju_lex_pp),
+                               daughter_templates = (vf_adju_cr_vc_CP,
+                                                     vf_adju_cr_vc_prep, 
+                                                     vf_adju_cr_vc_verb,
+                                                     vf_adju_cr_nc_CP,
+                                                     vf_adju_cr_nc_Prec_adv,
+                                                     vf_adju_cr_nc_Prec_prep),
+                               exp_name='vf_adju_lex')
+    cache['valAdjuLex'] = valAdjuLex
+else:
+    valAdjuLex = cache['valAdjuLex']
     
 params['frame']['vf_adju_lex'] = (
                                         (vf_adju_lex_np, valAdjuLex.daughters, 2, (5,), verb_token, funct_lexer, False),
@@ -1776,16 +1805,19 @@ vf_adjuSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas
                                             pred_funct=all_preds)
 vf_adjuSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Adju|PrAd', reqs=''),
                                              pred_funct=all_preds)
-    
-valAdjuSD = validateFrame(mother_templates=(vf_adju_sd_np,
-                                             vf_adju_sd_pp),
-                           daughter_templates = (vf_adjuSD_cr_vc_CP,
-                                                 vf_adjuSD_cr_vc_prep, 
-                                                 vf_adjuSD_cr_vc_verb,
-                                                 vf_adjuSD_cr_nc_CP,
-                                                 vf_adjuSD_cr_nc_Prec_adv,
-                                                 vf_adjuSD_cr_nc_Prec_prep),
-                           exp_name='vf_adju_sd')
+if not cached_data:
+    valAdjuSD = validateFrame(mother_templates=(vf_adju_sd_np,
+                                                 vf_adju_sd_pp),
+                               daughter_templates = (vf_adjuSD_cr_vc_CP,
+                                                     vf_adjuSD_cr_vc_prep, 
+                                                     vf_adjuSD_cr_vc_verb,
+                                                     vf_adjuSD_cr_nc_CP,
+                                                     vf_adjuSD_cr_nc_Prec_adv,
+                                                     vf_adjuSD_cr_nc_Prec_prep),
+                               exp_name='vf_adju_sd')
+    cache['valAdjuSD'] = valAdjuSD
+else:
+    valAdjuSD = cache['valAdjuSD']
     
 params['frame']['vf_adju_domain'] = (
                                           (vf_adju_sd_np, valAdjuSD.daughters, 2, (5,), verb_token, funct_domainer, False),
@@ -2043,5 +2075,10 @@ def tenser(basis, target):
 params['inventory']['vg_tense'] = (
                                       (vg_tense, None, 2, (2,), verb_token, tenser, True),
                                   )
+
+# save the cache
+
+with open('VF_cache.dill', 'wb') as outfile:
+    dill.dump(cache, outfile)
 
 print('\nAll parameters ready!')

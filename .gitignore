@@ -5,3 +5,4 @@ __pycache__
 __init__.py
 *.pickle
 sdbh
+VF_cache.dill
