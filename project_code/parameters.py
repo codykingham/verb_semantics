@@ -24,7 +24,7 @@ from __main__ import F, E, T, L, S # Text-Fabric methods
 from __main__ import cached_data
 
 if cached_data:
-    with open('VF_cache.dill', 'rb') as infile:
+    with open('/Users/cody/Documents/VF_cache.dill', 'rb') as infile:
         cache = dill.load(infile)
 else:
     cache = {}
@@ -87,8 +87,8 @@ code_priorities = (('1\.001001[0-9]*',  # ANIMATE
                    '1\.003001005', # names of groups (!)
                    '2\.[0-9]*'), # frames
     
-                  ('1\.002[1-9]*', # EVENTS
-                   '1\.003002[1-9]*',
+                  ('1\.002[0-9]*', # EVENTS
+                   '1\.003002[0-9]*',
                    '1\.002$'))
 
 def code2tag(code):
@@ -2078,7 +2078,7 @@ params['inventory']['vg_tense'] = (
 
 # save the cache
 
-with open('VF_cache.dill', 'wb') as outfile:
+with open('/Users/cody/Documents/VF_cache.dill', 'wb') as outfile:
     dill.dump(cache, outfile)
 
 print('\nAll parameters ready!')
