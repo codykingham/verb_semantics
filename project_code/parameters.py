@@ -30,42 +30,22 @@ params = collections.defaultdict(dict) # all parameters will be stored here
 
 # standard predicate target template
 
-# this predicate target template is no longer used since
-# it does not account for predicate participles.
-pred_target_OLD = '''
-c1:clause
-either:
-    c2:clause typ#Ptcp
-        phrase function={pred_funct}
-            target:word pdp=verb language=Hebrew
-    c2 = c1
-or:
-    c2:clause typ=Ptcp
-        phrase function=PreC|{pred_funct}
-    
-{basis}
-
-lex freq_lex>9
-   lexword:word 
-   lexword = target
-'''
-
 pred_target = '''
 
 c1:clause
     p1:phrase
 
-    either:
-        clause typ#Ptcp
-            p:phrase function={pred_funct}
-                -heads> word pdp=verb language=Hebrew
-            p = p1
-    or:
-        clause typ=Ptcp
-            p:phrase function=PreC|{pred_funct}
-                -heads> word pdp=verb language=Hebrew
-            p = p1
-    end:
+    /with/
+    clause typ#Ptcp
+        p:phrase function={pred_funct}
+            -heads> word pdp=verb language=Hebrew
+        p = p1
+    /or/
+    clause typ=Ptcp
+        p:phrase function=PreC|{pred_funct}
+            -heads> word pdp=verb language=Hebrew
+        p = p1
+    /-/
 
         target:word pdp=verb
     
@@ -205,6 +185,90 @@ def rela_lexer(basis, target):
     rela = F.rela.v(L.u(clause, 'phrase')[0])
     return f'{rela}.{F.lex.v(basis)}'
 
+
+'''
+Frame Methodology Notes:
+Within the frame, every capturable element
+must be present. If there is an uncapturable element, 
+we must exclude the entire clause. Examples of "uncapturable
+elements" are daughter clauses that are verbless without a 
+conjunction. It is not possible to condense these down into
+a lexical token, as can be done with כאשר + verb, for instance.
+Thus, not only these clauses, but also their mothers, must be excluded.
+
+In order to know which clauses should be excluded, we have
+to run the whole experiment twice so that every clause relation can be
+checked and validated. The first time we run it here in this module.
+
+The second time the queries are run in the Experiment class to produce results.
+The results are then crossreferenced against the first run to make sure that all
+elligible functions are present in the complete result.
+
+The class validateFrame (below) completes this task. The data is prepared
+within the module and is then called to filter the final results.
+'''
+
+class validateFrame:
+    '''
+    This class prepares frame validation data
+    and then filters results based on the prepared
+    data.
+    '''
+    
+    def __init__(self, mother_templates=tuple(), 
+                       daughter_templates=tuple(), 
+                       mother_ri = 0,
+                       daughter_ri = 3,
+                       exp_name = ''):
+    
+        print(f'Preparing frame validation data for {exp_name}...')
+
+        self.good_mothers = set()
+        self.good_daughters = collections.defaultdict(set)
+        self.daughter_ri = daughter_ri
+        self.mother_ri = mother_ri
+
+        print(f'\tpreparing good mother set...')
+        for mom in mother_templates:
+            results = set(S.search(mom))
+            self.good_mothers |= set(r[mother_ri] for r in results) 
+
+        print(f'\tpreparing good daughter set...')
+        for daught in daughter_templates:
+            results = set(S.search(daught))
+            for r in results:
+                rela = F.rela.v(r[daughter_ri])
+                self.good_daughters[rela].add(r[daughter_ri])
+
+        print(f'\t√ Frame validation data prep complete.')
+    
+    def mothers(self, results):
+        '''
+        Checks both a mother and her daughters
+        for validity.
+        '''
+        check_relas = set(self.good_daughters.keys())
+        validated_results = []
+        for r in results:
+            mother = r[self.mother_ri]
+            check_mother_daughters = all([d in self.good_daughters[F.rela.v(d)] for d in E.mother.t(mother)
+                                              if F.rela.v(d) in check_relas])
+            if mother in self.good_mothers and check_mother_daughters:
+                validated_results.append(r)
+        return validated_results
+                
+    def daughters(self, results):
+        '''
+        Checks daughters for validity.
+        '''
+        check_relas = set(self.good_daughters.keys())
+        validated_results = []
+        for r in results:
+            if all([d in self.good_daughters[F.rela.v(d)] for d in E.mother.t(r[0]) # NB: Assume mother is i=0
+                        if F.rela.v(d) in check_relas]):
+                validated_results.append(r)
+        return validated_results
+
 '''
 The following search templates are specialized for
 selecting carefully defined clause relations. These
@@ -222,15 +286,15 @@ clR_vc_CP = '''
 c2:clause
     p1:phrase typ=CP
     p2:phrase
-    either:
-        clause kind=VC rela={relas} typ#Ptcp
-            p3:phrase function=Pred|PreS|PreO
-            p3 = p2
-    or:
-        clause kind=VC rela={relas} typ=Ptcp
-            p3:phrase function=PreC|PtcO
-            p3 = p2
-    end:
+    /with/
+    clause kind=VC rela={relas} typ#Ptcp
+        p3:phrase function=Pred|PreS|PreO
+        p3 = p2
+    /or/
+    clause kind=VC rela={relas} typ=Ptcp
+        p3:phrase function=PreC|PtcO
+        p3 = p2
+    /-/
 
         basis:word pdp=verb {reqs}
 
@@ -244,19 +308,19 @@ clR_vc_prep = '''
 #basis @ 6
 
 c2:clause
-no:
-    ^ phrase typ=CP
-end:
+/without/
+    phrase typ=CP
+/-/
     p2:phrase
-    either:
-        clause kind=VC rela={relas} typ#Ptcp
-            p:phrase function=Pred|PreS|PreO
-            p = p2
-    or:
-        clause kind=VC rela={relas} typ=Ptcp
-            p:phrase function=PreC|PtcO
-            p = p2
-    end:
+    /with/
+    clause kind=VC rela={relas} typ#Ptcp
+        p:phrase function=Pred|PreS|PreO
+        p = p2
+    /or/
+    clause kind=VC rela={relas} typ=Ptcp
+        p:phrase function=PreC|PtcO
+        p = p2
+    /-/
     
         word pdp=prep
         < word pdp=verb {reqs} 
@@ -269,30 +333,30 @@ clR_vc_verb = '''
 #basis @ 5
 
 c2:clause
-no:
-    ^ phrase typ=CP
-end:
-no:
-    ^ word pdp=prin|inrg
-end:
+/without/
+    phrase typ=CP
+/-/
+/without/
+    word pdp=prin|inrg
+/-/
 
     p2:phrase
     
-    either:
-        clause kind=VC rela={relas} typ#Ptcp
-            p:phrase function=Pred|PreS|PreO
-            no:
-                ^ word pdp=prep
-            end:
-            p = p2
-    or:
-        clause kind=VC rela={relas} typ=Ptcp
-            p:phrase function=PreC|PtcO
-            no:
-                ^ word pdp=prep
-            end:
-            p = p2
-    end:
+    /with/
+    clause kind=VC rela={relas} typ#Ptcp
+        p:phrase function=Pred|PreS|PreO
+        /without/
+            word pdp=prep
+        /-/
+        p = p2
+    /or/
+    clause kind=VC rela={relas} typ=Ptcp
+        p:phrase function=PreC|PtcO
+        /without/
+            word pdp=prep
+        /-/
+        p = p2
+    /-/
     
         basis:word pdp=verb {reqs}
 
@@ -303,36 +367,34 @@ clR_nc_CP = '''
 c2:clause kind=NC rela={relas}
     phrase typ=CP
     < phrase function=PreC
-        -heads> word {reqs}
+        -heads> word pdp#prep|prps|prde|prin|inrg {reqs}
 
 c1 <mother- c2
 '''
 
 clR_nc_PreC_adv = '''
-
 #only for use with adj/cmpl relations 
 
 c2:clause kind=NC rela={relas}
-no:
-    ^ phrase typ=CP
-end:
+/without/
+    phrase typ=CP
+/-/
     phrase function=PreC typ=AdvP
-        -heads> word {reqs}
+        -heads> word pdp#prep|prps|prde|prin|inrg {reqs}
 
 c1 <mother- c2
 '''
 
 clR_nc_PreC_prep = '''
-
 #only for use with adj/cmpl functions 
 
 c2:clause kind=NC rela={relas}
-no:
-    ^ phrase typ=CP
-end:
+/without/
+    phrase typ=CP
+/-/
     phrase function=PreC typ=PP
         -heads> word pdp=prep
-        -prep_obj> word {reqs}
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg {reqs}
 
 c1 <mother- c2
 '''
@@ -396,17 +458,17 @@ c1 <mother- c2
 vi_o_pa_null = pred_target.format(basis='''
 
 c2:clause
-no:
+/without/
     <mother- clause rela=Objc
-end:
-no:
-    ^ phrase function=Objc|PtcO|Rela
-end:
-no:
-    ^ ca:clause_atom
+/-/
+/without/
+    phrase function=Objc|PtcO|Rela
+/-/
+/without/
+    ca:clause_atom
     speech:clause_atom code=999
     ca <mother- speech
-end:
+/-/
 
 c1 = c2
 ''', pred_funct='Pred|PreS')
@@ -601,12 +663,12 @@ c1 <mother- c2
 vi_cmp_pa_null = pred_target.format(basis='''
 
 c2:clause
-    no:
-        phrase function=Cmpl
-    end:
-    no:
-        <mother- clause rela=Cmpl
-    end:
+/without/
+    phrase function=Cmpl
+/-/
+/without/
+<mother- clause rela=Cmpl
+/-/
 
 c1 = c2
 ''', pred_funct=all_preds)
@@ -874,40 +936,22 @@ params['inventory']['vi_adj+_domain2'] = (
 
 # 5.1, Verb Frames, All Arguments, Presence/Absence
 
-vf_allarg_pa_np = pred_target.format(basis='''
+vf_allarg_pa = pred_target.format(basis='''
 
 c2:clause
 no:
     ^ phrase function=Rela
 end:
     
-    p1:phrase
-    either:
-        p2:phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ#PP
-        p1 = p2
-    or:
-        p2:phrase function=Objc typ=PP
-        p1 = p2
-    end:
+    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd
     
 c1 = c2
 ''', pred_funct=all_preds)
 
-vf_allarg_pa_pp = pred_target.format(basis='''
+vf_allarg_pa_clRela = pred_target.format(basis='''
 
-c2:clause
-no:
-    ^ phrase function=Cmpl|Adju|Time|Loca|PrAd typ=PP
-        -heads> word pdp#prep
-end:
-no:
-    ^ phrase function=Rela
-end:
+<mother- clause rela=Objc|Cmpl|Adju|PrAd
 
-    phrase function=Cmpl|Adju|Time|Loca|PrAd typ=PP
-        -heads> word pdp=prep
-
-c1 = c2
 ''', pred_funct=all_preds)
 
 vf_allarg_pa_null = pred_target.format(basis='''
@@ -928,18 +972,13 @@ end:
 c1 = c2
 ''', pred_funct='Pred|PreS')
 
+
 vf_allarg_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
 vf_allarg_pa_speech = vi_o_pa_speech
 
-def prep_o_functioner(basis, target):
-    # builds prep_lex + function basis tokens
-    prep_lex = F.lex.v(basis)
-    basis_function = F.function.v(L.u(basis, 'phrase')[0])
-    return f'{prep_lex}_{basis_function}'
-
 params['frame']['vf_argAll_pa'] = (
-                                      (vf_allarg_pa_np, None, 2, (3,), verb_token, functioner, False),
-                                      (vf_allarg_pa_pp, None, 2, (4,), verb_token, prep_o_functioner, False),
+                                      (vf_allarg_pa, None, 2, (4,), verb_token, functioner, False),
+                                      (vf_allarg_pa_clRela, None, 2, (3,), verb_token, relationer, False),
                                       (vf_allarg_pa_suffix, None, 2, (2,), verb_token, simple_object, False),
                                       (vf_allarg_pa_speech, None, 2, (2,), verb_token, simple_object, False),
                                       (vf_allarg_pa_null, None, 2, (2,), verb_token, nuller, False)
@@ -949,6 +988,10 @@ params['frame']['vf_argAll_pa'] = (
 
 
 # 5.2, Verb Frames, All Arguments, Lexemes
+
+# rules:
+# • Select only lexical elements (e.g. not pronouns) within the frame with all argument functions
+# • Any non-lexical elements with an argument function excludes the frame altogether.
 
 # a set of conditions that must hold true
 # for all frame elements that are selected
@@ -963,16 +1006,16 @@ end:
 all:
     ^ phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ#PP
 have:
-      -heads> word
+      -heads> word pdp#prep|prps|prde|prin|inrg
 end:
 
 all:
   ^ phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=PP
 have:
     all:
-        -heads> word
+        -heads> word pdp=prep
     have:
-        -prep_obj> word
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg
     end:
 end:
 
@@ -988,26 +1031,25 @@ vf_allarg_lex_np = pred_target.format(basis=f'''
         
 ''', pred_funct='Pred|PreS')
 
-vf_allarg_lex_pp = pred_target.format(basis='''
+vf_allarg_lex_pp = pred_target.format(basis=f'''
 
 {vf_all_arg_conditions}
 
     phrase function=Cmpl|Adju|Time|Loca|PrAd typ=PP
-        -heads> word pdp=prep
+        -heads> word
         -prep_obj> word
         
 ''', pred_funct='Pred|PreS')
 
-vf_allarg_lex_pp_obj = pred_target.format(basis='''
+vf_allarg_lex_pp_obj = pred_target.format(basis=f'''
 
 {vf_all_arg_conditions}
 
     phrase function=Objc typ=PP
-        -heads> word pdp=prep
+        -heads> word
         -prep_obj> word
      
 ''', pred_funct='Pred|PreS')
-
     
 # Clause Relations
 vf_args_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc|Cmpl|Adju', reqs=''), 
@@ -1033,178 +1075,119 @@ def funct_prep_o_lexer(basis, target):
     function = F.function.v(L.u(basis, 'phrase')[0])
     prep_obj = E.prep_obj.f(basis)[0]
     return f'{function}.{F.lex.v(basis)}_{F.lex.v(prep_obj)}'
-
-'''
-Method Notes:
-Within the frame, every capturable element
-must be present. If there is an uncapturable element, 
-we must exclude the entire clause. Examples of "uncapturable
-elements" are daughter clauses that are verbless without a 
-conjunction. It is not possible to condense these down into
-a lexical token, as can be done with כאשר + verb, for instance.
-Thus, not only these clauses, but also their mothers, must be excluded.
-
-In order to know which clauses should be excluded, we have
-to run the whole experiment twice so that every clause relation can be
-checked and validated. The first time we run it here in this module.
-
-The second time the queries are run in the Experiment class to produce results.
-The results are then crossreferenced against the first run to make sure that all
-elligible functions are present in the complete result.
-
-The class validateFrame completes this task. The data is prepared
-within the module and is then called to filter the final results.
-'''
-
-class validateFrame:
-    '''
-    This class prepares frame validation data
-    and then filters results based on the prepared
-    data.
-    '''
     
-    def __init__(self, mother_templates=tuple(), 
-                       daughter_templates=tuple(), 
-                       mother_ri = 0
-                       daughter_ri = 3,
-                       exp_name = ''):
-    
-    print(f'Preparing frame validation data for {exp_name}...')
-    
-    self.good_mothers = set()
-    self.good_daughters = collections.defaultdict(set)
-    self.daughter_ri = daughter_ri
-    self.mother_ri = mother_ri
-    
-    for mom in mother_templates:
-        results = set(S.search(template))
-        self.good_mothers |= set(r[mother_ri] for r in results) 
-        
-    for daught in daughter_templates:
-        results = set(S.search(template))
-        for r in results:
-            rela = F.rela.v(r[daughter_ri])
-            self.good_daughters[rela] = r[daughter_ri]
-            
-    print(f'\tFrame validation data prep complete.')
-    
-    def mothers(self, results):
-        '''
-        Checks both a mother and her daughters
-        for validity.
-        '''
-        check_relas = set(self.good_daughters.keys())
-        validated_results = []
-        for r in results:
-            mother = r[self.mother_ri]
-            check_mother_daughters = all([d in self.good_daughters[F.rela.v(d)] for d in E.mother.t(mother)
-                                              if F.rela.v(d) in check_relas])
-            if mother in good_mothers and check_mother_daughters:
-                validated_results.append(r)
-        return validated_results
-                
-    def daughters(self, results):
-        '''
-        Checks daughters for validity.
-        '''
-        check_relas = set(self.good_daughters.keys())
-        validated_results = []
-        for r in results:
-            if all([d in self.good_daughters[F.rela.v(d)] for d in E.mother.t(r[0]) # NB: Assume mother is i=0
-                        if F.rela.v(d) in check_relas]):
-                validated_results.append(r)
-        return validated_results
-    
-valLex = validateFrame(mothers=(vf_allarg_lex_np,
-                                vf_allarg_lex_pp, 
-                                vf_allarg_lex_pp_obj),
-                       daughters = (vf_args_cr_vc_CP,
-                                   vf_args_cr_vc_prep, 
-                                   vf_args_cr_vc_verb,
-                                   vf_args_cr_nc_CP,
-                                   vf_args_cr_nc_Prec_adv,
-                                   vf_args_cr_nc_Prec_prep)
+valLex = validateFrame(mother_templates=(vf_allarg_lex_np,
+                                         vf_allarg_lex_pp, 
+                                         vf_allarg_lex_pp_obj),
+                       daughter_templates = (vf_args_cr_vc_CP,
+                                             vf_args_cr_vc_prep, 
+                                             vf_args_cr_vc_verb,
+                                             vf_args_cr_nc_CP,
+                                             vf_args_cr_nc_Prec_adv,
+                                             vf_args_cr_nc_Prec_prep),
                        exp_name='vf_allarg_lex')
     
 params['frame']['vf_argAll_lex'] = (
-                                        (vf_allarg_lex_np, valLex.mothers, 2, (4,), verb_token, funct_lexer, False),
-                                        (vf_allarg_lex_pp_obj, valLex.mothers, 2, (4,), verb_token, funct_lexer, False),
-                                        (vf_allarg_lex_pp, valLex.mothers, 2, (4,), verb_token, funct_prep_o_lexer, False),
-                                        (vf_args_cr_vc_CP, valLex.daughters, 2, (6,), verb_token, rela_conj_lexer, False),
-                                        (vf_args_cr_vc_prep, valLex.daughters, 2, (6,), verb_token, rela_prep_lexer, False),
-                                        (vf_args_cr_vc_verb, valLex.daughters, 2, (5,), verb_token, rela_lexer, False),
-                                        (vf_args_cr_nc_CP, valLex.daughters, 2, (6,), verb_token, rela_conj_lexer, False),
-                                        (vf_args_cr_nc_Prec_adv, valLex.daughters, 2, (5,), verb_token, rela_lexer, False),
-                                        (vf_args_cr_nc_Prec_prep, valLex.daughters, 2, (6,), verb_token, rela_prep_lexer, False),
+                                        (vf_allarg_lex_np, valLex.daughters, 2, (5,), verb_token, funct_lexer, False),
+                                        (vf_allarg_lex_pp_obj, valLex.daughters, 2, (6,), verb_token, funct_lexer, False),
+                                        (vf_allarg_lex_pp, valLex.daughters, 2, (6,), verb_token, funct_prep_o_lexer, False),
+                                        (vf_args_cr_vc_CP, valLex.mothers, 2, (6,), verb_token, rela_conj_lexer, False),
+                                        (vf_args_cr_vc_prep, valLex.mothers, 2, (6,), verb_token, rela_prep_lexer, False),
+                                        (vf_args_cr_vc_verb, valLex.mothers, 2, (5,), verb_token, rela_lexer, False),
+                                        (vf_args_cr_nc_CP, valLex.mothers, 2, (6,), verb_token, rela_conj_lexer, False),
+                                        (vf_args_cr_nc_Prec_adv, valLex.mothers, 2, (5,), verb_token, rela_lexer, False),
+                                        (vf_args_cr_nc_Prec_prep, valLex.mothers, 2, (6,), verb_token, rela_prep_lexer, False),
                                     )
 
 
-# PICKUP HERE
 
 # 5.3, Verb Frames, All Arguments, Semantic Domains
 
+vf_all_arg_conditions_SD = '''
+
+c2:clause
+no:
+   ^ phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ#NP|PrNP|AdvP|PP
+end:
+
+all:
+    ^ phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ#PP
+have:
+      -heads> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
+end:
+
+all:
+  ^ phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=PP
+have:
+    all:
+        -heads> word pdp=prep
+    have:
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
+    end:
+end:
+
+c1 = c2
+'''
+
 vf_allarg_sd_np = pred_target.format(basis=f'''
 
-    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
-        -heads> word sem_domain_code~{good_sem_codes}
+{vf_all_arg_conditions}
 
+    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
+        -heads> word
+        
 ''', pred_funct='Pred|PreS')
 
 vf_allarg_sd_pp = pred_target.format(basis=f'''
 
-    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=PP
-        -heads> word pdp=prep
-        -prep_obj> word pdp~^(?!prep) sem_domain_code~{good_sem_codes}
+{vf_all_arg_conditions}
 
+    phrase function=Cmpl|Adju|Time|Loca|PrAd typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word
+        
 ''', pred_funct='Pred|PreS')
 
+vf_allarg_sd_pp_obj = pred_target.format(basis=f'''
+
+{vf_all_arg_conditions}
+
+    phrase function=Objc typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word
+     
+''', pred_funct='Pred|PreS')
 
 # Clause Relations
-vf_argsSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc|Cmpl|Adju', reqs='sem_domain_code~{good_sem_codes}'), 
+vf_argsSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc|Cmpl|Adju', 
+                                        reqs='sem_domain_code~{good_sem_codes}'), 
                                         pred_funct='Pred|PreS')
-vf_argsSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc|Cmpl|Adju', reqs='sem_domain_code~{good_sem_codes}'),
+vf_argsSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc|Cmpl|Adju', 
+                                          reqs='sem_domain_code~{good_sem_codes}'),
                                           pred_funct='Pred|PreS')
-vf_argsSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc|Cmpl|Adju', reqs='sem_domain_code~{good_sem_codes}'),
+vf_argsSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc|Cmpl|Adju', 
+                                          reqs='sem_domain_code~{good_sem_codes}'),
                                           pred_funct='Pred|PreS')
-vf_argsSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Cmpl|Adju', reqs='sem_domain_code~{good_sem_codes}'),
+vf_argsSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Cmpl|Adju', 
+                                        reqs='sem_domain_code~{good_sem_codes}'),
                                         pred_funct='Pred|PreS')
-vf_argsSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl|Adju', reqs='sem_domain_code~{good_sem_codes}'),
+vf_argsSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl|Adju',
+                                              reqs='sem_domain_code~{good_sem_codes}'),
                                               pred_funct='Pred|PreS')
-vf_argsSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl|Adju', reqs='sem_domain_code~{good_sem_codes}'),
+vf_argsSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl|Adju',
+                                              reqs='sem_domain_code~{good_sem_codes}'),
                                               pred_funct='Pred|PreS')
 
-# run experiments for good daughters check (see explanation above)
-paramsSD = ((vf_argsSD_cr_vc_CP, filterPreC),
-           (vf_argsSD_cr_vc_prep, filterPreC),
-           (vf_argsSD_cr_vc_verb, filterPreC),
-           (vf_argsSD_cr_nc_CP, None),
-           (vf_argsSD_cr_nc_Prec_adv, None),
-           (vf_argsSD_cr_nc_Prec_prep, None))
-
-goodDaughtersSD = get_goodDaughters(paramsSD)
-
-def filterAllClausesSD(results):
-    '''
-    Applies the goodDaughters dict
-    as a filter. All applicable daughteres
-    for a given clause must be validated.
-    '''
-    new_results = []
-    for res in results:
-        mother = res[0]
-        daughters = [d for d in E.mother.t(mother) if F.rela.v(r) in {'Objc', 'Adju', 'Cmpl'}]
-        daught_is_good = [d in goodDaughtersSD[F.rela.v(d)] for d in daughters]
-        if all(daught_is_good):
-            new_results.append(res)
-            
-def filterRelaSD(results):
-    '''
-    Applies both the daughter filter
-    and the PreC filter.
-    '''
-    new_results = filterPreC(results)
-    new_results2 = filterAllClausesSD(new_results)
-    return new_results2
+valSD = validateFrame(mother_templates=(vf_allarg_sd_np,
+                                        vf_allarg_sd_pp, 
+                                        vf_allarg_sd_pp_obj),
+                      daughter_templates = (vf_argsSD_cr_vc_CP,
+                                            vf_argsSD_cr_vc_prep, 
+                                            vf_argsSD_cr_vc_verb,
+                                            vf_argsSD_cr_nc_CP,
+                                            vf_argsSD_cr_nc_Prec_adv,
+                                            vf_argsSD_cr_nc_Prec_prep),
+                      exp_name='vf_allarg_sd')
 
 def funct_domainer(basis, target):
     # basis tokenizer for semantic domains + functions
@@ -1242,14 +1225,15 @@ def rela_domainer(basis, target):
     return f'{rela}.{sem_category}'
     
 params['frame']['vf_argAll_domain'] = (
-                                          (vf_allarg_sd_np, filterAllClausesSD, 2, (4,), verb_token, funct_domainer, False),
-                                          (vf_allarg_sd_pp, filterAllClausesSD, 2, (4,), verb_token, funct_prep_o_domainer, False),
-                                          (vf_args_cr_vc_CP, filterPreC, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_args_cr_vc_prep, (filterRelaSD, RelaSets), 2, (6,), verb_token, rela_prep_domainer, False),
-                                          (vf_args_cr_vc_verb, (filterRelaSD, RelaSets), 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_args_cr_nc_CP, filterRelaSD, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_args_cr_nc_Prec_adv, (filterRelaSD, RelaSets), 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_args_cr_nc_Prec_prep, (filterRelaSD, RelaSets), 2, (6,), verb_token, rela_prep_domainer, False),
+                                          (vf_allarg_sd_np, valSD.daughter, 2, (5,), verb_token, funct_domainer, False),
+                                          (vf_allarg_sd_pp, valSD.daughter, 2, (6,), verb_token, funct_prep_o_domainer, False),
+                                          (vf_allarg_sd_pp_obj, valSD.daughter, 2, (6, verb_token, funct_domainer, False))
+                                          (vf_args_cr_vc_CP, valSD.mother, 2, (6,), verb_token, rela_conj_domainer, False),
+                                          (vf_args_cr_vc_prep, valSD.mother, 2, (6,), verb_token, rela_prep_domainer, False),
+                                          (vf_args_cr_vc_verb, valSD.mother, 2, (5,), verb_token, rela_domainer, False),
+                                          (vf_args_cr_nc_CP, valSD.mother, 2, (6,), verb_token, rela_conj_domainer, False),
+                                          (vf_args_cr_nc_Prec_adv, valSD.mother, 2, (5,), verb_token, rela_domainer, False),
+                                          (vf_args_cr_nc_Prec_prep, valSD.mother, 2, (6,), verb_token, rela_prep_domainer, False),
                                       )
 
 
@@ -1293,86 +1277,168 @@ def rela_domainer2(basis, target):
     return f'{rela}.{sem_domain}'
 
 params['frame']['vf_argAll_domain2'] = (
-                                          (vf_allarg_sd_np, filterAllClauses, 2, (4,), verb_token, funct_domainer2, False),
-                                          (vf_allarg_sd_pp, filterAllClauses, 2, (4,), verb_token, funct_prep_o_domainer2, False),
-                                          (vf_args_cr_vc_CP, filterPreC, 2, (6,), verb_token, rela_conj_domainer2, False),
-                                          (vf_args_cr_vc_prep, (filterRela, RelaSets), 2, (6,), verb_token, rela_prep_domainer2, False),
-                                          (vf_args_cr_vc_verb, (filterRela, RelaSets), 2, (5,), verb_token, rela_domainer2, False),
-                                          (vf_args_cr_nc_CP, filterRela, 2, (6,), verb_token, rela_conj_domainer2, False),
-                                          (vf_args_cr_nc_Prec_adv, (filterRela, RelaSets), 2, (5,), verb_token, rela_domainer2, False),
-                                          (vf_args_cr_nc_Prec_prep, (filterRela, RelaSets), 2, (6,), verb_token, rela_prep_domainer2, False),
+                                          (vf_allarg_sd_np, valSD.daughter, 2, (5,), verb_token, funct_domainer2, False),
+                                          (vf_allarg_sd_pp, valSD.daughter, 2, (6,), verb_token, funct_prep_o_domainer2, False),
+                                          (vf_allarg_sd_pp_obj, valSD.daughter, 2, (6, verb_token, funct_domainer2, False))
+                                          (vf_args_cr_vc_CP, valSD.mother, 2, (6,), verb_token, rela_conj_domainer2, False),
+                                          (vf_args_cr_vc_prep, valSD.mother, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                          (vf_args_cr_vc_verb, valSD.mother, 2, (5,), verb_token, rela_domainer2, False),
+                                          (vf_args_cr_nc_CP, valSD.mother, 2, (6,), verb_token, rela_conj_domainer2, False),
+                                          (vf_args_cr_nc_Prec_adv, valSD.mother, 2, (5,), verb_token, rela_domainer2, False),
+                                          (vf_args_cr_nc_Prec_prep, valSD.mother, 2, (6,), verb_token, rela_prep_domainer2, False),
                                       )
 
 
-''''
-
-# 6.1, Verb Frame, Objects, Lexemes 
-
-# 6.2, Verb Frame, Objects, Semantic Domains
-
-# 6.3, Verb Frame, Objects, Semantic Domains - Longform
 
 
+# 6.1, Verb Frame, Objects, Presence/Absence
+vf_obj_pa = pred_target.format(basis='''
 
-# 7.1, Verb Frame, Complements, Lexemes
+c2:clause
+no:
+    ^ phrase function=Rela
+end:
+    
+    phrase function=Objc
+    
+c1 = c2
+''', pred_funct=all_preds)
+
+vf_obj_pa_clRela = pred_target.format(basis='''
+
+<mother- clause rela=Objc
+
+''', pred_funct=all_preds)
+
+vf_obj_pa_null = pred_target.format(basis='''
+
+c2:clause
+no:
+    <mother- clause rela=Objc
+end:
+no:
+    ^ phrase function=Objc|Rela
+end:
+no:
+    ^ ca:clause_atom
+    speech:clause_atom code=999
+    ca <mother- speech
+end:
+
+c1 = c2
+''', pred_funct='Pred|PreS')
 
 
-def filterCmplClauses(results):
-    '''
-    Applies the goodDaughters dict
-    as a filter. All applicable daughteres
-    for a given clause must be validated.
-    '''
-    new_results = []
-    for res in results:
-        mother = res[0]
-        daughters = [d for d in E.mother.t(mother) if F.rela.v(r) in {'Cmpl'}]
-        daught_is_good = [d in goodDaughters[F.rela.v(d)] for d in daughters]
-        if all(daught_is_good):
-            new_results.append(res)
 
+vf_obj_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
+vf_obj_pa_speech = vi_o_pa_speech
 
-params['frame']['vf_cmpl_lex'] = (
-                                     (vi_cmpl_lex_pp, ADDFUNCTION, 2, (4,), verb_token, funct_prep_o_lexer, False),
-                                     (vi_cmpl_lex_np, ADDFUNCTION, 2, (4,), verb_token, funct_lexer, False),
-                                     (vi_cmpl_lex_clRela, ADDFUNCTION, 2, (5,), verb_token, funct_lexer, False)
-                                     (vi_cmpl_cr_vc_CP, filterPreC, 2, (6,), verb_token, rela_conj_lexer, False),
-                                     (vi_cmpl_cr_vc_prep, (filterRela, RelaSets), 2, (6,), verb_token, rela_prep_lexer, False),
-                                     (vi_cmpl_cr_vc_verb, (filterRela, RelaSets), 2, (5,), verb_token, rela_lexer, False),
-                                     (vi_cmpl_cr_nc_CP, filterRela, 2, (6,), verb_token, rela_conj_lexer, False),
-                                     (vi_cmpl_cr_nc_Prec_adv, (filterRela, RelaSets), 2, (5,), verb_token, rela_lexer, False),
-                                     (vi_cmpl_cr_nc_Prec_prep, (filterRela, RelaSets), 2, (6,), verb_token, rela_prep_lexer, False),
-                                 )
-
-
-
-# 7.2, Verb Frame, Complements, Semantic Domains
-params['frame']['vf_cmpl_domain'] = (
-                                        (vi_cmpl_sd_pp, None, 2, (4,), verb_token, funct_prep_o_domainer, False),
-                                        (vi_cmpl_sd_np, None, 2, (4,), verb_token, funct_domainer, False),
-                                        (vi_cmpl_sd_clRela, None, 2, (5,), verb_token, funct_domainer, False)
-                                    )
-
-# 8.1, Verb Frame, Adjuncts, Lexemes
-params['frame']['vf_adj+_lex'] = (
-                                     (vi_adj_lex_pp, None, 2, (4,), verb_token, funct_prep_o_lexer, False),
-                                     (vi_adj_lex_np, None, 2, (4,), verb_token, funct_lexer, False),
-                                     (vi_adj_lex_clRela, None, 2, (5,), verb_token, funct_lexer, False)
-                                  )
+params['frame']['vf_obj_pa'] = (
+                                    (vf_obj_pa, None, 2, (4,), verb_token, functioner, False),
+                                    (vf_obj_pa_clRela, None, 2, (3,), verb_token, relationer, False),
+                                    (vf_obj_pa_suffix, None, 2, (2,), verb_token, simple_object, False),
+                                    (vf_obj_pa_speech, None, 2, (2,), verb_token, simple_object, False),
+                                    (vf_obj_pa_null, None, 2, (2,), verb_token, nuller, False)
+                                )
 
 
 
 
-# 9.2, Verb Frame, Adjuncts, Semantic Domains
-params['frame']['vf_adj+_domain'] = (
-                                        (vi_adj_sd_pp, None, 2, (4,), verb_token, funct_prep_o_domainer, False),
-                                        (vi_adj_sd_np, None, 2, (4,), verb_token, funct_domainer, False),
-                                        (vi_adj_sd_clRela, None, 2, (5,), verb_token, funct_domainer, False)
-                                    )
+# 6.2, Verb Frame, Objects, Lexemes 
+vf_obj_arg_conditions = '''
+
+c2:clause
+no:
+   ^ phrase function=Objc typ#NP|PrNP|AdvP|PP
+end:
+
+all:
+    ^ phrase function=Objc typ#PP
+have:
+      -heads> word pdp#prep|prps|prde|prin|inrg
+end:
+
+all:
+  ^ phrase function=Objc typ=PP
+have:
+    all:
+        -heads> word pdp=prep
+    have:
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg
+    end:
+end:
+
+c1 = c2
+'''
+
+vf_obj_lex_np = pred_target.format(basis=f'''
+
+{vf_obj_arg_conditions}
+
+    phrase function=Objc typ#PP
+        -heads> word 
+        
+''', pred_funct='Pred|PreS')
+
+vf_obj_lex_pp = pred_target.format(basis=f'''
+
+{vf_obj_arg_conditions}
+
+    phrase function=Objc typ=PP
+        -heads> word
+        -prep_obj> word
+     
+''', pred_funct='Pred|PreS')
+    
+# Clause Relations
+vf_obj_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc', reqs=''), 
+                                      pred_funct='Pred|PreS')
+vf_obj_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc', reqs=''),
+                                        pred_funct='Pred|PreS')
+vf_obj_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc', reqs=''),
+                                        pred_funct='Pred|PreS')
+vf_obj_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs=''),
+                                      pred_funct='Pred|PreS')
+    
+valObjLex = validateFrame(mother_templates=(vf_obj_lex_np,
+                                            vf_obj_lex_pp),
+                       daughter_templates = (vf_obj_cr_vc_CP,
+                                             vf_obj_cr_vc_prep, 
+                                             vf_obj_cr_vc_verb,
+                                             vf_obj_cr_nc_CP),
+                       exp_name='vf_obj_lex')
+    
+params['frame']['vf_obj_lex'] = (
+                                    (vf_obj_lex_np, valObjLex.daughters, 2, (5,), verb_token, funct_lexer, False),
+                                    (vf_obj_lex_pp, valObjLex.daughters, 2, (6,), verb_token, funct_lexer, False),
+                                    (vf_obj_cr_vc_CP, valObjLex.mothers, 2, (6,), verb_token, rela_conj_lexer, False),
+                                    (vf_obj_cr_vc_prep, valObjLex.mothers, 2, (6,), verb_token, rela_prep_lexer, False),
+                                    (vf_obj_cr_vc_verb, valObjLex.mothers, 2, (5,), verb_token, rela_lexer, False),
+                                    (vf_obj_cr_nc_CP, valObjLex.mothers, 2, (6,), verb_token, rela_conj_lexer, False),
+                                )
 
 
-''''
-# 10.1, Verb Discourse, Parallelism, Lexemes
+
+
+# 6.3, Verb Frame, Objects, Semantic Domains
+# 6.4, Verb Frame, Objects, Semantic Domains - Longform
+
+
+
+# 7.1, Verb Frame, Complements, Presence/Absence
+# 7.2, Verb Frame, Complements, Lexemes
+# 7.3, Verb Frame, Complements, Semantic Domains
+# 7.4, Verb Frame, Complements, Semantic Domains - Longform
+
+
+
+# 8.1, Verb Frame, Adjuncts+, Presence/Absence
+# 8.2, Verb Frame, Adjuncts+, Lexemes
+# 8.3, Verb Frame, Adjuncts+, Semantic Domains
+# 8.4, Verb Frame, Adjuncts+, Semantic Domains - Longform
+
+
+# 9.1, Verb Discourse, Parallelism, Lexemes
 
 poetry = '|'.join(F.book.v(book) for book in F.otype.s('book') 
                       if 426595 < book < 426618) # Isaiah-Lamentations
@@ -1439,7 +1505,7 @@ params['inventory']['vd_par_lex'] = (
 
 
 
-# 11.1, Verb Discourse, Context, Window-2 Content words
+# 10.1, Verb Discourse, Context, Window-2 Content words
 
 content_words = {'subs', 'nmpr', 'verb', 'advb', 'adjv'}
 
@@ -1479,7 +1545,7 @@ params['inventory']['vd_con_window'] = (
 
 
 
-# 11.2, Verb Discourse, Context, Clause Content Words
+# 10.2, Verb Discourse, Context, Clause Content Words
 
 vd_con_clause = pred_target.format(basis='', pred_funct=all_preds)
 
@@ -1507,7 +1573,7 @@ params['inventory']['vd_con_clause'] = (
 
 
 
-# 11.3, Verb Discourse, Context, Mother-Daughter Chain Content Words
+# 10.3, Verb Discourse, Context, Mother-Daughter Chain Content Words
 
 vd_con_chain = pred_target.format(basis='', pred_funct=all_preds)
 
@@ -1549,7 +1615,7 @@ params['inventory']['vd_con_chain'] = (
 
 
 
-# 11.4, Verb Discourse, Domain, Simple
+# 10.4, Verb Discourse, Domain, Simple
 
 vd_domain_simple = pred_target.format(basis='', pred_funct=all_preds)
 
@@ -1569,7 +1635,7 @@ params['inventory']['vd_domain_simple'] = (
 
 
 
-# 11.5, Verb Discourse, Domain, Embedding
+# 10.5, Verb Discourse, Domain, Embedding
 
 def notexist_unknown_txt(results):
     # filters out unknown domains
@@ -1587,7 +1653,7 @@ params['inventory']['vd_domain_embed'] = (
 
 
 
-# 12.1, Verb Grammar, Tense
+# 11.1, Verb Grammar, Tense
 
 vg_tense = pred_target.format(basis='', pred_funct=all_preds)
 
