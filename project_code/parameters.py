@@ -169,7 +169,7 @@ def relationer(basis, target):
 def rela_prep_lexer(basis, target):
     # returns clause relation + prep + verb lex
     rela = F.rela.v(L.u(clause, 'phrase')[0])
-    prep = next(w for w in L.u(basis, 'phrase') if F.pdp.v(w) == 'prep')
+    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
     prep_lex = F.lex.v(prep)
     return f'{rela}.{prep_lex}_{F.lex.v(basis)}'
 
@@ -528,7 +528,7 @@ vi_objc_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs=
 
 def prep_verber(basis, target):
     # returns prep + verb lex, for e.g. infinitives
-    prep = next(w for w in L.u(basis, 'phrase') if F.pdp.v(w) == 'prep')
+    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
     prep_lex = F.lex.v(prep)
     return f'{prep_lex}_{F.lex.v(basis)}'
 
@@ -581,7 +581,7 @@ vi_objcSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', req
 
 def prep_verbDomainer(basis, target):
     # combines a infinitive verb with its preposition
-    prep = next(w for w in L.u(basis, 'phrase') if F.pdp.v(w) == 'prep')
+    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
     prep_lex = F.lex.v(prep)
     sem_category = code2tag(F.sem_domain_code.v(basis))
     return f'{prep_lex}_{sem_category}'
@@ -610,7 +610,7 @@ params['inventory']['vi_o_domain'] = (
 def domainer2(basis, target):
     # basis tokenizer for semantic domains
     sem_domain = code2domain(basis)
-    return sem_category
+    return sem_domain
 
 def prep_o_domainer2(basis, target):
     # makes prep_domain + prep_obj_domain tokens
@@ -620,7 +620,7 @@ def prep_o_domainer2(basis, target):
 
 def prep_verbDomainer2(basis, target):
     # combines a infinitive verb with its preposition
-    prep = next(w for w in L.u(basis, 'phrase') if F.pdp.v(w) == 'prep')
+    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
     prep_lex = F.lex.v(prep)
     sem_domain = code2domain(basis)
     return f'{prep_lex}_{sem_domain}'
@@ -1190,7 +1190,7 @@ def funct_prep_o_domainer(basis, target):
 def rela_prep_domainer(basis, target):
     # returns clause relation + prep + verb domain
     rela = F.rela.v(L.u(clause, 'phrase')[0])
-    prep = next(w for w in L.u(basis, 'phrase') if F.pdp.v(w) == 'prep')
+    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
     prep_lex = F.lex.v(prep)
     sem_category = code2tag(F.sem_domain_code.v(basis))
     return f'{rela}.{prep_lex}_{sem_category}'
@@ -1210,15 +1210,15 @@ def rela_domainer(basis, target):
     return f'{rela}.{sem_category}'
     
 params['frame']['vf_argAll_domain'] = (
-                                          (vf_allarg_sd_np, valSD.daughter, 2, (5,), verb_token, funct_domainer, False),
-                                          (vf_allarg_sd_pp, valSD.daughter, 2, (6,), verb_token, funct_prep_o_domainer, False),
-                                          (vf_allarg_sd_pp_obj, valSD.daughter, 2, (6, verb_token, funct_domainer, False))
-                                          (vf_argsSD_cr_vc_CP, valSD.mother, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_argsSD_cr_vc_prep, valSD.mother, 2, (6,), verb_token, rela_prep_domainer, False),
-                                          (vf_argsSD_cr_vc_verb, valSD.mother, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_argsSD_cr_nc_CP, valSD.mother, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_argsSD_cr_nc_Prec_adv, valSD.mother, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_argsSD_cr_nc_Prec_prep, valSD.mother, 2, (6,), verb_token, rela_prep_domainer, False),
+                                          (vf_allarg_sd_np, valSD.daughters, 2, (5,), verb_token, funct_domainer, False),
+                                          (vf_allarg_sd_pp, valSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer, False),
+                                          (vf_allarg_sd_pp_obj, valSD.daughters, 2, (6,), verb_token, funct_domainer, False),
+                                          (vf_argsSD_cr_vc_CP, valSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
+                                          (vf_argsSD_cr_vc_prep, valSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
+                                          (vf_argsSD_cr_vc_verb, valSD.mothers, 2, (5,), verb_token, rela_domainer, False),
+                                          (vf_argsSD_cr_nc_CP, valSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
+                                          (vf_argsSD_cr_nc_Prec_adv, valSD.mothers, 2, (5,), verb_token, rela_domainer, False),
+                                          (vf_argsSD_cr_nc_Prec_prep, valSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
                                       )
 
 
@@ -1242,7 +1242,7 @@ def funct_prep_o_domainer2(basis, target):
 def rela_prep_domainer2(basis, target):
     # returns clause relation + prep + verb domain
     rela = F.rela.v(L.u(clause, 'phrase')[0])
-    prep = next(w for w in L.u(basis, 'phrase') if F.pdp.v(w) == 'prep')
+    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
     prep_lex = F.lex.v(prep)
     sem_domain = code2domain(basis)
     return f'{rela}.{prep_lex}_{sem_domain}'
@@ -1262,15 +1262,15 @@ def rela_domainer2(basis, target):
     return f'{rela}.{sem_domain}'
 
 params['frame']['vf_argAll_domain2'] = (
-                                          (vf_allarg_sd_np, valSD.daughter, 2, (5,), verb_token, funct_domainer2, False),
-                                          (vf_allarg_sd_pp, valSD.daughter, 2, (6,), verb_token, funct_prep_o_domainer2, False),
-                                          (vf_allarg_sd_pp_obj, valSD.daughter, 2, (6, verb_token, funct_domainer2, False))
-                                          (vf_argsSD_cr_vc_CP, valSD.mother, 2, (6,), verb_token, rela_conj_domainer2, False),
-                                          (vf_argsSD_cr_vc_prep, valSD.mother, 2, (6,), verb_token, rela_prep_domainer2, False),
-                                          (vf_argsSD_cr_vc_verb, valSD.mother, 2, (5,), verb_token, rela_domainer2, False),
-                                          (vf_argsSD_cr_nc_CP, valSD.mother, 2, (6,), verb_token, rela_conj_domainer2, False),
-                                          (vf_argsSD_cr_nc_Prec_adv, valSD.mother, 2, (5,), verb_token, rela_domainer2, False),
-                                          (vf_argsSD_cr_nc_Prec_prep, valSD.mother, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                          (vf_allarg_sd_np, valSD.daughters, 2, (5,), verb_token, funct_domainer2, False),
+                                          (vf_allarg_sd_pp, valSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer2, False),
+                                          (vf_allarg_sd_pp_obj, valSD.daughters, 2, (6,), verb_token, funct_domainer2, False),
+                                          (vf_argsSD_cr_vc_CP, valSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
+                                          (vf_argsSD_cr_vc_prep, valSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                          (vf_argsSD_cr_vc_verb, valSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
+                                          (vf_argsSD_cr_nc_CP, valSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
+                                          (vf_argsSD_cr_nc_Prec_adv, valSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
+                                          (vf_argsSD_cr_nc_Prec_prep, valSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
                                       )
 
 
@@ -1430,25 +1430,23 @@ valObjSD = validateFrame(mother_templates=(vf_obj_sd_np,
                          exp_name='vf_obj_sd')
 
     
-params['frame']['vf_argAll_domain'] = (
-                                          (vf_obj_sd_np, valObjSD.daughter, 2, (5,), verb_token, funct_domainer, False),
-                                          (vf_obj_sd_pp, valObjSD.daughter, 2, (6,), verb_token, funct_prep_o_domainer, False),
-                                          (vf_obj_sd_pp_obj, valObjSD.daughter, 2, (6, verb_token, funct_domainer, False))
-                                          (vf_objSD_cr_vc_CP, valObjSD.mother, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_objSD_cr_vc_prep, valObjSD.mother, 2, (6,), verb_token, rela_prep_domainer, False),
-                                          (vf_objSD_cr_vc_verb, valObjSD.mother, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_objSD_cr_nc_CP, valObjSD.mother, 2, (6,), verb_token, rela_conj_domainer, False)
+params['frame']['vf_obj_domain'] = (
+                                          (vf_obj_sd_np, valObjSD.daughters, 2, (5,), verb_token, funct_domainer, False),
+                                          (vf_obj_sd_pp, valObjSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer, False),
+                                          (vf_objSD_cr_vc_CP, valObjSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
+                                          (vf_objSD_cr_vc_prep, valObjSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
+                                          (vf_objSD_cr_vc_verb, valObjSD.mothers, 2, (5,), verb_token, rela_domainer, False),
+                                          (vf_objSD_cr_nc_CP, valObjSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False)
                                       )
 
 # 6.4, Verb Frame, Objects, Semantic Domains - Longform
-params['frame']['vf_argAll_domain2'] = (
-                                          (vf_obj_sd_np, valObjSD.daughter, 2, (5,), verb_token, funct_domainer2, False),
-                                          (vf_obj_sd_pp, valObjSD.daughter, 2, (6,), verb_token, funct_prep_o_domainer2, False),
-                                          (vf_obj_sd_pp_obj, valObjSD.daughter, 2, (6, verb_token, funct_domainer2, False))
-                                          (vf_objSD_cr_vc_CP, valObjSD.mother, 2, (6,), verb_token, rela_conj_domainer2, False),
-                                          (vf_objSD_cr_vc_prep, valObjSD.mother, 2, (6,), verb_token, rela_prep_domainer2, False),
-                                          (vf_objSD_cr_vc_verb, valObjSD.mother, 2, (5,), verb_token, rela_domainer2, False),
-                                          (vf_objSD_cr_nc_CP, valObjSD.mother, 2, (6,), verb_token, rela_conj_domainer2, False)
+params['frame']['vf_obj_domain2'] = (
+                                          (vf_obj_sd_np, valObjSD.daughters, 2, (5,), verb_token, funct_domainer2, False),
+                                          (vf_obj_sd_pp, valObjSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer2, False),
+                                          (vf_objSD_cr_vc_CP, valObjSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
+                                          (vf_objSD_cr_vc_prep, valObjSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                          (vf_objSD_cr_vc_verb, valObjSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
+                                          (vf_objSD_cr_nc_CP, valObjSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False)
                                       )
 
 
@@ -1569,7 +1567,7 @@ vf_cmpl_sd_np = pred_target.format(basis=f'''
         
 ''', pred_funct=all_preds)
 
-vf_allarg_sd_pp = pred_target.format(basis=f'''
+vf_cmpl_sd_pp = pred_target.format(basis=f'''
 
 {vf_cmpl_conditionsSD}
 
@@ -1600,8 +1598,7 @@ vf_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(rel
                                                                              pred_funct=all_preds)
 
 valCmplSD = validateFrame(mother_templates=(vf_cmpl_sd_np,
-                                            vf_cmpl_sd_pp, 
-                                            vf_cmpl_sd_pp_obj),
+                                            vf_cmpl_sd_pp),
                       daughter_templates = (vf_cmplSD_cr_vc_CP,
                                             vf_cmplSD_cr_vc_prep, 
                                             vf_cmplSD_cr_vc_verb,
@@ -1612,14 +1609,14 @@ valCmplSD = validateFrame(mother_templates=(vf_cmpl_sd_np,
 
     
 params['frame']['vf_cmpl_domain'] = (
-                                          (vf_cmpl_sd_np, valCmplSD.daughter, 2, (5,), verb_token, funct_domainer, False),
-                                          (vf_cmpl_sd_pp, valCmplSD.daughter, 2, (6,), verb_token, funct_prep_o_domainer, False),
-                                          (vf_cmplSD_cr_vc_CP, valCmplSD.mother, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_cmplSD_cr_vc_prep, valCmplSD.mother, 2, (6,), verb_token, rela_prep_domainer, False),
-                                          (vf_cmplSD_cr_vc_verb, valCmplSD.mother, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_cmplSD_cr_nc_CP, valCmplSD.mother, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_cmplSD_cr_nc_Prec_adv, valCmplSD.mother, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_cmplSD_cr_nc_Prec_prep, valCmplSD.mother, 2, (6,), verb_token, rela_prep_domainer, False),
+                                          (vf_cmpl_sd_np, valCmplSD.daughters, 2, (5,), verb_token, funct_domainer, False),
+                                          (vf_cmpl_sd_pp, valCmplSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer, False),
+                                          (vf_cmplSD_cr_vc_CP, valCmplSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
+                                          (vf_cmplSD_cr_vc_prep, valCmplSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
+                                          (vf_cmplSD_cr_vc_verb, valCmplSD.mothers, 2, (5,), verb_token, rela_domainer, False),
+                                          (vf_cmplSD_cr_nc_CP, valCmplSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
+                                          (vf_cmplSD_cr_nc_Prec_adv, valCmplSD.mothers, 2, (5,), verb_token, rela_domainer, False),
+                                          (vf_cmplSD_cr_nc_Prec_prep, valCmplSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
                                       )
 
 
@@ -1628,14 +1625,14 @@ params['frame']['vf_cmpl_domain'] = (
 # 7.4, Verb Frame, Complements, Domains - Longform
 
 params['frame']['vf_cmpl_domain2'] = (
-                                          (vf_cmpl_sd_np, valCmplSD.daughter, 2, (5,), verb_token, funct_domainer2, False),
-                                          (vf_cmpl_sd_pp, valCmplSD.daughter, 2, (6,), verb_token, funct_prep_o_domainer2, False),
-                                          (vf_cmplSD_cr_vc_CP, valCmplSD.mother, 2, (6,), verb_token, rela_conj_domainer2, False),
-                                          (vf_cmplSD_cr_vc_prep, valCmplSD.mother, 2, (6,), verb_token, rela_prep_domainer2, False),
-                                          (vf_cmplSD_cr_vc_verb, valCmplSD.mother, 2, (5,), verb_token, rela_domainer2, False),
-                                          (vf_cmplSD_cr_nc_CP, valCmplSD.mother, 2, (6,), verb_token, rela_conj_domainer2, False),
-                                          (vf_cmplSD_cr_nc_Prec_adv, valCmplSD.mother, 2, (5,), verb_token, rela_domainer2, False),
-                                          (vf_cmplSD_cr_nc_Prec_prep, valCmplSD.mother, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                          (vf_cmpl_sd_np, valCmplSD.daughters, 2, (5,), verb_token, funct_domainer2, False),
+                                          (vf_cmpl_sd_pp, valCmplSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer2, False),
+                                          (vf_cmplSD_cr_vc_CP, valCmplSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
+                                          (vf_cmplSD_cr_vc_prep, valCmplSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                          (vf_cmplSD_cr_vc_verb, valCmplSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
+                                          (vf_cmplSD_cr_nc_CP, valCmplSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
+                                          (vf_cmplSD_cr_nc_Prec_adv, valCmplSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
+                                          (vf_cmplSD_cr_nc_Prec_prep, valCmplSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
                                       )
 
 
@@ -1791,14 +1788,14 @@ valAdjuSD = validateFrame(mother_templates=(vf_adju_sd_np,
                            exp_name='vf_adju_sd')
     
 params['frame']['vf_adju_domain'] = (
-                                          (vf_adju_sd_np, valAdjuSD.daughter, 2, (5,), verb_token, funct_domainer, False),
-                                          (vf_adju_sd_pp, valAdjuSD.daughter, 2, (6,), verb_token, funct_prep_o_domainer, False),
-                                          (vf_adjuSD_cr_vc_CP, valAdjuSD.mother, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_adjuSD_cr_vc_prep, valAdjuSD.mother, 2, (6,), verb_token, rela_prep_domainer, False),
-                                          (vf_adjuSD_cr_vc_verb, valAdjuSD.mother, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_adjuSD_cr_nc_CP, valAdjuSD.mother, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_adjuSD_cr_nc_Prec_adv, valAdjuSD.mother, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_adjuSD_cr_nc_Prec_prep, valAdjuSD.mother, 2, (6,), verb_token, rela_prep_domainer, False),
+                                          (vf_adju_sd_np, valAdjuSD.daughters, 2, (5,), verb_token, funct_domainer, False),
+                                          (vf_adju_sd_pp, valAdjuSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer, False),
+                                          (vf_adjuSD_cr_vc_CP, valAdjuSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
+                                          (vf_adjuSD_cr_vc_prep, valAdjuSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
+                                          (vf_adjuSD_cr_vc_verb, valAdjuSD.mothers, 2, (5,), verb_token, rela_domainer, False),
+                                          (vf_adjuSD_cr_nc_CP, valAdjuSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
+                                          (vf_adjuSD_cr_nc_Prec_adv, valAdjuSD.mothers, 2, (5,), verb_token, rela_domainer, False),
+                                          (vf_adjuSD_cr_nc_Prec_prep, valAdjuSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
                                       )
 
 
@@ -1807,14 +1804,14 @@ params['frame']['vf_adju_domain'] = (
 # 8.4, Verb Frame, Adjuncts+, Domains - Longform
 
 params['frame']['vf_adju_domain2'] = (
-                                          (vf_adju_sd_np, valAdjuSD.daughter, 2, (5,), verb_token, funct_domainer2, False),
-                                          (vf_adju_sd_pp, valAdjuSD.daughter, 2, (6,), verb_token, funct_prep_o_domainer2, False),
-                                          (vf_adjuSD_cr_vc_CP, valAdjuSD.mother, 2, (6,), verb_token, rela_conj_domainer2, False),
-                                          (vf_adjuSD_cr_vc_prep, valAdjuSD.mother, 2, (6,), verb_token, rela_prep_domainer2, False),
-                                          (vf_adjuSD_cr_vc_verb, valAdjuSD.mother, 2, (5,), verb_token, rela_domainer2, False),
-                                          (vf_adjuSD_cr_nc_CP, valAdjuSD.mother, 2, (6,), verb_token, rela_conj_domainer2, False),
-                                          (vf_adjuSD_cr_nc_Prec_adv, valAdjuSD.mother, 2, (5,), verb_token, rela_domainer2, False),
-                                          (vf_adjuSD_cr_nc_Prec_prep, valAdjuSD.mother, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                          (vf_adju_sd_np, valAdjuSD.daughters, 2, (5,), verb_token, funct_domainer2, False),
+                                          (vf_adju_sd_pp, valAdjuSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer2, False),
+                                          (vf_adjuSD_cr_vc_CP, valAdjuSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
+                                          (vf_adjuSD_cr_vc_prep, valAdjuSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                          (vf_adjuSD_cr_vc_verb, valAdjuSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
+                                          (vf_adjuSD_cr_nc_CP, valAdjuSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
+                                          (vf_adjuSD_cr_nc_Prec_adv, valAdjuSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
+                                          (vf_adjuSD_cr_nc_Prec_prep, valAdjuSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
                                       )
 
 
@@ -2046,3 +2043,5 @@ def tenser(basis, target):
 params['inventory']['vg_tense'] = (
                                       (vg_tense, None, 2, (2,), verb_token, tenser, True),
                                   )
+
+print('\nAll parameters ready!')

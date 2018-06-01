@@ -66,7 +66,7 @@ class Experiment:
             
             # run search query on template
             filt = filt_param if type(filt_param) != tuple else filt_param[0] # configure filter function
-            search_sets = None if type(filt_parapm) != tuple else filt_param[1] # configure search sets
+            search_sets = None if type(filt_param) != tuple else filt_param[1] # configure search sets
             sample = sorted(S.search(search_templ, sets=search_sets))
             sample = filt(sample) if filt else sample # filter results for not-exist type queries
 
