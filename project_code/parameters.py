@@ -23,12 +23,6 @@ import re, collections, dill
 from __main__ import F, E, T, L, S # Text-Fabric methods
 from __main__ import cached_data
 
-if cached_data:
-    with open('/Users/cody/Documents/VF_cache.dill', 'rb') as infile:
-        cache = dill.load(infile)
-else:
-    cache = {}
-
 params = collections.defaultdict(dict) # all parameters will be stored here
 
 
@@ -74,22 +68,26 @@ def verb_token(target):
 good_sem_codes = '1\.00[1-3][0-9]*|2\.[0-9]*' # SDBH codes: objects, events, referents, contexts
 
 # ordered in terms of selection preferences, select animate first, etc.
-code_priorities = (('1\.001001[0-9]*',  # ANIMATE
-                   '1\.00300100[3,6]', 
-                   '1\.00300101[0,3]',
-                   '2\.075[0-9]*'),
+code_priorities = (('(1\.001001[0-9]*)',  # ANIMATE
+                   '(1\.00300100[3,6])', 
+                   '(1\.00300101[0,3])',
+                   '(2\.075[0-9]*)'),
 
-                  ('1\.00100[2-6][0-9]*',  # INANIMATE
-                   '1\.00300100[1-2, 4, 7-9]',
-                   '1\.00300101[1-2]',
-                   '1\.00[1,3]$',
-                   '1\.003001', 
-                   '1\.003001005', # names of groups (!)
-                   '2\.[0-9]*'), # frames
+                  ('(1\.00100[2-6][0-9]*)',  # INANIMATE
+                   '(1\.00300100[1-2, 4, 7-9])',
+                   '(1\.00300101[1-2])',
+                   '(1\.00[1,3]$)',
+                   '(1\.00[1,3])\|',
+                   '(1\.003001$)',
+                   '(1\.003001)\|',
+                   '(1\.003001005$)', # names of groups (!)
+                   '(1\.003001005)\|',
+                   '(2\.[0-9]*)'), # frames
     
-                  ('1\.002[0-9]*', # EVENTS
-                   '1\.003002[0-9]*',
-                   '1\.002$'))
+                  ('(1\.002[0-9]*)', # EVENTS
+                   '(1\.003002[0-9]*)',
+                   '(1\.002$)',
+                   '(1\.002)\|'))
 
 def code2tag(code):
     '''
@@ -110,6 +108,7 @@ def code2tag(code):
         return 'event'
     else:
         raise Exception(code) # avoid accidental selections
+
         
 def code2domain(word):
     '''
@@ -122,24 +121,26 @@ def code2domain(word):
     animate = '|'.join(code_priorities[0])
     inanimate = '|'.join(code_priorities[1])
     events = '|'.join(code_priorities[2])
-    
-    if re.search(animate, code):
-        match = re.findall(animate, code)[0]
-        code_index = code.split('|').index(match)
-        return domain.split('|')[code_index]
-        
-    elif re.search(inanimate, code):
-        match = re.findall(inanimate, code)[0]
-        code_index = code.split('|').index(match)
-        return domain.split('|')[code_index]
-  
-    elif re.search(events, code):
-        match = re.findall(events, code)[0]
-        code_index = code.split('|').index(match)   
-        return domain.split('|')[code_index]
-    else:
-        raise Exception(code) # avoid accidental selections
-        
+    try:
+        if re.search(animate, code):
+            match = next(match for group in re.findall(animate, code) for match in group if match)
+            code_index = code.split('|').index(match)
+            return domain.split('|')[code_index]
+
+        elif re.search(inanimate, code):
+            match = next(match for group in re.findall(inanimate, code) for match in group if match)
+            code_index = code.split('|').index(match)
+            return domain.split('|')[code_index]
+
+        elif re.search(events, code):
+            match = next(match for group in re.findall(events, code) for match in group if match)
+            code_index = code.split('|').index(match)   
+            return domain.split('|')[code_index]
+        else:
+            raise Exception(code) # avoid accidental selections
+    except:
+        raise Exception(word)
+
     
 def domainer(basis, target):
     # basis tokenizer for semantic domains
@@ -175,7 +176,7 @@ def relationer(basis, target):
 
 def rela_prep_lexer(basis, target):
     # returns clause relation + prep + verb lex
-    rela = F.rela.v(L.u(clause, 'phrase')[0])
+    rela = F.rela.v(L.u(basis, 'clause')[0])
     prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
     prep_lex = F.lex.v(prep)
     return f'{rela}.{prep_lex}_{F.lex.v(basis)}'
@@ -189,7 +190,7 @@ def rela_conj_lexer(basis, target):
    
 def rela_lexer(basis, target):
     # returns rela + lex
-    rela = F.rela.v(L.u(clause, 'phrase')[0])
+    rela = F.rela.v(L.u(basis, 'clause')[0])
     return f'{rela}.{F.lex.v(basis)}'
 
 
@@ -410,7 +411,11 @@ c1 <mother- c2
 
 
 # - - - - - - Parameters - - - - - - -
-
+if cached_data:
+    with open('/Users/cody/Documents/VF_cache.dill', 'rb') as infile:
+        cache = dill.load(infile)
+else:
+    cache = {}
 
 
 
@@ -424,7 +429,7 @@ vi_s_lex_np = pred_target.format(basis='''
 ''', pred_funct=all_preds)
 
 
-params['inventory']['vi_s_lex'] = (
+params['inventory']['vi_subj_lex'] = (
                                       (vi_s_lex_np, None, 2, (4,), verb_token, lexer, False),
                                   )
 
@@ -440,7 +445,7 @@ vi_s_sd = pred_target.format(basis=f'''
 
 ''', pred_funct=all_preds)
 
-params['inventory']['vi_s_domain'] = (
+params['inventory']['vi_subj_domain'] = (
                                          (vi_s_sd, None, 2, (4,), verb_token, domainer, False),
                                      )
 
@@ -495,7 +500,7 @@ vi_o_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
 def simple_object(basis, target):
     return 'Objc'
 
-params['inventory']['vi_o_pa'] = (
+params['inventory']['vi_objc_pa'] = (
                                      (vi_o_pa, None, 2, (3,), verb_token, simple_object, True),
                                      (vi_o_pa_clRela, None, 2, (3,), verb_token, simple_object, True),
                                      (vi_o_pa_suffix, None, 2, (2,), verb_token, simple_object, True),
@@ -545,9 +550,9 @@ def conj_lexer(basis, target):
     conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
     return f'{conj_string}_{F.lex.v(basis)}'
 
-params['inventory']['vi_o_lex'] = (
+params['inventory']['vi_objc_lex'] = (
                                       (vi_o_lex_np, None, 2, (4,), verb_token, lexer, False),
-                                      (vi_o_lex_pp, None, 2, (5,), verb_token, lexer, False),
+                                      (vi_o_lex_pp, None, 2, (4,), verb_token, lexer, False),
                                       (vi_objc_cr_vc_CP, None, 2, (6,), verb_token, conj_lexer, False),
                                       (vi_objc_cr_vc_prep, None, 2, (6,), verb_token, prep_verber, False),
                                       (vi_objc_cr_vc_verb, None, 2, (5,), verb_token, lexer, False),
@@ -600,7 +605,7 @@ def conj_domainer(basis, target):
     sem_category = code2tag(F.sem_domain_code.v(basis))
     return f'{conj_string}_{sem_category}'
                                         
-params['inventory']['vi_o_domain'] = (
+params['inventory']['vi_objc_domain'] = (
                                          (vi_o_sd_np, None, 2, (4,), verb_token,  domainer, False),
                                          (vi_o_sd_pp, None, 2, (5,), verb_token, domainer, False),
                                          (vi_objcSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer, False),
@@ -622,7 +627,7 @@ def domainer2(basis, target):
 def prep_o_domainer2(basis, target):
     # makes prep_domain + prep_obj_domain tokens
     prep_obj = E.prep_obj.f(basis)[0]
-    sem_domain = code2domain(basis)
+    sem_domain = code2domain(prep_obj)
     return f'{F.lex.v(basis)}_{sem_domain}'
 
 def prep_verbDomainer2(basis, target):
@@ -639,7 +644,7 @@ def conj_domainer2(basis, target):
     sem_domain = code2domain(basis)
     return f'{conj_string}_{sem_domain}'
                                         
-params['inventory']['vi_o_domain2'] = (
+params['inventory']['vi_objc_domain2'] = (
                                          (vi_o_sd_np, None, 2, (4,), verb_token,  domainer2, False),
                                          (vi_o_sd_pp, None, 2, (5,), verb_token, domainer2, False),
                                          (vi_objcSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
@@ -691,18 +696,19 @@ params['inventory']['vi_cmpl_pa'] = (
 
 
 # 3.2, Verb Inventory, Complements, Lexemes
-vi_cmpl_lex_pp = pred_target.format(basis='''
-
-    phrase function=Cmpl typ=PP
-        -heads> word pdp=prep
-        -prep_obj> word pdp#prep|prps|prde|prin|inrg
-
-''', pred_funct=all_preds)
 
 vi_cmpl_lex_np = pred_target.format(basis='''
 
     phrase function=Cmpl typ=NP|PrNP|AdvP
         -heads> word pdp#prep|prps|prde|prin|inrg
+
+''', pred_funct=all_preds)
+
+vi_cmpl_lex_pp = pred_target.format(basis='''
+
+    phrase function=Cmpl typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg
 
 ''', pred_funct=all_preds)
 
@@ -722,8 +728,8 @@ vi_cmpl_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas
 
         
 params['inventory']['vi_cmpl_lex'] = (
-                                         (vi_cmpl_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
                                          (vi_cmpl_lex_np, None, 2, (4,), verb_token, lexer, False),
+                                         (vi_cmpl_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
                                          (vi_cmpl_cr_vc_CP, None, 2, (6,), verb_token, conj_lexer, False),
                                          (vi_cmpl_cr_vc_prep, None, 2, (6,), verb_token, prep_verber, False),
                                          (vi_cmpl_cr_vc_verb, None, 2, (5,), verb_token, lexer, False),
@@ -736,18 +742,19 @@ params['inventory']['vi_cmpl_lex'] = (
 
 
 # 3.3, Verb Inventory, Complements, Semantic Domains
-vi_cmpl_sd_pp = pred_target.format(basis=f'''
-
-    phrase function=Cmpl typ=PP
-        -heads> word pdp=prep
-        -prep_obj> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
-
-''', pred_funct=all_preds)
 
 vi_cmpl_sd_np = pred_target.format(basis=f'''
 
     phrase function=Cmpl typ=NP|PrNP|AdvP
         -heads> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
+
+''', pred_funct=all_preds)
+
+vi_cmpl_sd_pp = pred_target.format(basis=f'''
+
+    phrase function=Cmpl typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
 
 ''', pred_funct=all_preds)
 
@@ -766,8 +773,8 @@ vi_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(rel
                                                pred_funct=all_preds)
     
 params['inventory']['vi_cmpl_domain'] = (
-                                             (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
                                              (vi_cmpl_sd_np, None, 2, (4,), verb_token, domainer, False),
+                                             (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
                                              (vi_cmplSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer, False),
                                              (vi_cmplSD_cr_vc_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
                                              (vi_cmplSD_cr_vc_verb, None, 2, (5,), verb_token, domainer, False),
@@ -781,8 +788,8 @@ params['inventory']['vi_cmpl_domain'] = (
 
 # 3.4, Verb Inventory, Complements, Semantic Domains - Longform
 params['inventory']['vi_cmpl_domain2'] = (
-                                             (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer2, False),
                                              (vi_cmpl_sd_np, None, 2, (4,), verb_token, domainer2, False),
+                                             (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer2, False),
                                              (vi_cmplSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
                                              (vi_cmplSD_cr_vc_prep, None, 2, (6,), verb_token, prep_verbDomainer2, False),
                                              (vi_cmplSD_cr_vc_verb, None, 2, (5,), verb_token, domainer2, False),
@@ -836,18 +843,18 @@ params['inventory']['vi_adj+_pa'] = (
 
 # 4.2, Verb Inventory, Adjuncts+, Lexemes
 
+vi_adj_lex_np = pred_target.format(basis='''
+
+    phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
+        -heads> word pdp#prep|prps|prde|prin|inrg
+
+''', pred_funct=all_preds)
+
 vi_adj_lex_pp = pred_target.format(basis='''
 
     phrase function=Adju|Time|Loca|PrAd typ=PP
         -heads> word pdp=prep
         -prep_obj> word pdp#prep|prps|prde|prin|inrg
-
-''', pred_funct=all_preds)
-
-vi_adj_lex_np = pred_target.format(basis='''
-
-    phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
-        -heads> word pdp#prep|prps|prde|prin|inrg
 
 ''', pred_funct=all_preds)
 
@@ -866,8 +873,8 @@ vi_adj_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas=
                                             pred_funct=all_preds)
     
 params['inventory']['vi_adj+_lex'] = (
-                                         (vi_adj_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
                                          (vi_adj_lex_np, None, 2, (4,), verb_token, lexer, False),
+                                         (vi_adj_lex_pp, None, 2, (4,), verb_token, prep_o_lexer, False),
                                          (vi_adj_cr_vc_CP, None, 2, (6,), verb_token, conj_lexer, False),
                                          (vi_adj_cr_vc_prep, None, 2, (6,), verb_token, prep_verber, False),
                                          (vi_adj_cr_vc_verb, None, 2, (5,), verb_token, lexer, False),
@@ -881,18 +888,18 @@ params['inventory']['vi_adj+_lex'] = (
 
 # 4.3, Verb Inventory, Adjuncts+, Semantic Domains
 
+vi_adj_sd_np = pred_target.format(basis=f'''
+
+    phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
+        -heads> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
+
+''', pred_funct=all_preds)
+
 vi_adj_sd_pp = pred_target.format(basis=f'''
 
     phrase function=Adju|Time|Loca|PrAd typ=PP
         -heads> word pdp=prep
         -prep_obj> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
-
-''', pred_funct=all_preds)
-
-vi_adj_sd_np = pred_target.format(basis=f'''
-
-    phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
-        -heads> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
 
 ''', pred_funct=all_preds)
 
@@ -912,8 +919,8 @@ vi_adjSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(rela
 
     
 params['inventory']['vi_adj+_domain'] = (
-                                             (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
                                              (vi_adj_sd_np, None, 2, (4,), verb_token, domainer, False),
+                                             (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
                                              (vi_adjSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer, False),
                                              (vi_adjSD_cr_vc_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
                                              (vi_adjSD_cr_vc_verb, None, 2, (5,), verb_token, domainer, False),
@@ -928,8 +935,8 @@ params['inventory']['vi_adj+_domain'] = (
 # 4.4, Verb Inventory, Adjuncts+, Semantic Domains - Longform
 
 params['inventory']['vi_adj+_domain2'] = (
-                                             (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer2, False),
                                              (vi_adj_sd_np, None, 2, (4,), verb_token, domainer2, False),
+                                             (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer2, False),
                                              (vi_adjSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
                                              (vi_adjSD_cr_vc_prep, None, 2, (6,), verb_token, prep_verbDomainer2, False),
                                              (vi_adjSD_cr_vc_verb, None, 2, (5,), verb_token, domainer2, False),
@@ -957,7 +964,9 @@ c1 = c2
 
 vf_allarg_pa_clRela = pred_target.format(basis='''
 
-<mother- clause rela=Objc|Cmpl|Adju|PrAd
+c2:clause rela=Objc|Cmpl|Adju|PrAd
+
+c1 <mother- c2
 
 ''', pred_funct=all_preds)
 
@@ -1108,7 +1117,7 @@ else:
 params['frame']['vf_argAll_lex'] = (
                                         (vf_allarg_lex_np, valLex.daughters, 2, (5,), verb_token, funct_lexer, False),
                                         (vf_allarg_lex_pp_obj, valLex.daughters, 2, (6,), verb_token, funct_lexer, False),
-                                        (vf_allarg_lex_pp, valLex.daughters, 2, (6,), verb_token, funct_prep_o_lexer, False),
+                                        (vf_allarg_lex_pp, valLex.daughters, 2, (5,), verb_token, funct_prep_o_lexer, False),
                                         (vf_args_cr_vc_CP, valLex.mothers, 2, (6,), verb_token, rela_conj_lexer, False),
                                         (vf_args_cr_vc_prep, valLex.mothers, 2, (6,), verb_token, rela_prep_lexer, False),
                                         (vf_args_cr_vc_verb, valLex.mothers, 2, (5,), verb_token, rela_lexer, False),
@@ -1203,7 +1212,7 @@ def funct_prep_o_domainer(basis, target):
 
 def rela_prep_domainer(basis, target):
     # returns clause relation + prep + verb domain
-    rela = F.rela.v(L.u(clause, 'phrase')[0])
+    rela = F.rela.v(L.u(basis, 'clause')[0])
     prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
     prep_lex = F.lex.v(prep)
     sem_category = code2tag(F.sem_domain_code.v(basis))
@@ -1219,13 +1228,13 @@ def rela_conj_domainer(basis, target):
    
 def rela_domainer(basis, target):
     # returns rela + domain
-    rela = F.rela.v(L.u(clause, 'phrase')[0])
+    rela = F.rela.v(L.u(basis, 'clause')[0])
     sem_category = code2tag(F.sem_domain_code.v(basis))
     return f'{rela}.{sem_category}'
     
 params['frame']['vf_argAll_domain'] = (
                                           (vf_allarg_sd_np, valSD.daughters, 2, (5,), verb_token, funct_domainer, False),
-                                          (vf_allarg_sd_pp, valSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer, False),
+                                          (vf_allarg_sd_pp, valSD.daughters, 2, (5,), verb_token, funct_prep_o_domainer, False),
                                           (vf_allarg_sd_pp_obj, valSD.daughters, 2, (6,), verb_token, funct_domainer, False),
                                           (vf_argsSD_cr_vc_CP, valSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
                                           (vf_argsSD_cr_vc_prep, valSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
@@ -1255,7 +1264,7 @@ def funct_prep_o_domainer2(basis, target):
 
 def rela_prep_domainer2(basis, target):
     # returns clause relation + prep + verb domain
-    rela = F.rela.v(L.u(clause, 'phrase')[0])
+    rela = F.rela.v(L.u(basis, 'clause')[0])
     prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
     prep_lex = F.lex.v(prep)
     sem_domain = code2domain(basis)
@@ -1271,13 +1280,13 @@ def rela_conj_domainer2(basis, target):
    
 def rela_domainer2(basis, target):
     # returns rela + domain
-    rela = F.rela.v(L.u(clause, 'phrase')[0])
+    rela = F.rela.v(L.u(basis, 'clause')[0])
     sem_domain = code2domain(basis)
     return f'{rela}.{sem_domain}'
 
 params['frame']['vf_argAll_domain2'] = (
                                           (vf_allarg_sd_np, valSD.daughters, 2, (5,), verb_token, funct_domainer2, False),
-                                          (vf_allarg_sd_pp, valSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer2, False),
+                                          (vf_allarg_sd_pp, valSD.daughters, 2, (5,), verb_token, funct_prep_o_domainer2, False),
                                           (vf_allarg_sd_pp_obj, valSD.daughters, 2, (6,), verb_token, funct_domainer2, False),
                                           (vf_argsSD_cr_vc_CP, valSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
                                           (vf_argsSD_cr_vc_prep, valSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
@@ -1304,8 +1313,9 @@ c1 = c2
 
 vf_obj_pa_clRela = pred_target.format(basis='''
 
-<mother- clause rela=Objc
+c2:clause rela=Objc
 
+c1 <mother- c2
 ''', pred_funct=all_preds)
 
 vf_obj_pa_null = pred_target.format(basis='''
@@ -1452,7 +1462,7 @@ else:
     
 params['frame']['vf_obj_domain'] = (
                                           (vf_obj_sd_np, valObjSD.daughters, 2, (5,), verb_token, funct_domainer, False),
-                                          (vf_obj_sd_pp, valObjSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer, False),
+                                          (vf_obj_sd_pp, valObjSD.daughters, 2, (6,), verb_token, funct_domainer, False),
                                           (vf_objSD_cr_vc_CP, valObjSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
                                           (vf_objSD_cr_vc_prep, valObjSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
                                           (vf_objSD_cr_vc_verb, valObjSD.mothers, 2, (5,), verb_token, rela_domainer, False),
@@ -1462,7 +1472,7 @@ params['frame']['vf_obj_domain'] = (
 # 6.4, Verb Frame, Objects, Semantic Domains - Longform
 params['frame']['vf_obj_domain2'] = (
                                           (vf_obj_sd_np, valObjSD.daughters, 2, (5,), verb_token, funct_domainer2, False),
-                                          (vf_obj_sd_pp, valObjSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer2, False),
+                                          (vf_obj_sd_pp, valObjSD.daughters, 2, (6,), verb_token, funct_domainer2, False),
                                           (vf_objSD_cr_vc_CP, valObjSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
                                           (vf_objSD_cr_vc_prep, valObjSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
                                           (vf_objSD_cr_vc_verb, valObjSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
@@ -1481,8 +1491,9 @@ vf_cmpl_pa = pred_target.format(basis='''
 
 vf_cmpl_pa_clRela = pred_target.format(basis='''
 
-<mother- clause rela=Cmpl
+c2:clause rela=Cmpl
 
+c1 <mother- c2
 ''', pred_funct=all_preds)
 
 vf_cmpl_pa_null = pred_target.format(basis='''
@@ -1563,7 +1574,7 @@ else:
     
 params['frame']['vf_cmpl_lex'] = (
                                         (vf_cmpl_lex_np, valCmplLex.daughters, 2, (5,), verb_token, funct_lexer, False),
-                                        (vf_cmpl_lex_pp, valCmplLex.daughters, 2, (6,), verb_token, funct_prep_o_lexer, False),
+                                        (vf_cmpl_lex_pp, valCmplLex.daughters, 2, (5,), verb_token, funct_prep_o_lexer, False),
                                         (vf_cmpl_cr_vc_CP, valCmplLex.mothers, 2, (6,), verb_token, rela_conj_lexer, False),
                                         (vf_cmpl_cr_vc_prep, valCmplLex.mothers, 2, (6,), verb_token, rela_prep_lexer, False),
                                         (vf_cmpl_cr_vc_verb, valCmplLex.mothers, 2, (5,), verb_token, rela_lexer, False),
@@ -1636,7 +1647,7 @@ else:
     
 params['frame']['vf_cmpl_domain'] = (
                                           (vf_cmpl_sd_np, valCmplSD.daughters, 2, (5,), verb_token, funct_domainer, False),
-                                          (vf_cmpl_sd_pp, valCmplSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer, False),
+                                          (vf_cmpl_sd_pp, valCmplSD.daughters, 2, (5,), verb_token, funct_prep_o_domainer, False),
                                           (vf_cmplSD_cr_vc_CP, valCmplSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
                                           (vf_cmplSD_cr_vc_prep, valCmplSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
                                           (vf_cmplSD_cr_vc_verb, valCmplSD.mothers, 2, (5,), verb_token, rela_domainer, False),
@@ -1652,7 +1663,7 @@ params['frame']['vf_cmpl_domain'] = (
 
 params['frame']['vf_cmpl_domain2'] = (
                                           (vf_cmpl_sd_np, valCmplSD.daughters, 2, (5,), verb_token, funct_domainer2, False),
-                                          (vf_cmpl_sd_pp, valCmplSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer2, False),
+                                          (vf_cmpl_sd_pp, valCmplSD.daughters, 2, (5,), verb_token, funct_prep_o_domainer2, False),
                                           (vf_cmplSD_cr_vc_CP, valCmplSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
                                           (vf_cmplSD_cr_vc_prep, valCmplSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
                                           (vf_cmplSD_cr_vc_verb, valCmplSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
@@ -1673,8 +1684,9 @@ vf_adju_pa = pred_target.format(basis='''
 
 vf_adju_pa_clRela = pred_target.format(basis='''
 
-<mother- clause rela=Adju|PrAd
+c2:clause rela=Adju|PrAd
 
+c1 <mother- c2
 ''', pred_funct=all_preds)
 
 vf_adju_pa_null = pred_target.format(basis='''
@@ -1755,7 +1767,7 @@ else:
     
 params['frame']['vf_adju_lex'] = (
                                         (vf_adju_lex_np, valAdjuLex.daughters, 2, (5,), verb_token, funct_lexer, False),
-                                        (vf_adju_lex_pp, valAdjuLex.daughters, 2, (6,), verb_token, funct_prep_o_lexer, False),
+                                        (vf_adju_lex_pp, valAdjuLex.daughters, 2, (5,), verb_token, funct_prep_o_lexer, False),
                                         (vf_adju_cr_vc_CP, valAdjuLex.mothers, 2, (6,), verb_token, rela_conj_lexer, False),
                                         (vf_adju_cr_vc_prep, valAdjuLex.mothers, 2, (6,), verb_token, rela_prep_lexer, False),
                                         (vf_adju_cr_vc_verb, valAdjuLex.mothers, 2, (5,), verb_token, rela_lexer, False),
@@ -1821,7 +1833,7 @@ else:
     
 params['frame']['vf_adju_domain'] = (
                                           (vf_adju_sd_np, valAdjuSD.daughters, 2, (5,), verb_token, funct_domainer, False),
-                                          (vf_adju_sd_pp, valAdjuSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer, False),
+                                          (vf_adju_sd_pp, valAdjuSD.daughters, 2, (5,), verb_token, funct_prep_o_domainer, False),
                                           (vf_adjuSD_cr_vc_CP, valAdjuSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
                                           (vf_adjuSD_cr_vc_prep, valAdjuSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
                                           (vf_adjuSD_cr_vc_verb, valAdjuSD.mothers, 2, (5,), verb_token, rela_domainer, False),
@@ -1837,7 +1849,7 @@ params['frame']['vf_adju_domain'] = (
 
 params['frame']['vf_adju_domain2'] = (
                                           (vf_adju_sd_np, valAdjuSD.daughters, 2, (5,), verb_token, funct_domainer2, False),
-                                          (vf_adju_sd_pp, valAdjuSD.daughters, 2, (6,), verb_token, funct_prep_o_domainer2, False),
+                                          (vf_adju_sd_pp, valAdjuSD.daughters, 2, (5,), verb_token, funct_prep_o_domainer2, False),
                                           (vf_adjuSD_cr_vc_CP, valAdjuSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
                                           (vf_adjuSD_cr_vc_prep, valAdjuSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
                                           (vf_adjuSD_cr_vc_verb, valAdjuSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
