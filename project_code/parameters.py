@@ -137,7 +137,7 @@ def code2domain(word):
             code_index = code.split('|').index(match)   
             return domain.split('|')[code_index]
         else:
-            raise Exception(code) # avoid accidental selections
+            raise Exception(word) # avoid accidental selections
     except:
         raise Exception(word)
 
@@ -761,7 +761,7 @@ vi_cmpl_sd_pp = pred_target.format(basis=f'''
 # Clause Relations
 vi_cmplSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'), 
                                         pred_funct=all_preds)
-vi_cmplSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Cmpl', freqs=f'sem_domain_code~{good_sem_codes}'),
+vi_cmplSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
                                           pred_funct=all_preds)
 vi_cmplSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
                                           pred_funct=all_preds)
@@ -1025,7 +1025,12 @@ c2:clause
 /where/
     phrase function={relas} typ#PP
 /have/
-    -heads> word pdp#prep|prps|prde|prin|inrg {word_reqs}
+    /where/
+        -heads> w1:word
+    /have/
+        w2:word pdp#prep|prps|prde|prin|inrg {word_reqs}
+        w1 = w2
+    /-/
 /-/
 
 /where/
@@ -1199,8 +1204,11 @@ else:
 
 def funct_domainer(basis, target):
     # basis tokenizer for semantic domains + functions
-    function = F.function.v(L.u(basis, 'phrase')[0])
-    sem_category = code2tag(F.sem_domain_code.v(basis))
+    try:
+        function = F.function.v(L.u(basis, 'phrase')[0])
+        sem_category = code2tag(F.sem_domain_code.v(basis))
+    except:
+        raise Exception(basis)
     return f'{function}.{sem_category}'
     
 def funct_prep_o_domainer(basis, target):
@@ -1223,7 +1231,10 @@ def rela_conj_domainer(basis, target):
     rela = F.rela.v(L.u(basis, 'clause')[0])
     conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
     conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
-    sem_category = code2tag(F.sem_domain_code.v(basis))
+    try:
+        sem_category = code2tag(F.sem_domain_code.v(basis))
+    except:
+        raise Exception(basis)
     return f'{rela}.{conj_string}_{sem_category}'
    
 def rela_domainer(basis, target):
@@ -1258,7 +1269,7 @@ def funct_domainer2(basis, target):
 def funct_prep_o_domainer2(basis, target):
     # makes prep_domain + prep_obj_domain tokens + functions
     prep_obj = E.prep_obj.f(basis)[0]
-    sem_domain = code2domain(basis)
+    sem_domain = code2domain(prep_obj)
     function = F.function.v(L.u(basis, 'phrase')[0])
     return f'{function}.{F.lex.v(basis)}_{sem_domain}'
 
