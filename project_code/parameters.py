@@ -86,8 +86,9 @@ code_priorities = (('(1\.001001[0-9]*)',  # ANIMATE
     
                   ('(1\.002[0-9]*)', # EVENTS
                    '(1\.003002[0-9]*)',
-                   '(1\.002$)',
-                   '(1\.002)\|'))
+                   '(1\.002$)|(1\.002)\|',
+                   '(1.004003$)|(1.004003)\|',
+                   '(1.004005$)|(1.004005)\|'))
 
 def code2tag(code):
     '''
@@ -121,25 +122,23 @@ def code2domain(word):
     animate = '|'.join(code_priorities[0])
     inanimate = '|'.join(code_priorities[1])
     events = '|'.join(code_priorities[2])
-    try:
-        if re.search(animate, code):
-            match = next(match for group in re.findall(animate, code) for match in group if match)
-            code_index = code.split('|').index(match)
-            return domain.split('|')[code_index]
+    if re.search(animate, code):
+        match = next(match for group in re.findall(animate, code) for match in group if match)
+        code_index = code.split('|').index(match)
+        return domain.split('|')[code_index]
 
-        elif re.search(inanimate, code):
-            match = next(match for group in re.findall(inanimate, code) for match in group if match)
-            code_index = code.split('|').index(match)
-            return domain.split('|')[code_index]
+    elif re.search(inanimate, code):
+        match = next(match for group in re.findall(inanimate, code) for match in group if match)
+        code_index = code.split('|').index(match)
+        return domain.split('|')[code_index]
 
-        elif re.search(events, code):
-            match = next(match for group in re.findall(events, code) for match in group if match)
-            code_index = code.split('|').index(match)   
-            return domain.split('|')[code_index]
-        else:
-            raise Exception(word) # avoid accidental selections
-    except:
-        raise Exception(word)
+    elif re.search(events, code):
+        match = next(match for group in re.findall(events, code) for match in group if match)
+        code_index = code.split('|').index(match)   
+        return domain.split('|')[code_index]
+    else:
+        raise Exception(word) # avoid accidental selections
+
 
     
 def domainer(basis, target):
@@ -1204,11 +1203,8 @@ else:
 
 def funct_domainer(basis, target):
     # basis tokenizer for semantic domains + functions
-    try:
-        function = F.function.v(L.u(basis, 'phrase')[0])
-        sem_category = code2tag(F.sem_domain_code.v(basis))
-    except:
-        raise Exception(basis)
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    sem_category = code2tag(F.sem_domain_code.v(basis))
     return f'{function}.{sem_category}'
     
 def funct_prep_o_domainer(basis, target):
@@ -1231,10 +1227,7 @@ def rela_conj_domainer(basis, target):
     rela = F.rela.v(L.u(basis, 'clause')[0])
     conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
     conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
-    try:
-        sem_category = code2tag(F.sem_domain_code.v(basis))
-    except:
-        raise Exception(basis)
+    sem_category = code2tag(F.sem_domain_code.v(basis))
     return f'{rela}.{conj_string}_{sem_category}'
    
 def rela_domainer(basis, target):
@@ -1816,17 +1809,17 @@ vf_adju_sd_pp = pred_target.format(basis=f'''
 
 
 # Clause Relations
-vf_adjuSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Adju|PrAd', reqs=''), 
+vf_adjuSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'), 
                                       pred_funct=all_preds)
-vf_adjuSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Adju|PrAd', reqs=''),
+vf_adjuSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
                                         pred_funct=all_preds)
-vf_adjuSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Adju|PrAd', reqs=''),
+vf_adjuSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
                                         pred_funct=all_preds)
-vf_adjuSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=''),
+vf_adjuSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
                                       pred_funct=all_preds)
-vf_adjuSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Adju|PrAd', reqs=''),
+vf_adjuSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
                                             pred_funct=all_preds)
-vf_adjuSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Adju|PrAd', reqs=''),
+vf_adjuSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
                                              pred_funct=all_preds)
 if not cached_data:
     valAdjuSD = validateFrame(mother_templates=(vf_adju_sd_np,
