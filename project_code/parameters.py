@@ -1511,7 +1511,7 @@ c1 = c2
 
 
 params['frame']['vf_cmpl_pa'] = (
-                                    (vf_cmpl_pa, None, 2, (4,), verb_token, functioner, False),
+                                    (vf_cmpl_pa, None, 2, (3,), verb_token, functioner, False),
                                     (vf_cmpl_pa_clRela, None, 2, (3,), verb_token, relationer, False),
                                     (vf_cmpl_pa_null, None, 2, (2,), verb_token, nuller, False)
                                 )
@@ -1704,7 +1704,7 @@ c1 = c2
 
 
 params['frame']['vf_adju_pa'] = (
-                                    (vf_adju_pa, None, 2, (4,), verb_token, functioner, False),
+                                    (vf_adju_pa, None, 2, (3,), verb_token, functioner, False),
                                     (vf_adju_pa_clRela, None, 2, (3,), verb_token, relationer, False),
                                     (vf_adju_pa_null, None, 2, (2,), verb_token, nuller, False)
                                 )
