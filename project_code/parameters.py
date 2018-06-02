@@ -582,13 +582,13 @@ vi_o_sd_pp = pred_target.format(basis=f'''
 )
 
 # Clause Relations
-vi_objcSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc', reqs='sem_domain_code~{good_sem_codes}'), 
+vi_objcSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc', reqs=f'sem_domain_code~{good_sem_codes}'), 
                                         pred_funct=all_preds)
-vi_objcSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc', reqs='sem_domain_code~{good_sem_codes}'),
+vi_objcSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc', reqs=f'sem_domain_code~{good_sem_codes}'),
                                           pred_funct=all_preds)
-vi_objcSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc', reqs='sem_domain_code~{good_sem_codes}'),
+vi_objcSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc', reqs=f'sem_domain_code~{good_sem_codes}'),
                                           pred_funct=all_preds)
-vi_objcSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs='sem_domain_code~{good_sem_codes}'),
+vi_objcSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs=f'sem_domain_code~{good_sem_codes}'),
                                         pred_funct=all_preds)
 
 def prep_verbDomainer(basis, target):
@@ -759,17 +759,17 @@ vi_cmpl_sd_pp = pred_target.format(basis=f'''
 ''', pred_funct=all_preds)
 
 # Clause Relations
-vi_cmplSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Cmpl', reqs='sem_domain_code~{good_sem_codes}'), 
+vi_cmplSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'), 
                                         pred_funct=all_preds)
-vi_cmplSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Cmpl', reqs='sem_domain_code~{good_sem_codes}'),
+vi_cmplSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Cmpl', freqs=f'sem_domain_code~{good_sem_codes}'),
                                           pred_funct=all_preds)
-vi_cmplSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Cmpl', reqs='sem_domain_code~{good_sem_codes}'),
+vi_cmplSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
                                           pred_funct=all_preds)
-vi_cmplSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Cmpl', reqs='sem_domain_code~{good_sem_codes}'),
+vi_cmplSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
                                         pred_funct=all_preds)
-vi_cmplSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl', reqs='sem_domain_code~{good_sem_codes}'),
+vi_cmplSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
                                               pred_funct=all_preds)
-vi_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl', reqs='sem_domain_code~{good_sem_codes}'),
+vi_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
                                                pred_funct=all_preds)
     
 params['inventory']['vi_cmpl_domain'] = (
@@ -904,17 +904,17 @@ vi_adj_sd_pp = pred_target.format(basis=f'''
 ''', pred_funct=all_preds)
 
 # Clause Relations
-vi_adjSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Adju|PrAd', reqs='sem_domain_code~{good_sem_codes}'), 
+vi_adjSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'), 
                                         pred_funct=all_preds)
-vi_adjSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Adju|PrAd', reqs='sem_domain_code~{good_sem_codes}'),
+vi_adjSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
                                           pred_funct=all_preds)
-vi_adjSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Adju|PrAd', reqs='sem_domain_code~{good_sem_codes}'),
+vi_adjSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
                                           pred_funct=all_preds)
-vi_adjSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs='sem_domain_code~{good_sem_codes}'),
+vi_adjSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
                                         pred_funct=all_preds)
-vi_adjSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Adju|PrAd', reqs='sem_domain_code~{good_sem_codes}'),
+vi_adjSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
                                               pred_funct=all_preds)
-vi_adjSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Adju|PrAd', reqs='sem_domain_code~{good_sem_codes}'),
+vi_adjSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
                                                pred_funct=all_preds)
 
     
@@ -1131,7 +1131,7 @@ params['frame']['vf_argAll_lex'] = (
 # 5.3, Verb Frames, All Arguments, Semantic Domains
 
 vf_all_arg_conditionsSD = vf_clause_conditions.format(relas='Objc|Cmpl|Adju|Time|Loca|PrAd', 
-                                                      word_reqs='sem_domain_code~{good_sem_codes}',                                  
+                                                      word_reqs=f'sem_domain_code~{good_sem_codes}',                                  
                                                       clause_reqs='/without/\n    phrase function=Rela\n/-/')
 
 vf_allarg_sd_np = pred_target.format(basis=f'''
@@ -1165,22 +1165,22 @@ vf_allarg_sd_pp_obj = pred_target.format(basis=f'''
 
 # Clause Relations
 vf_argsSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc|Cmpl|Adju', 
-                                        reqs='sem_domain_code~{good_sem_codes}'), 
+                                        reqs=f'sem_domain_code~{good_sem_codes}'), 
                                         pred_funct='Pred|PreS')
 vf_argsSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc|Cmpl|Adju', 
-                                          reqs='sem_domain_code~{good_sem_codes}'),
+                                          reqs=f'sem_domain_code~{good_sem_codes}'),
                                           pred_funct='Pred|PreS')
 vf_argsSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc|Cmpl|Adju', 
-                                          reqs='sem_domain_code~{good_sem_codes}'),
+                                          reqs=f'sem_domain_code~{good_sem_codes}'),
                                           pred_funct='Pred|PreS')
 vf_argsSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Cmpl|Adju', 
-                                        reqs='sem_domain_code~{good_sem_codes}'),
+                                        reqs=f'sem_domain_code~{good_sem_codes}'),
                                         pred_funct='Pred|PreS')
 vf_argsSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl|Adju',
-                                              reqs='sem_domain_code~{good_sem_codes}'),
+                                              reqs=f'sem_domain_code~{good_sem_codes}'),
                                               pred_funct='Pred|PreS')
 vf_argsSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl|Adju',
-                                              reqs='sem_domain_code~{good_sem_codes}'),
+                                              reqs=f'sem_domain_code~{good_sem_codes}'),
                                               pred_funct='Pred|PreS')
 if not cached_data:
     valSD = validateFrame(mother_templates=(vf_allarg_sd_np,
@@ -1412,7 +1412,7 @@ params['frame']['vf_obj_lex'] = (
 
 # 6.3, Verb Frame, Objects, Semantic Domains
 vf_obj_arg_conditionsSD = vf_clause_conditions.format(relas='Objc', 
-                                                      word_reqs='sem_domain_code~{good_sem_codes}',                                  
+                                                      word_reqs=f'sem_domain_code~{good_sem_codes}',                                  
                                                       clause_reqs='/without/\n    phrase function=Rela\n/-/')
 
 vf_obj_sd_np = pred_target.format(basis=f'''
@@ -1436,16 +1436,16 @@ vf_obj_sd_pp = pred_target.format(basis=f'''
 
 # Clause Relations
 vf_objSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc', 
-                                                              reqs='sem_domain_code~{good_sem_codes}'), 
+                                                              reqs=f'sem_domain_code~{good_sem_codes}'), 
                                                               pred_funct='Pred|PreS')
 vf_objSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc', 
-                                                                  reqs='sem_domain_code~{good_sem_codes}'),
+                                                                  reqs=f'sem_domain_code~{good_sem_codes}'),
                                                                   pred_funct='Pred|PreS')
 vf_objSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc', 
-                                                                  reqs='sem_domain_code~{good_sem_codes}'),
+                                                                  reqs=f'sem_domain_code~{good_sem_codes}'),
                                                                   pred_funct='Pred|PreS')
 vf_objSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', 
-                                                               reqs='sem_domain_code~{good_sem_codes}'),
+                                                               reqs=f'sem_domain_code~{good_sem_codes}'),
                                                                pred_funct='Pred|PreS')
 
 if not cached_data:
@@ -1589,7 +1589,7 @@ params['frame']['vf_cmpl_lex'] = (
 
 
 vf_cmpl_conditionsSD = vf_clause_conditions.format(relas='Cmpl', 
-                                                   word_reqs='sem_domain_code~{good_sem_codes}',                                  
+                                                   word_reqs=f'sem_domain_code~{good_sem_codes}',                                  
                                                    clause_reqs='')
 
 vf_cmpl_sd_np = pred_target.format(basis=f'''
@@ -1613,22 +1613,22 @@ vf_cmpl_sd_pp = pred_target.format(basis=f'''
 
 # Clause Relations
 vf_cmplSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc|Cmpl|Adju', 
-                                                               reqs='sem_domain_code~{good_sem_codes}'), 
+                                                               reqs=f'sem_domain_code~{good_sem_codes}'), 
                                                                pred_funct=all_preds)
 vf_cmplSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc|Cmpl|Adju', 
-                                                                   reqs='sem_domain_code~{good_sem_codes}'),
+                                                                   reqs=f'sem_domain_code~{good_sem_codes}'),
                                                                     pred_funct=all_preds)
 vf_cmplSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc|Cmpl|Adju', 
-                                                                   reqs='sem_domain_code~{good_sem_codes}'),
+                                                                   reqs=f'sem_domain_code~{good_sem_codes}'),
                                                                    pred_funct=all_preds)
 vf_cmplSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Cmpl|Adju', 
-                                                               reqs='sem_domain_code~{good_sem_codes}'),
+                                                               reqs=f'sem_domain_code~{good_sem_codes}'),
                                                                pred_funct=all_preds)
 vf_cmplSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl|Adju',
-                                                                           reqs='sem_domain_code~{good_sem_codes}'),
+                                                                           reqs=f'sem_domain_code~{good_sem_codes}'),
                                                                            pred_funct=all_preds)
 vf_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl|Adju',
-                                                                             reqs='sem_domain_code~{good_sem_codes}'),
+                                                                             reqs=f'sem_domain_code~{good_sem_codes}'),
                                                                              pred_funct=all_preds)
 if not cached_data:
     valCmplSD = validateFrame(mother_templates=(vf_cmpl_sd_np,
@@ -1781,7 +1781,7 @@ params['frame']['vf_adju_lex'] = (
 # 8.3, Verb Frame, Adjuncts+, Domains
 
 vf_adjuSD_conditions = vf_clause_conditions.format(relas='Adju|Time|Loca|PrAd', 
-                                                   word_reqs='sem_domain_code~{good_sem_codes}',
+                                                   word_reqs=f'sem_domain_code~{good_sem_codes}',
                                                    clause_reqs='')
 
 vf_adju_sd_np = pred_target.format(basis=f'''
