@@ -1024,7 +1024,15 @@ c2:clause
 c1 = c2
 ''', pred_funct='PreS|Pred', ptcp_funct='PreC')
 
-vf_allarg_pa_suffix = pred_target.format(basis='', pred_funct='PreO', ptcp_funct='PtcO')
+vf_allarg_pa_suffix = pred_target.format(basis='''
+
+c2:clause
+/without/
+    phrase function=Rela
+/-/    
+c1 = c2
+
+''', pred_funct='PreO', ptcp_funct='PtcO')
 
 if not cached_data:
     allArgVal = validateFrame(mother_templates=(vf_allarg_pa,
@@ -1387,7 +1395,16 @@ ca <mother- speech
 c1 = c2
 ''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
-vf_obj_pa_suffix = pred_target.format(basis='', pred_funct='PreO', ptcp_funct='PtcO')
+vf_obj_pa_suffix = pred_target.format(basis='''
+
+c2:clause
+/without/
+    phrase function=Rela
+/-/    
+c1 = c2
+
+''', pred_funct='PreO', ptcp_funct='PtcO')
+
 vf_obj_pa_speech = vf_allarg_pa_speech
 
 vf_obj_simpleNull = pred_target.format(basis='''
