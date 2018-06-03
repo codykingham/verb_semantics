@@ -117,6 +117,7 @@ class Experiment:
         for target, clauses in experiment_data.items():
             for clause, bases in clauses.items():
                 bases = bases if not self.collapse_instances else set(bases)
+                bases = bases if not set(bases) == {'ø'} else {'ø'} # count only one null value
                 ecounts[target].update(bases)
                 
         counts = dict((target, counts) for target, counts in ecounts.items()
@@ -158,6 +159,7 @@ class Experiment:
         for target, clauses in experiment_data.items():
             for clause, bases in clauses.items():
                 bases = bases if not self.collapse_instances else set(bases)
+                bases = bases if not set(bases) == {'ø'} else {'ø'} # count only one null value
                 frame = '|'.join(sorted(bases))
                 ecounts[target][frame] += 1
                 

@@ -43,7 +43,7 @@ c1:clause
         p = p1
     /or/
     clause typ=Ptcp
-        p:phrase function=PreC|{pred_funct}
+        p:phrase function={ptcp_funct}
             -heads> word pdp=verb language=Hebrew
         p = p1
     /-/
@@ -57,7 +57,8 @@ lex freq_lex>9
    lexword = target
 '''
 
-all_preds = 'Pred|PreO|PreS|PtcO' # all predicate phrase functions
+all_preds = 'Pred|PreO|PreS' # all predicate phrase functions
+all_ptcp = 'PreC|PtcO'
 
 def verb_token(target):
     # standard verb target tokenizer
@@ -71,7 +72,9 @@ good_sem_codes = '1\.00[1-3][0-9]*|2\.[0-9]*' # SDBH codes: objects, events, ref
 code_priorities = (('(1\.001001[0-9]*)',  # ANIMATE
                    '(1\.00300100[3,6])', 
                    '(1\.00300101[0,3])',
-                   '(2\.075[0-9]*)'),
+                   '(2\.075[0-9]*)',
+                    '(1\.003001005$)|(1\.003001005)\|', # names of groups (!)
+                   ),
 
                   ('(1\.00100[2-6][0-9]*)',  # INANIMATE
                    '(1\.00300100[1-2, 4, 7-9])',
@@ -80,8 +83,6 @@ code_priorities = (('(1\.001001[0-9]*)',  # ANIMATE
                    '(1\.00[1,3])\|',
                    '(1\.003001$)',
                    '(1\.003001)\|',
-                   '(1\.003001005$)', # names of groups (!)
-                   '(1\.003001005)\|',
                    '(2\.[0-9]*)'), # frames
     
                   ('(1\.002[0-9]*)', # EVENTS
@@ -425,7 +426,7 @@ vi_s_lex_np = pred_target.format(basis='''
     phrase typ=NP|PrNP function=Subj
         -heads> word pdp#prep|prps|prde|prin|inrg
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 
 params['inventory']['vi_subj_lex'] = (
@@ -442,7 +443,7 @@ vi_s_sd = pred_target.format(basis=f'''
     phrase typ=NP|PrNP function=Subj
         -heads> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 params['inventory']['vi_subj_domain'] = (
                                          (vi_s_sd, None, 2, (4,), verb_token, domainer, False),
@@ -457,14 +458,14 @@ vi_o_pa = pred_target.format(basis='''
 
     phrase function=Objc
         
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vi_o_pa_clRela = pred_target.format(basis='''
 
 c2:clause rela=Objc
 c1 <mother- c2
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vi_o_pa_null = pred_target.format(basis='''
 
@@ -482,7 +483,7 @@ c2:clause
 /-/
 
 c1 = c2
-''', pred_funct='Pred|PreS')
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 vi_o_pa_speech = pred_target.format(basis='''
 
@@ -491,10 +492,11 @@ vi_o_pa_speech = pred_target.format(basis='''
 ca2:clause_atom code=999
 
 ca1 <mother- ca2
+ca1 <: ca2
 ca1 [[ p1
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
-vi_o_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
+vi_o_pa_suffix = pred_target.format(basis='', pred_funct='PreO', ptcp_funct='PtcO')
 
 def simple_object(basis, target):
     return 'Objc'
@@ -517,7 +519,7 @@ vi_o_lex_np = pred_target.format(basis='''
     phrase typ=NP|PrNP function=Objc
         -heads> word pdp#prep|prps|prde|prin|inrg
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vi_o_lex_pp = pred_target.format(basis='''
 
@@ -525,17 +527,17 @@ vi_o_lex_pp = pred_target.format(basis='''
         -heads> word pdp=prep
         -prep_obj> word pdp#prep|prps|prde|prin|inrg
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 # Clause Relations
 vi_objc_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc', reqs=''), 
-                                       pred_funct=all_preds)
+                                       pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_objc_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc', reqs=''),
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_objc_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc', reqs=''),
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_objc_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs=''),
-                                      pred_funct=all_preds)
+                                      pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 def prep_verber(basis, target):
     # returns prep + verb lex, for e.g. infinitives
@@ -568,7 +570,7 @@ vi_o_sd_np = pred_target.format(basis=f'''
     phrase typ=NP|PrNP function=Objc
         -heads> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
 
-''', pred_funct=all_preds
+''', pred_funct=all_preds, ptcp_funct=all_ptcp
 )
 
 vi_o_sd_pp = pred_target.format(basis=f'''
@@ -577,18 +579,18 @@ vi_o_sd_pp = pred_target.format(basis=f'''
         -heads> word pdp=prep
         -prep_obj> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
 
-''', pred_funct='Pred|PreS|PreO|PtcO'
+''', pred_funct=all_preds, ptcp_funct=all_ptcp
 )
 
 # Clause Relations
 vi_objcSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc', reqs=f'sem_domain_code~{good_sem_codes}'), 
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_objcSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                          pred_funct=all_preds)
+                                          pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_objcSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                          pred_funct=all_preds)
+                                          pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_objcSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 def prep_verbDomainer(basis, target):
     # combines a infinitive verb with its preposition
@@ -661,14 +663,14 @@ vi_cmp_pa = pred_target.format(basis='''
 
     phrase function=Cmpl
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vi_cmp_pa_clRel = pred_target.format(basis='''
 
 c2:clause rela=Cmpl
 c1 <mother- c2
     
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 
 vi_cmp_pa_null = pred_target.format(basis='''
@@ -682,7 +684,7 @@ c2:clause
 /-/
 
 c1 = c2
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 
 params['inventory']['vi_cmpl_pa'] = (
@@ -701,7 +703,7 @@ vi_cmpl_lex_np = pred_target.format(basis='''
     phrase function=Cmpl typ=NP|PrNP|AdvP
         -heads> word pdp#prep|prps|prde|prin|inrg
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vi_cmpl_lex_pp = pred_target.format(basis='''
 
@@ -709,21 +711,21 @@ vi_cmpl_lex_pp = pred_target.format(basis='''
         -heads> word pdp=prep
         -prep_obj> word pdp#prep|prps|prde|prin|inrg
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 # Clause Relations
 vi_cmpl_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Cmpl', reqs=''), 
-                                       pred_funct=all_preds)
+                                       pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_cmpl_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Cmpl', reqs=''),
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_cmpl_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Cmpl', reqs=''),
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_cmpl_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Cmpl', reqs=''),
-                                      pred_funct=all_preds)
+                                      pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_cmpl_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl', reqs=''),
-                                            pred_funct=all_preds)
+                                            pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_cmpl_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl', reqs=''),
-                                            pred_funct=all_preds)
+                                            pred_funct=all_preds, ptcp_funct=all_ptcp)
 
         
 params['inventory']['vi_cmpl_lex'] = (
@@ -747,7 +749,7 @@ vi_cmpl_sd_np = pred_target.format(basis=f'''
     phrase function=Cmpl typ=NP|PrNP|AdvP
         -heads> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vi_cmpl_sd_pp = pred_target.format(basis=f'''
 
@@ -755,21 +757,21 @@ vi_cmpl_sd_pp = pred_target.format(basis=f'''
         -heads> word pdp=prep
         -prep_obj> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 # Clause Relations
 vi_cmplSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'), 
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_cmplSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                          pred_funct=all_preds)
+                                          pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_cmplSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                          pred_funct=all_preds)
+                                          pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_cmplSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_cmplSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                              pred_funct=all_preds)
+                                              pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                               pred_funct=all_preds)
+                                               pred_funct=all_preds, ptcp_funct=all_ptcp)
     
 params['inventory']['vi_cmpl_domain'] = (
                                              (vi_cmpl_sd_np, None, 2, (4,), verb_token, domainer, False),
@@ -806,14 +808,14 @@ vi_adj_pa = pred_target.format(basis='''
 
     phrase function=Adju|Time|Loca|PrAd
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vi_adj_pa_clRel = pred_target.format(basis='''
 
 c2:clause rela=Adju|PrAd
     c1 <mother- c2
     
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 
 vi_adj_pa_null = pred_target.format(basis='''
@@ -828,7 +830,7 @@ c2:clause
     
 c1 = c2
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 
 params['inventory']['vi_adj+_pa'] = (
@@ -847,7 +849,7 @@ vi_adj_lex_np = pred_target.format(basis='''
     phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
         -heads> word pdp#prep|prps|prde|prin|inrg
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vi_adj_lex_pp = pred_target.format(basis='''
 
@@ -855,21 +857,21 @@ vi_adj_lex_pp = pred_target.format(basis='''
         -heads> word pdp=prep
         -prep_obj> word pdp#prep|prps|prde|prin|inrg
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 # Clause Relations
 vi_adj_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Adju|PrAd', reqs=''), 
-                                     pred_funct=all_preds)
+                                     pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_adj_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Adju|PrAd', reqs=''),
-                                       pred_funct=all_preds)
+                                       pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_adj_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Adju|PrAd', reqs=''),
-                                       pred_funct=all_preds)
+                                       pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_adj_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=''),
-                                     pred_funct=all_preds)
+                                     pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_adj_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Adju|PrAd', reqs=''),
-                                           pred_funct=all_preds)
+                                           pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_adj_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Adju|PrAd', reqs=''),
-                                            pred_funct=all_preds)
+                                            pred_funct=all_preds, ptcp_funct=all_ptcp)
     
 params['inventory']['vi_adj+_lex'] = (
                                          (vi_adj_lex_np, None, 2, (4,), verb_token, lexer, False),
@@ -892,7 +894,7 @@ vi_adj_sd_np = pred_target.format(basis=f'''
     phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
         -heads> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vi_adj_sd_pp = pred_target.format(basis=f'''
 
@@ -900,21 +902,21 @@ vi_adj_sd_pp = pred_target.format(basis=f'''
         -heads> word pdp=prep
         -prep_obj> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 # Clause Relations
 vi_adjSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'), 
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_adjSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                          pred_funct=all_preds)
+                                          pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_adjSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                          pred_funct=all_preds)
+                                          pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_adjSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_adjSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                              pred_funct=all_preds)
+                                              pred_funct=all_preds, ptcp_funct=all_ptcp)
 vi_adjSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                               pred_funct=all_preds)
+                                               pred_funct=all_preds, ptcp_funct=all_ptcp)
 
     
 params['inventory']['vi_adj+_domain'] = (
@@ -959,7 +961,7 @@ c2:clause
     phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd
     
 c1 = c2
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vf_allarg_pa_clRela = pred_target.format(basis='''
 
@@ -967,7 +969,7 @@ c2:clause rela=Objc|Cmpl|Adju|PrAd
 
 c1 <mother- c2
 
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vf_allarg_pa_null = pred_target.format(basis='''
 
@@ -987,10 +989,10 @@ ca <mother- speech
 /-/
 
 c1 = c2
-''', pred_funct='Pred|PreS')
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 
-vf_allarg_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
+vf_allarg_pa_suffix = pred_target.format(basis='', pred_funct='PreO', ptcp_funct='PtcO')
 vf_allarg_pa_speech = vi_o_pa_speech
 
 params['frame']['vf_argAll_pa'] = (
@@ -1056,7 +1058,7 @@ vf_allarg_lex_np = pred_target.format(basis=f'''
     phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
         -heads> word
         
-''', pred_funct='Pred|PreS')
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 vf_allarg_lex_pp = pred_target.format(basis=f'''
 
@@ -1066,7 +1068,7 @@ vf_allarg_lex_pp = pred_target.format(basis=f'''
         -heads> word
         -prep_obj> word
         
-''', pred_funct='Pred|PreS')
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 vf_allarg_lex_pp_obj = pred_target.format(basis=f'''
 
@@ -1076,21 +1078,21 @@ vf_allarg_lex_pp_obj = pred_target.format(basis=f'''
         -heads> word
         -prep_obj> word
      
-''', pred_funct='Pred|PreS')
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
     
 # Clause Relations
 vf_args_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc|Cmpl|Adju', reqs=''), 
-                                      pred_funct='Pred|PreS')
+                                      pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_args_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc|Cmpl|Adju', reqs=''),
-                                        pred_funct='Pred|PreS')
+                                        pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_args_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc|Cmpl|Adju', reqs=''),
-                                        pred_funct='Pred|PreS')
+                                        pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_args_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Cmpl|Adju', reqs=''),
-                                      pred_funct='Pred|PreS')
+                                      pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_args_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl|Adju', reqs=''),
-                                            pred_funct='Pred|PreS')
+                                            pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_args_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl|Adju', reqs=''),
-                                             pred_funct='Pred|PreS')
+                                             pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 def funct_lexer(basis, target):
     # returns function + lexeme basis tokens
@@ -1145,7 +1147,7 @@ vf_allarg_sd_np = pred_target.format(basis=f'''
     phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
         -heads> word
         
-''', pred_funct='Pred|PreS')
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 vf_allarg_sd_pp = pred_target.format(basis=f'''
 
@@ -1155,7 +1157,7 @@ vf_allarg_sd_pp = pred_target.format(basis=f'''
         -heads> word
         -prep_obj> word
         
-''', pred_funct='Pred|PreS')
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 vf_allarg_sd_pp_obj = pred_target.format(basis=f'''
 
@@ -1165,27 +1167,27 @@ vf_allarg_sd_pp_obj = pred_target.format(basis=f'''
         -heads> word
         -prep_obj> word
      
-''', pred_funct='Pred|PreS')
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 # Clause Relations
 vf_argsSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc|Cmpl|Adju', 
                                         reqs=f'sem_domain_code~{good_sem_codes}'), 
-                                        pred_funct='Pred|PreS')
+                                        pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_argsSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc|Cmpl|Adju', 
                                           reqs=f'sem_domain_code~{good_sem_codes}'),
-                                          pred_funct='Pred|PreS')
+                                          pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_argsSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc|Cmpl|Adju', 
                                           reqs=f'sem_domain_code~{good_sem_codes}'),
-                                          pred_funct='Pred|PreS')
+                                          pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_argsSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Cmpl|Adju', 
                                         reqs=f'sem_domain_code~{good_sem_codes}'),
-                                        pred_funct='Pred|PreS')
+                                        pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_argsSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl|Adju',
                                               reqs=f'sem_domain_code~{good_sem_codes}'),
-                                              pred_funct='Pred|PreS')
+                                              pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_argsSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl|Adju',
                                               reqs=f'sem_domain_code~{good_sem_codes}'),
-                                              pred_funct='Pred|PreS')
+                                              pred_funct='Pred|PreS', ptcp_funct='PreC')
 if not cached_data:
     valSD = validateFrame(mother_templates=(vf_allarg_sd_np,
                                             vf_allarg_sd_pp, 
@@ -1313,14 +1315,14 @@ c2:clause
     phrase function=Objc
     
 c1 = c2
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct='PreC')
 
 vf_obj_pa_clRela = pred_target.format(basis='''
 
 c2:clause rela=Objc
 
 c1 <mother- c2
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct='PreC')
 
 vf_obj_pa_null = pred_target.format(basis='''
 
@@ -1338,11 +1340,11 @@ ca <mother- speech
 /-/
 
 c1 = c2
-''', pred_funct='Pred|PreS')
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 
 
-vf_obj_pa_suffix = pred_target.format(basis='', pred_funct='PreO|PtcO')
+vf_obj_pa_suffix = pred_target.format(basis='', pred_funct='PreO', ptcp_funct='PtcO')
 vf_obj_pa_speech = vi_o_pa_speech
 
 params['frame']['vf_obj_pa'] = (
@@ -1368,7 +1370,7 @@ vf_obj_lex_np = pred_target.format(basis=f'''
     phrase function=Objc typ#PP
         -heads> word 
         
-''', pred_funct='Pred|PreS')
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 vf_obj_lex_pp = pred_target.format(basis=f'''
 
@@ -1378,17 +1380,17 @@ vf_obj_lex_pp = pred_target.format(basis=f'''
         -heads> word
         -prep_obj> word
      
-''', pred_funct='Pred|PreS')
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
     
 # Clause Relations
 vf_obj_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc', reqs=''), 
-                                      pred_funct='Pred|PreS')
+                                      pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_obj_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc', reqs=''),
-                                        pred_funct='Pred|PreS')
+                                        pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_obj_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc', reqs=''),
-                                        pred_funct='Pred|PreS')
+                                        pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_obj_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs=''),
-                                      pred_funct='Pred|PreS')
+                                      pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 if not cached_data:
     valObjLex = validateFrame(mother_templates=(vf_obj_lex_np,
@@ -1426,7 +1428,7 @@ vf_obj_sd_np = pred_target.format(basis=f'''
     phrase function=Objc typ=NP|PrNP|AdvP
         -heads> word
         
-''', pred_funct='Pred|PreS')
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 vf_obj_sd_pp = pred_target.format(basis=f'''
 
@@ -1436,21 +1438,21 @@ vf_obj_sd_pp = pred_target.format(basis=f'''
         -heads> word
         -prep_obj> word
      
-''', pred_funct='Pred|PreS')
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 # Clause Relations
 vf_objSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc', 
                                                               reqs=f'sem_domain_code~{good_sem_codes}'), 
-                                                              pred_funct='Pred|PreS')
+                                                              pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_objSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc', 
                                                                   reqs=f'sem_domain_code~{good_sem_codes}'),
-                                                                  pred_funct='Pred|PreS')
+                                                                  pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_objSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc', 
                                                                   reqs=f'sem_domain_code~{good_sem_codes}'),
-                                                                  pred_funct='Pred|PreS')
+                                                                  pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_objSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', 
                                                                reqs=f'sem_domain_code~{good_sem_codes}'),
-                                                               pred_funct='Pred|PreS')
+                                                               pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 if not cached_data:
     valObjSD = validateFrame(mother_templates=(vf_obj_sd_np,
@@ -1491,14 +1493,14 @@ vf_cmpl_pa = pred_target.format(basis='''
 
     phrase function=Cmpl
     
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vf_cmpl_pa_clRela = pred_target.format(basis='''
 
 c2:clause rela=Cmpl
 
 c1 <mother- c2
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vf_cmpl_pa_null = pred_target.format(basis='''
 
@@ -1511,7 +1513,7 @@ c2:clause
 /-/
 
 c1 = c2
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 
 params['frame']['vf_cmpl_pa'] = (
@@ -1536,7 +1538,7 @@ vf_cmpl_lex_np = pred_target.format(basis=f'''
     phrase function=Cmpl typ=NP|PrNP|AdvP
         -heads> word
         
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vf_cmpl_lex_pp = pred_target.format(basis=f'''
 
@@ -1546,22 +1548,22 @@ vf_cmpl_lex_pp = pred_target.format(basis=f'''
         -heads> word
         -prep_obj> word
         
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 
 # Clause Relations
 vf_cmpl_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Cmpl', reqs=''), 
-                                      pred_funct=all_preds)
+                                      pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_cmpl_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Cmpl', reqs=''),
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_cmpl_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Cmpl', reqs=''),
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_cmpl_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Cmpl', reqs=''),
-                                      pred_funct=all_preds)
+                                      pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_cmpl_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl', reqs=''),
-                                            pred_funct=all_preds)
+                                            pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_cmpl_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl', reqs=''),
-                                             pred_funct=all_preds)
+                                             pred_funct=all_preds, ptcp_funct=all_ptcp)
 if not cached_data:
     valCmplLex = validateFrame(mother_templates=(vf_cmpl_lex_np,
                                                  vf_cmpl_lex_pp),
@@ -1603,7 +1605,7 @@ vf_cmpl_sd_np = pred_target.format(basis=f'''
     phrase function=Cmpl typ=NP|PrNP|AdvP
         -heads> word
         
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vf_cmpl_sd_pp = pred_target.format(basis=f'''
 
@@ -1613,27 +1615,27 @@ vf_cmpl_sd_pp = pred_target.format(basis=f'''
         -heads> word
         -prep_obj> word
         
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 # Clause Relations
 vf_cmplSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc|Cmpl|Adju', 
                                                                reqs=f'sem_domain_code~{good_sem_codes}'), 
-                                                               pred_funct=all_preds)
+                                                               pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_cmplSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc|Cmpl|Adju', 
                                                                    reqs=f'sem_domain_code~{good_sem_codes}'),
-                                                                    pred_funct=all_preds)
+                                                                    pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_cmplSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc|Cmpl|Adju', 
                                                                    reqs=f'sem_domain_code~{good_sem_codes}'),
-                                                                   pred_funct=all_preds)
+                                                                   pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_cmplSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Cmpl|Adju', 
                                                                reqs=f'sem_domain_code~{good_sem_codes}'),
-                                                               pred_funct=all_preds)
+                                                               pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_cmplSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl|Adju',
                                                                            reqs=f'sem_domain_code~{good_sem_codes}'),
-                                                                           pred_funct=all_preds)
+                                                                           pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl|Adju',
                                                                              reqs=f'sem_domain_code~{good_sem_codes}'),
-                                                                             pred_funct=all_preds)
+                                                                             pred_funct=all_preds, ptcp_funct=all_ptcp)
 if not cached_data:
     valCmplSD = validateFrame(mother_templates=(vf_cmpl_sd_np,
                                                 vf_cmpl_sd_pp),
@@ -1684,14 +1686,14 @@ vf_adju_pa = pred_target.format(basis='''
 
     phrase function=Adju|Time|Loca|PrAd
     
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vf_adju_pa_clRela = pred_target.format(basis='''
 
 c2:clause rela=Adju|PrAd
 
 c1 <mother- c2
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vf_adju_pa_null = pred_target.format(basis='''
 
@@ -1704,7 +1706,7 @@ c2:clause
 /-/
 
 c1 = c2
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 
 params['frame']['vf_adju_pa'] = (
@@ -1729,7 +1731,7 @@ vf_adju_lex_np = pred_target.format(basis=f'''
     phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
         -heads> word
         
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vf_adju_lex_pp = pred_target.format(basis=f'''
 
@@ -1739,22 +1741,22 @@ vf_adju_lex_pp = pred_target.format(basis=f'''
         -heads> word
         -prep_obj> word
         
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 
 # Clause Relations
 vf_adju_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Adju|PrAd', reqs=''), 
-                                      pred_funct=all_preds)
+                                      pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_adju_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Adju|PrAd', reqs=''),
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_adju_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Adju|PrAd', reqs=''),
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_adju_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=''),
-                                      pred_funct=all_preds)
+                                      pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_adju_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Adju|PrAd', reqs=''),
-                                            pred_funct=all_preds)
+                                            pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_adju_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Adju|PrAd', reqs=''),
-                                             pred_funct=all_preds)
+                                             pred_funct=all_preds, ptcp_funct=all_ptcp)
 if not cached_data:
     valAdjuLex = validateFrame(mother_templates=(vf_adju_lex_np,
                                                  vf_adju_lex_pp),
@@ -1795,7 +1797,7 @@ vf_adju_sd_np = pred_target.format(basis=f'''
     phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
         -heads> word
         
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vf_adju_sd_pp = pred_target.format(basis=f'''
 
@@ -1805,22 +1807,22 @@ vf_adju_sd_pp = pred_target.format(basis=f'''
         -heads> word
         -prep_obj> word
         
-''', pred_funct=all_preds)
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 
 # Clause Relations
 vf_adjuSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'), 
-                                      pred_funct=all_preds)
+                                      pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_adjuSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_adjuSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                        pred_funct=all_preds)
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_adjuSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                      pred_funct=all_preds)
+                                      pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_adjuSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                            pred_funct=all_preds)
+                                            pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_adjuSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
-                                             pred_funct=all_preds)
+                                             pred_funct=all_preds, ptcp_funct=all_ptcp)
 if not cached_data:
     valAdjuSD = validateFrame(mother_templates=(vf_adju_sd_np,
                                                  vf_adju_sd_pp),
@@ -1936,7 +1938,7 @@ params['inventory']['vd_par_lex'] = (
 
 content_words = {'subs', 'nmpr', 'verb', 'advb', 'adjv'}
 
-vd_con_window = pred_target.format(basis='', pred_funct=all_preds)
+vd_con_window = pred_target.format(basis='', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 def select_window(results):
     
@@ -1974,7 +1976,7 @@ params['inventory']['vd_con_window'] = (
 
 # 10.2, Verb Discourse, Context, Clause Content Words
 
-vd_con_clause = pred_target.format(basis='', pred_funct=all_preds)
+vd_con_clause = pred_target.format(basis='', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 def select_cl_words(results):
     '''
@@ -2002,7 +2004,7 @@ params['inventory']['vd_con_clause'] = (
 
 # 10.3, Verb Discourse, Context, Mother-Daughter Chain Content Words
 
-vd_con_chain = pred_target.format(basis='', pred_funct=all_preds)
+vd_con_chain = pred_target.format(basis='', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 def climb_chain(clause_atom, chain_list):
     '''
@@ -2044,7 +2046,7 @@ params['inventory']['vd_con_chain'] = (
 
 # 10.4, Verb Discourse, Domain, Simple
 
-vd_domain_simple = pred_target.format(basis='', pred_funct=all_preds)
+vd_domain_simple = pred_target.format(basis='', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 def notexist_unknown_dom(results):
     # filters out unknown domains
@@ -2082,7 +2084,7 @@ params['inventory']['vd_domain_embed'] = (
 
 # 11.1, Verb Grammar, Tense
 
-vg_tense = pred_target.format(basis='', pred_funct=all_preds)
+vg_tense = pred_target.format(basis='', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 def tenser(basis, target):
     # makes tense basis tokens
