@@ -991,15 +991,58 @@ ca <mother- speech
 c1 = c2
 ''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
+# NB, a trick was required in this template so that the correct index
+# can be provided to the validateFrame mothers class, i=3
+# c3:clause must thus be awkwardly put first; when combined with target it becomes i=3
+vf_allarg_pa_speech = pred_target.format(basis='''
+
+c3:clause
+c2:clause
+/without/
+    phrase function=Rela
+/-/
+    ca1:clause_atom
+    
+ca2:clause_atom code=999
+
+c1 = c2
+ca1 <mother- ca2
+ca1 <: ca2
+ca1 [[ p1
+c3 [[ ca2
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+# NB: This template is required to validate clauses with no matched
+# relations within the clause, but an exteral clause relation
+vf_allarg_simpleNull = pred_target.format(basis='''
+
+c2:clause
+/without/
+    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd|Rela
+/-/
+
+c1 = c2
+''', pred_funct='PreS|Pred', ptcp_funct='PreC')
 
 vf_allarg_pa_suffix = pred_target.format(basis='', pred_funct='PreO', ptcp_funct='PtcO')
-vf_allarg_pa_speech = vi_o_pa_speech
+
+if not cached_data:
+    allArgVal = validateFrame(mother_templates=(vf_allarg_pa,
+                                                vf_allarg_pa_suffix,
+                                                vf_allarg_simpleNull),
+                          daughter_templates=(vf_allarg_pa_clRela,
+                                              vf_allarg_pa_speech),
+                          exp_name='vf_argAll_pa')
+    cache['allArgVal'] = allArgVal
+else:
+    allArgVal = cache['allArgVal']
+    
 
 params['frame']['vf_argAll_pa'] = (
-                                      (vf_allarg_pa, None, 2, (4,), verb_token, functioner, False),
-                                      (vf_allarg_pa_clRela, None, 2, (3,), verb_token, relationer, False),
-                                      (vf_allarg_pa_suffix, None, 2, (2,), verb_token, simple_object, False),
-                                      (vf_allarg_pa_speech, None, 2, (2,), verb_token, simple_object, False),
+                                      (vf_allarg_pa, allArgVal.daughters, 2, (4,), verb_token, functioner, False),
+                                      (vf_allarg_pa_suffix, allArgVal.daughters, 2, (2,), verb_token, simple_object, False),
+                                      (vf_allarg_pa_clRela, allArgVal.mothers, 2, (3,), verb_token, relationer, False),
+                                      (vf_allarg_pa_speech, allArgVal.mothers, 2, (2,), verb_token, simple_object, False),
                                       (vf_allarg_pa_null, None, 2, (2,), verb_token, nuller, False)
                                   )
 
@@ -1108,7 +1151,8 @@ def funct_prep_o_lexer(basis, target):
 if not cached_data:
     valLex = validateFrame(mother_templates=(vf_allarg_lex_np,
                                              vf_allarg_lex_pp, 
-                                             vf_allarg_lex_pp_obj),
+                                             vf_allarg_lex_pp_obj,
+                                             vf_allarg_simpleNull),
                            daughter_templates = (vf_args_cr_vc_CP,
                                                  vf_args_cr_vc_prep, 
                                                  vf_args_cr_vc_verb,
@@ -1191,7 +1235,8 @@ vf_argsSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(rel
 if not cached_data:
     valSD = validateFrame(mother_templates=(vf_allarg_sd_np,
                                             vf_allarg_sd_pp, 
-                                            vf_allarg_sd_pp_obj),
+                                            vf_allarg_sd_pp_obj,
+                                            vf_allarg_simpleNull),
                           daughter_templates = (vf_argsSD_cr_vc_CP,
                                                 vf_argsSD_cr_vc_prep, 
                                                 vf_argsSD_cr_vc_verb,
@@ -1342,16 +1387,35 @@ ca <mother- speech
 c1 = c2
 ''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
-
-
 vf_obj_pa_suffix = pred_target.format(basis='', pred_funct='PreO', ptcp_funct='PtcO')
-vf_obj_pa_speech = vi_o_pa_speech
+vf_obj_pa_speech = vf_allarg_pa_speech
+
+vf_obj_simpleNull = pred_target.format(basis='''
+
+c2:clause
+/without/
+    phrase function=Objc|PreO|PtcO|Rela
+/-/
+
+c1 = c2
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
+
+if not cached_data:
+    vfObjPa = validateFrame(mother_templates=(vf_obj_pa, 
+                                              vf_obj_pa_suffix,
+                                              vf_obj_simpleNull),
+                              daughter_templates=(vf_obj_pa_clRela,
+                                                  vf_obj_pa_speech),
+                              exp_name='vf_obj_pa')
+    cache['vfObjPa'] = vfObjPa
+else:
+    vfObjPa = cache['vfObjPa']
 
 params['frame']['vf_obj_pa'] = (
-                                    (vf_obj_pa, None, 2, (4,), verb_token, functioner, False),
-                                    (vf_obj_pa_clRela, None, 2, (3,), verb_token, relationer, False),
-                                    (vf_obj_pa_suffix, None, 2, (2,), verb_token, simple_object, False),
-                                    (vf_obj_pa_speech, None, 2, (2,), verb_token, simple_object, False),
+                                    (vf_obj_pa, vfObjPa.daughters, 2, (4,), verb_token, functioner, False),
+                                    (vf_obj_pa_suffix, vfObjPa.daughters, 2, (2,), verb_token, simple_object, False),
+                                    (vf_obj_pa_clRela, vfObjPa.mothers, 2, (3,), verb_token, relationer, False),
+                                    (vf_obj_pa_speech, vfObjPa.mothers, 2, (2,), verb_token, simple_object, False),
                                     (vf_obj_pa_null, None, 2, (2,), verb_token, nuller, False)
                                 )
 
@@ -1394,7 +1458,8 @@ vf_obj_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs='
 
 if not cached_data:
     valObjLex = validateFrame(mother_templates=(vf_obj_lex_np,
-                                                vf_obj_lex_pp),
+                                                vf_obj_lex_pp,
+                                                vf_obj_simpleNull),
                            daughter_templates = (vf_obj_cr_vc_CP,
                                                  vf_obj_cr_vc_prep, 
                                                  vf_obj_cr_vc_verb,
@@ -1456,7 +1521,8 @@ vf_objSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc',
 
 if not cached_data:
     valObjSD = validateFrame(mother_templates=(vf_obj_sd_np,
-                                               vf_obj_sd_pp),
+                                               vf_obj_sd_pp,
+                                               vf_obj_simpleNull),
                              daughter_templates = (vf_objSD_cr_vc_CP,
                                                    vf_objSD_cr_vc_prep, 
                                                    vf_objSD_cr_vc_verb,
@@ -1515,10 +1581,29 @@ c2:clause
 c1 = c2
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
+vf_cmpl_simpleNull = pred_target.format(basis='''
+
+c2:clause
+/without/
+    phrase function=Cmpl
+/-/
+
+c1 = c2
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+if not cached_data:
+    vfCmplPa = validateFrame(mother_templates=(vf_cmpl_pa, 
+                                               vf_cmpl_simpleNull),
+                              daughter_templates=(vf_cmpl_pa_clRela,),
+                              exp_name='vf_cmpl_pa')
+    cache['vfCmplPa'] = vfCmplPa
+else:
+    vfCmplPa = cache['vfCmplPa']
+
 
 params['frame']['vf_cmpl_pa'] = (
-                                    (vf_cmpl_pa, None, 2, (3,), verb_token, functioner, False),
-                                    (vf_cmpl_pa_clRela, None, 2, (3,), verb_token, relationer, False),
+                                    (vf_cmpl_pa, vfCmplPa.daughters, 2, (3,), verb_token, functioner, False),
+                                    (vf_cmpl_pa_clRela, vfCmplPa.mothers, 2, (3,), verb_token, relationer, False),
                                     (vf_cmpl_pa_null, None, 2, (2,), verb_token, nuller, False)
                                 )
 
@@ -1566,7 +1651,8 @@ vf_cmpl_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas
                                              pred_funct=all_preds, ptcp_funct=all_ptcp)
 if not cached_data:
     valCmplLex = validateFrame(mother_templates=(vf_cmpl_lex_np,
-                                                 vf_cmpl_lex_pp),
+                                                 vf_cmpl_lex_pp,
+                                                 vf_cmpl_simpleNull),
                                daughter_templates = (vf_cmpl_cr_vc_CP,
                                                      vf_cmpl_cr_vc_prep, 
                                                      vf_cmpl_cr_vc_verb,
@@ -1638,7 +1724,8 @@ vf_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(rel
                                                                              pred_funct=all_preds, ptcp_funct=all_ptcp)
 if not cached_data:
     valCmplSD = validateFrame(mother_templates=(vf_cmpl_sd_np,
-                                                vf_cmpl_sd_pp),
+                                                vf_cmpl_sd_pp, 
+                                                vf_cmpl_simpleNull),
                           daughter_templates = (vf_cmplSD_cr_vc_CP,
                                                 vf_cmplSD_cr_vc_prep, 
                                                 vf_cmplSD_cr_vc_verb,
@@ -1708,10 +1795,30 @@ c2:clause
 c1 = c2
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
+vf_adju_simpleNull = pred_target.format(basis='''
+
+c2:clause
+/without/
+    phrase function=Adju|Time|Loca|PrAd
+/-/
+
+c1 = c2
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+if not cached_data:
+    vfAdjPa = validateFrame(mother_templates=(vf_adju_pa, 
+                                              vf_adju_simpleNull),
+                              daughter_templates=(vf_adju_pa_clRela,),
+                              exp_name='vf_adju_pa')
+    cache['vfAdjPa'] = vfAdjPa
+else:
+    vfAdjPa = cache['vfAdjPa']
+
+
 
 params['frame']['vf_adju_pa'] = (
-                                    (vf_adju_pa, None, 2, (3,), verb_token, functioner, False),
-                                    (vf_adju_pa_clRela, None, 2, (3,), verb_token, relationer, False),
+                                    (vf_adju_pa, vfAdjPa.daughters, 2, (3,), verb_token, functioner, False),
+                                    (vf_adju_pa_clRela, vfAdjPa.mothers, 2, (3,), verb_token, relationer, False),
                                     (vf_adju_pa_null, None, 2, (2,), verb_token, nuller, False)
                                 )
 
@@ -1759,7 +1866,8 @@ vf_adju_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas
                                              pred_funct=all_preds, ptcp_funct=all_ptcp)
 if not cached_data:
     valAdjuLex = validateFrame(mother_templates=(vf_adju_lex_np,
-                                                 vf_adju_lex_pp),
+                                                 vf_adju_lex_pp,
+                                                 vf_adju_simpleNull),
                                daughter_templates = (vf_adju_cr_vc_CP,
                                                      vf_adju_cr_vc_prep, 
                                                      vf_adju_cr_vc_verb,
@@ -1825,7 +1933,8 @@ vf_adjuSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(rel
                                              pred_funct=all_preds, ptcp_funct=all_ptcp)
 if not cached_data:
     valAdjuSD = validateFrame(mother_templates=(vf_adju_sd_np,
-                                                 vf_adju_sd_pp),
+                                                vf_adju_sd_pp,
+                                                vf_adju_simpleNull),
                                daughter_templates = (vf_adjuSD_cr_vc_CP,
                                                      vf_adjuSD_cr_vc_prep, 
                                                      vf_adjuSD_cr_vc_verb,
