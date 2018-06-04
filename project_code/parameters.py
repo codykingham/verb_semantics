@@ -235,11 +235,14 @@ class validateFrame:
         self.good_daughters = collections.defaultdict(set)
         self.daughter_ri = daughter_ri
         self.mother_ri = mother_ri
-
+        self.relas = {'Objc', 'Cmpl', 'Adju', 'PrAd'}
+        for rela in relas:
+            self.good_daughters[rela] = set()
+        
         print(f'\tpreparing good mother set...')
         for mom in mother_templates:
             results = set(S.search(mom))
-            self.good_mothers |= set(r[mother_ri] for r in results) 
+            self.good_mothers |= set(r[mother_ri] for r in results)
 
         print(f'\tpreparing good daughter set...')
         for daught in daughter_templates:
@@ -1368,14 +1371,14 @@ c2:clause
     phrase function=Objc
     
 c1 = c2
-''', pred_funct=all_preds, ptcp_funct='PreC')
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vf_obj_pa_clRela = pred_target.format(basis='''
 
 c2:clause rela=Objc
 
 c1 <mother- c2
-''', pred_funct=all_preds, ptcp_funct='PreC')
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 vf_obj_pa_null = pred_target.format(basis='''
 
@@ -1401,8 +1404,8 @@ c2:clause
 /without/
     phrase function=Rela
 /-/    
-c1 = c2
 
+c1 = c2
 ''', pred_funct='PreO', ptcp_funct='PtcO')
 
 vf_obj_pa_speech = vf_allarg_pa_speech
