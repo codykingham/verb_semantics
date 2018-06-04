@@ -982,6 +982,10 @@ c2:clause
 /-/
 
 /without/
+<mother- phrase rela=PrAd
+/-/
+
+/without/
     phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd|Rela
 /-/
 
@@ -1226,23 +1230,23 @@ vf_allarg_sd_pp_obj = pred_target.format(basis=f'''
 
 # Clause Relations
 vf_argsSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc|Cmpl|Adju', 
-                                        reqs=f'sem_domain_code~{good_sem_codes}'), 
-                                        pred_funct='Pred|PreS', ptcp_funct='PreC')
+                                                               reqs=f'sem_domain_code~{good_sem_codes}'), 
+                                                               pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_argsSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc|Cmpl|Adju', 
-                                          reqs=f'sem_domain_code~{good_sem_codes}'),
-                                          pred_funct='Pred|PreS', ptcp_funct='PreC')
+                                                                   reqs=f'sem_domain_code~{good_sem_codes}'),
+                                                                   pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_argsSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc|Cmpl|Adju', 
-                                          reqs=f'sem_domain_code~{good_sem_codes}'),
-                                          pred_funct='Pred|PreS', ptcp_funct='PreC')
+                                                                   reqs=f'sem_domain_code~{good_sem_codes}'),
+                                                                   pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_argsSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Cmpl|Adju', 
-                                        reqs=f'sem_domain_code~{good_sem_codes}'),
-                                        pred_funct='Pred|PreS', ptcp_funct='PreC')
+                                                               reqs=f'sem_domain_code~{good_sem_codes}'),
+                                                               pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_argsSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl|Adju',
-                                              reqs=f'sem_domain_code~{good_sem_codes}'),
-                                              pred_funct='Pred|PreS', ptcp_funct='PreC')
+                                                                           reqs=f'sem_domain_code~{good_sem_codes}'),
+                                                                           pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_argsSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl|Adju',
-                                              reqs=f'sem_domain_code~{good_sem_codes}'),
-                                              pred_funct='Pred|PreS', ptcp_funct='PreC')
+                                                                             reqs=f'sem_domain_code~{good_sem_codes}'),
+                                                                             pred_funct='Pred|PreS', ptcp_funct='PreC')
 if not cached_data:
     valSD = validateFrame(mother_templates=(vf_allarg_sd_np,
                                             vf_allarg_sd_pp, 
@@ -1528,16 +1532,16 @@ vf_obj_sd_pp = pred_target.format(basis=f'''
 # Clause Relations
 vf_objSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc', 
                                                               reqs=f'sem_domain_code~{good_sem_codes}'), 
-                                                              pred_funct='Pred|PreS', ptcp_funct='PreC')
+                                       pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_objSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc', 
                                                                   reqs=f'sem_domain_code~{good_sem_codes}'),
-                                                                  pred_funct='Pred|PreS', ptcp_funct='PreC')
+                                         pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_objSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc', 
                                                                   reqs=f'sem_domain_code~{good_sem_codes}'),
-                                                                  pred_funct='Pred|PreS', ptcp_funct='PreC')
+                                         pred_funct='Pred|PreS', ptcp_funct='PreC')
 vf_objSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', 
                                                                reqs=f'sem_domain_code~{good_sem_codes}'),
-                                                               pred_funct='Pred|PreS', ptcp_funct='PreC')
+                                       pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 if not cached_data:
     valObjSD = validateFrame(mother_templates=(vf_obj_sd_np,
@@ -1808,6 +1812,11 @@ c2:clause
 /without/
 <mother- clause rela=Adju|PrAd
 /-/
+
+/without/
+<mother- phrase rela=PrAd
+/-/
+
 /without/
     phrase function=Adju|Time|Loca|PrAd
 /-/
@@ -1940,9 +1949,9 @@ vf_adju_sd_pp = pred_target.format(basis=f'''
 
 # Clause Relations
 vf_adjuSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'), 
-                                      pred_funct=all_preds, ptcp_funct=all_ptcp)
-vf_adjuSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
                                         pred_funct=all_preds, ptcp_funct=all_ptcp)
+vf_adjuSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
+                                          pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_adjuSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
                                         pred_funct=all_preds, ptcp_funct=all_ptcp)
 vf_adjuSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes}'),
