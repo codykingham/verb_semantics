@@ -235,7 +235,7 @@ class validateFrame:
         self.good_daughters = collections.defaultdict(set)
         self.daughter_ri = daughter_ri
         self.mother_ri = mother_ri
-        self.relas = {'Objc', 'Cmpl', 'Adju', 'PrAd'}
+        relas = {'Objc', 'Cmpl', 'Adju', 'PrAd'}
         for rela in relas:
             self.good_daughters[rela] = set()
         
@@ -1806,10 +1806,10 @@ vf_adju_pa_null = pred_target.format(basis='''
 
 c2:clause
 /without/
-<mother- clause rela=Adju|Time|Loca|PrAd
+<mother- clause rela=Adju|PrAd
 /-/
 /without/
-    phrase function=Adju|PrAd
+    phrase function=Adju|Time|Loca|PrAd
 /-/
 
 c1 = c2
