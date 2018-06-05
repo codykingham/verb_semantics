@@ -474,18 +474,19 @@ vi_o_pa_null = pred_target.format(basis='''
 
 c2:clause
 /without/
-    <mother- clause rela=Objc
+<mother- clause rela=Objc
 /-/
 /without/
-    phrase function=Objc|PtcO|Rela
+    phrase function=Objc|Rela
 /-/
 /without/
     ca:clause_atom
-    speech:clause_atom code=999
-    ca <mother- speech
+speech:clause_atom code=999
+ca <mother- speech
 /-/
 
 c1 = c2
+
 ''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 vi_o_pa_speech = pred_target.format(basis='''
