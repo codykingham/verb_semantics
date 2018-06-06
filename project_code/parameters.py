@@ -78,11 +78,12 @@ def code2animacy(code):
     '''
     
     # animate object codes, all other sets of valid codes are inanimate:
-    animate = '1\.001001[0-9]*|1\.00300100[3,5,6]|1\.003001010' 
+    animate = '1\.001001[0-9]*|1\.00300100[3,5,6]|1\.003001010'     
     if re.search(animate, code):
         return 'animate'
     else:
         return 'inanimate'
+        
     
 good_sem_codes = '1\.00[1-3][0-9]*|2\.[0-9]*' # SDBH codes: objects, events, referents, semantic frames
         
@@ -1608,13 +1609,13 @@ def funct_animater(basis, target):
     function = F.function.v(L.u(basis, 'phrase')[0])
     if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
         function = 'adj+'
-    animacy = code2animacy(basis)
+    animacy = code2animacy(F.sem_domain_code.v(basis))
     return f'{function}.{animacy}'
     
 def funct_prep_o_animater(basis, target):
     # makes prep_domain + prep_obj_domain tokens + functions
     prep_obj = E.prep_obj.f(basis)[0]
-    animacy = code2animacy(prep_obj)
+    animacy = code2animacy(F.sem_domain_code.v(prep_obj))
     function = F.function.v(L.u(basis, 'phrase')[0])
     if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
         function = 'adj+'
@@ -1627,7 +1628,7 @@ def rela_conj_animater(basis, target):
         rela = 'adj+'
     conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
     conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
-    animacy = code2animacy(basis)
+    animacy = code2animacy(F.sem_domain_code.v(basis))
     return f'{rela}.{conj_string}_{animacy}'
    
 params['frame']['vf_argAll_animacy'] = (
@@ -2363,7 +2364,7 @@ vf_adju_an_pp = pred_target.format(basis=f'''
 
 
 # Clause Relations
-vf_adjuAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{animacy_code} sp#verb'),
+vf_adjuAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
                                         pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 if not cached_data:
@@ -2609,7 +2610,7 @@ vf_coad_an_pp = pred_target.format(basis=f'''
 
 
 # Clause Relations
-vf_coadAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd|Cmpl', reqs=f'sem_domain_code~{animacy_code} sp#verb'),
+vf_coadAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd|Cmpl', reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
                                         pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 if not cached_data:
