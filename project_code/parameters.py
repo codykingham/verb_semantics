@@ -1772,7 +1772,7 @@ params['frame']['vf_obj_lex'] = (
                                     (vf_obj_lex_np, valObjLex.daughters, 2, (5,), verb_token, lexer, False),
                                     (vf_obj_lex_pp, valObjLex.daughters, 2, (6,), verb_token, lexer, False),
                                     (vf_obj_cr_vc_CP, valObjLex.mothers, 2, (6,), verb_token, conj_lexer, False),
-                                    (vf_obj_cr_vc_prep, valObjLex.mothers, 2, (6,), verb_token, prep_lexer, False),
+                                    (vf_obj_cr_vc_prep, valObjLex.mothers, 2, (6,), verb_token, prep_verber, False),
                                     (vf_obj_cr_vc_verb, valObjLex.mothers, 2, (5,), verb_token, lexer, False),
                                     (vf_obj_cr_nc_CP, valObjLex.mothers, 2, (6,), verb_token, conj_lexer, False),
                                 )
@@ -1835,7 +1835,7 @@ params['frame']['vf_obj_domain'] = (
                                           (vf_obj_sd_np, valObjSD.daughters, 2, (5,), verb_token, domainer2, False),
                                           (vf_obj_sd_pp, valObjSD.daughters, 2, (6,), verb_token, domainer2, False),
                                           (vf_objSD_cr_vc_CP, valObjSD.mothers, 2, (6,), verb_token, conj_domainer2, False),
-                                          (vf_objSD_cr_vc_prep, valObjSD.mothers, 2, (6,), verb_token, prep_domainer2, False),
+                                          (vf_objSD_cr_vc_prep, valObjSD.mothers, 2, (6,), verb_token, prep_verbDomainer2, False),
                                           (vf_objSD_cr_vc_verb, valObjSD.mothers, 2, (5,), verb_token, domainer2, False),
                                           (vf_objSD_cr_nc_CP, valObjSD.mothers, 2, (6,), verb_token, conj_domainer2, False)
                                       )
@@ -1876,7 +1876,7 @@ if not cached_data:
     valObjAN = validateFrame(mother_templates=(vf_obj_an_np,
                                                vf_obj_an_pp,
                                                vf_obj_simpleNull),
-                             daughter_templates = (vf_objAN_cr_nc_CP),
+                             daughter_templates = (vf_objAN_cr_nc_CP,),
                              exp_name='vf_obj_an')
     cache['valObjAN'] = valObjAN
 else:
@@ -2005,11 +2005,11 @@ params['frame']['vf_cmpl_lex'] = (
                                         (vf_cmpl_lex_np, valCmplLex.daughters, 2, (5,), verb_token, lexer, False),
                                         (vf_cmpl_lex_pp, valCmplLex.daughters, 2, (5,), verb_token, prep_o_lexer, False),
                                         (vf_cmpl_cr_vc_CP, valCmplLex.mothers, 2, (6,), verb_token, conj_lexer, False),
-                                        (vf_cmpl_cr_vc_prep, valCmplLex.mothers, 2, (6,), verb_token, prep_lexer, False),
+                                        (vf_cmpl_cr_vc_prep, valCmplLex.mothers, 2, (6,), verb_token, prep_verber, False),
                                         (vf_cmpl_cr_vc_verb, valCmplLex.mothers, 2, (5,), verb_token, lexer, False),
                                         (vf_cmpl_cr_nc_CP, valCmplLex.mothers, 2, (6,), verb_token, conj_lexer, False),
                                         (vf_cmpl_cr_nc_Prec_adv, valCmplLex.mothers, 2, (5,), verb_token, lexer, False),
-                                        (vf_cmpl_cr_nc_Prec_prep, valCmplLex.mothers, 2, (6,), verb_token, prep_lexer, False),
+                                        (vf_cmpl_cr_nc_Prec_prep, valCmplLex.mothers, 2, (6,), verb_token, prep_verber, False),
                                     )
 
 
@@ -2079,11 +2079,11 @@ params['frame']['vf_cmpl_domain'] = (
                                           (vf_cmpl_sd_np, valCmplSD.daughters, 2, (5,), verb_token, domainer2, False),
                                           (vf_cmpl_sd_pp, valCmplSD.daughters, 2, (5,), verb_token, prep_o_domainer2, False),
                                           (vf_cmplSD_cr_vc_CP, valCmplSD.mothers, 2, (6,), verb_token, conj_domainer2, False),
-                                          (vf_cmplSD_cr_vc_prep, valCmplSD.mothers, 2, (6,), verb_token, prep_domainer2, False),
+                                          (vf_cmplSD_cr_vc_prep, valCmplSD.mothers, 2, (6,), verb_token, prep_verbDomainer2, False),
                                           (vf_cmplSD_cr_vc_verb, valCmplSD.mothers, 2, (5,), verb_token, domainer2, False),
                                           (vf_cmplSD_cr_nc_CP, valCmplSD.mothers, 2, (6,), verb_token, conj_domainer2, False),
                                           (vf_cmplSD_cr_nc_Prec_adv, valCmplSD.mothers, 2, (5,), verb_token, domainer2, False),
-                                          (vf_cmplSD_cr_nc_Prec_prep, valCmplSD.mothers, 2, (6,), verb_token, prep_domainer2, False),
+                                          (vf_cmplSD_cr_nc_Prec_prep, valCmplSD.mothers, 2, (6,), verb_token, prep_verbDomainer2, False),
                                       )
 
 
@@ -2259,11 +2259,11 @@ params['frame']['vf_adju_lex'] = (
                                         (vf_adju_lex_np, valAdjuLex.daughters, 2, (5,), verb_token, lexer, False),
                                         (vf_adju_lex_pp, valAdjuLex.daughters, 2, (5,), verb_token, prep_o_lexer, False),
                                         (vf_adju_cr_vc_CP, valAdjuLex.mothers, 2, (6,), verb_token, conj_lexer, False),
-                                        (vf_adju_cr_vc_prep, valAdjuLex.mothers, 2, (6,), verb_token, prep_lexer, False),
+                                        (vf_adju_cr_vc_prep, valAdjuLex.mothers, 2, (6,), verb_token, prep_verber, False),
                                         (vf_adju_cr_vc_verb, valAdjuLex.mothers, 2, (5,), verb_token, lexer, False),
                                         (vf_adju_cr_nc_CP, valAdjuLex.mothers, 2, (6,), verb_token, conj_lexer, False),
                                         (vf_adju_cr_nc_Prec_adv, valAdjuLex.mothers, 2, (5,), verb_token, lexer, False),
-                                        (vf_adju_cr_nc_Prec_prep, valAdjuLex.mothers, 2, (6,), verb_token, prep_lexer, False),
+                                        (vf_adju_cr_nc_Prec_prep, valAdjuLex.mothers, 2, (6,), verb_token, prep_verber, False),
                                     )
 
 
@@ -2326,11 +2326,11 @@ params['frame']['vf_adju_domain'] = (
                                           (vf_adju_sd_np, valAdjuSD.daughters, 2, (5,), verb_token, domainer2, False),
                                           (vf_adju_sd_pp, valAdjuSD.daughters, 2, (5,), verb_token, prep_o_domainer2, False),
                                           (vf_adjuSD_cr_vc_CP, valAdjuSD.mothers, 2, (6,), verb_token, conj_domainer2, False),
-                                          (vf_adjuSD_cr_vc_prep, valAdjuSD.mothers, 2, (6,), verb_token, prep_domainer2, False),
+                                          (vf_adjuSD_cr_vc_prep, valAdjuSD.mothers, 2, (6,), verb_token, prep_verbDomainer2, False),
                                           (vf_adjuSD_cr_vc_verb, valAdjuSD.mothers, 2, (5,), verb_token, domainer2, False),
                                           (vf_adjuSD_cr_nc_CP, valAdjuSD.mothers, 2, (6,), verb_token, conj_domainer2, False),
                                           (vf_adjuSD_cr_nc_Prec_adv, valAdjuSD.mothers, 2, (5,), verb_token, domainer2, False),
-                                          (vf_adjuSD_cr_nc_Prec_prep, valAdjuSD.mothers, 2, (6,), verb_token, prep_domainer2, False),
+                                          (vf_adjuSD_cr_nc_Prec_prep, valAdjuSD.mothers, 2, (6,), verb_token, prep_verbDomainer2, False),
                                       )
 
 
@@ -2572,11 +2572,11 @@ params['frame']['vf_coad_domain'] = (
                                           (vf_coad_sd_np, valCoadSD.daughters, 2, (5,), verb_token, domainer2, False),
                                           (vf_coad_sd_pp, valCoadSD.daughters, 2, (5,), verb_token, prep_o_domainer2, False),
                                           (vf_coadSD_cr_vc_CP, valCoadSD.mothers, 2, (6,), verb_token, conj_domainer2, False),
-                                          (vf_coadSD_cr_vc_prep, valCoadSD.mothers, 2, (6,), verb_token, prep_domainer2, False),
+                                          (vf_coadSD_cr_vc_prep, valCoadSD.mothers, 2, (6,), verb_token, prep_verbDomainer2, False),
                                           (vf_coadSD_cr_vc_verb, valCoadSD.mothers, 2, (5,), verb_token, domainer2, False),
                                           (vf_coadSD_cr_nc_CP, valCoadSD.mothers, 2, (6,), verb_token, conj_domainer2, False),
                                           (vf_coadSD_cr_nc_Prec_adv, valCoadSD.mothers, 2, (5,), verb_token, domainer2, False),
-                                          (vf_coadSD_cr_nc_Prec_prep, valCoadSD.mothers, 2, (6,), verb_token, prep_domainer2, False),
+                                          (vf_coadSD_cr_nc_Prec_prep, valCoadSD.mothers, 2, (6,), verb_token, prep_verbDomainer2, False),
                                       )
 
 
