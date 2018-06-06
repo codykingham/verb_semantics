@@ -66,36 +66,16 @@ def verb_token(target):
     lex = F.lex.v(target)
     return f'{lex}.{vs}'
 
-good_sem_codes = '1\.00[1-3][0-9]*|2\.[0-9]*' # SDBH codes: objects, events, referents, contexts
-
-# ordered in terms of selection preferences, select animate first, etc.
-code_priorities = (('(1\.001001[0-9]*)',  # ANIMATE
-                   '(1\.00300100[3,6])', 
-                   '(1\.00300101[0,3])',
-                   '(2\.075[0-9]*)',
-                    '(1\.003001005$)|(1\.003001005)\|', # names of groups (!)
-                   ),
-
-                  ('(1\.00100[2-6][0-9]*)',  # INANIMATE
-                   '(1\.00300100[1-2, 4, 7-9])',
-                   '(1\.00300101[1-2])',
-                   '(1\.00[1,3]$)',
-                   '(1\.00[1,3])\|',
-                   '(1\.003001$)',
-                   '(1\.003001)\|',
-                   '(2\.[0-9]*)'), # frames
-    
-                  ('(1\.002[0-9]*)', # EVENTS
-                   '(1\.003002[0-9]*)',
-                   '(1\.002$)|(1\.002)\|',
-                   '(1.004003$)|(1.004003)\|',
-                   '(1.004005$)|(1.004005)\|'))
+good_sem_codes = '1\.00[1-3][0-9]*|2\.[0-9]*' # SDBH codes: objects, events, referents, semantic frames
+animacy_codes = '1\.001[0-9]*|1\.003001[0-9]*|2\.[0-9]*' # eligible codes for animacy mapping
 
 def code2tag(code):
     '''
     Maps SDBH semantic domains to three basic codes:
     animate, inanimate, and events. These codes are
     of interest to the semantic content of a verb.
+    
+    !! NOW DEFUNCT !!
     '''
     
     animate = '|'.join(code_priorities[0])
@@ -111,12 +91,50 @@ def code2tag(code):
     else:
         raise Exception(code) # avoid accidental selections
 
+def code2animacy(code):
+    
+    '''
+    Maps SDBH semantic domains to one of two tags:
+        animate or inanimate
+    Codes fed to this algorithm must first be filtered
+    through animacy_codes (cf. above)
+    '''
+    
+    # animate object codes, all other sets of valid codes are inanimate:
+    animate = '1\.001001[0-9]*|1\.00300100[3,5,6]|1\.003001010' 
+    if re.search(animate, code):
+        return 'animate'
+    else:
+        return 'inanimate'
         
 def code2domain(word):
     '''
     Selects the prefered SDBH semantic domain code
     and maps it to the longer form domain.
     '''
+    
+    # ordered in terms of selection preferences, select animate first, etc.
+    code_priorities = (('(1\.001001[0-9]*)',  # ANIMATE
+                       '(1\.00300100[3,6])', 
+                       '(1\.00300101[0,3])',
+                       '(2\.075[0-9]*)',
+                        '(1\.003001005$)|(1\.003001005)\|', # names of groups (!)
+                       ),
+
+                      ('(1\.00100[2-6][0-9]*)',  # INANIMATE
+                       '(1\.00300100[1-2, 4, 7-9])',
+                       '(1\.00300101[1-2])',
+                       '(1\.00[1,3]$)',
+                       '(1\.00[1,3])\|',
+                       '(1\.003001$)',
+                       '(1\.003001)\|',
+                       '(2\.[0-9]*)'), # frames
+
+                      ('(1\.002[0-9]*)', # EVENTS
+                       '(1\.003002[0-9]*)',
+                       '(1\.002$)|(1\.002)\|',
+                       '(1.004003$)|(1.004003)\|',
+                       '(1.004005$)|(1.004005)\|'))
     
     code = F.sem_domain_code.v(word)
     domain = F.sem_domain.v(word)
@@ -142,15 +160,15 @@ def code2domain(word):
 
 
     
-def domainer(basis, target):
+def animater(basis, target):
     # basis tokenizer for semantic domains
-    sem_category = code2tag(F.sem_domain_code.v(basis))
+    sem_category = code2animacy(F.sem_domain_code.v(basis))
     return sem_category
 
-def prep_o_domainer(basis, target):
+def prep_o_animater(basis, target):
     # makes prep_domain + prep_obj_domain tokens
     prep_obj = E.prep_obj.f(basis)[0]
-    prep_o_domain = code2tag(F.sem_domain_code.v(prep_obj))
+    prep_o_domain = code2animacy(F.sem_domain_code.v(prep_obj))
     return f'{F.lex.v(basis)}_{prep_o_domain}'
 
 def lexer(basis, target):
@@ -449,7 +467,7 @@ vi_s_sd = pred_target.format(basis=f'''
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 params['inventory']['vi_subj_domain'] = (
-                                         (vi_s_sd, None, 2, (4,), verb_token, domainer, False),
+                                         (vi_s_sd, None, 2, (4,), verb_token, animater, False),
                                      )
 
 
@@ -596,34 +614,6 @@ vi_objcSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc',
 vi_objcSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs=f'sem_domain_code~{good_sem_codes}'),
                                         pred_funct=all_preds, ptcp_funct=all_ptcp)
 
-def prep_verbDomainer(basis, target):
-    # combines a infinitive verb with its preposition
-    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
-    prep_lex = F.lex.v(prep)
-    sem_category = code2tag(F.sem_domain_code.v(basis))
-    return f'{prep_lex}_{sem_category}'
-    
-def conj_domainer(basis, target):
-    # returns conjunction string + verb lex
-    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
-    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
-    sem_category = code2tag(F.sem_domain_code.v(basis))
-    return f'{conj_string}_{sem_category}'
-                                        
-params['inventory']['vi_objc_domain'] = (
-                                         (vi_o_sd_np, None, 2, (4,), verb_token,  domainer, False),
-                                         (vi_o_sd_pp, None, 2, (5,), verb_token, domainer, False),
-                                         (vi_objcSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer, False),
-                                         (vi_objcSD_cr_vc_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
-                                         (vi_objcSD_cr_vc_verb, None, 2, (5,), verb_token, domainer, False),
-                                         (vi_objcSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer, False),
-                                     )
-
-
-
-
-# 2.4, Verb Inventory, Objects, Semantic Domains - Longform
-
 def domainer2(basis, target):
     # basis tokenizer for semantic domains
     sem_domain = code2domain(basis)
@@ -649,7 +639,7 @@ def conj_domainer2(basis, target):
     sem_domain = code2domain(basis)
     return f'{conj_string}_{sem_domain}'
                                         
-params['inventory']['vi_objc_domain2'] = (
+params['inventory']['vi_objc_domain'] = (
                                          (vi_o_sd_np, None, 2, (4,), verb_token,  domainer2, False),
                                          (vi_o_sd_pp, None, 2, (5,), verb_token, domainer2, False),
                                          (vi_objcSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
@@ -657,6 +647,45 @@ params['inventory']['vi_objc_domain2'] = (
                                          (vi_objcSD_cr_vc_verb, None, 2, (5,), verb_token, domainer2, False),
                                          (vi_objcSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
                                      )
+
+
+
+
+# 2.4, Verb Inventory, Objects, Animacy
+
+vi_o_an_np = pred_target.format(basis=f'''
+
+    phrase typ=NP|PrNP function=Objc
+        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp
+)
+
+vi_o_an_pp = pred_target.format(basis=f'''
+
+    phrase typ=PP function=Objc
+        -heads> word pdp=prep
+        -prep_obj> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp
+)
+
+# Clause Relations – N.B. Only non-verbal clauses for animacy experiments
+vi_objcAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs=f'sem_domain_code~{animacy_codes}'),
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
+    
+def conj_animater(basis, target):
+    # returns conjunction string + verb animacy
+    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
+    animacy = code2animacy(F.sem_domain_code.v(basis))
+    return f'{conj_string}_{animacy}'
+                 
+params['inventory']['vi_objc_animacy'] = (
+                                             (vi_o_an_np, None, 2, (4,), verb_token,  animater, False),
+                                             (vi_o_an_pp, None, 2, (5,), verb_token, animater, False),
+                                             (vi_objcAN_cr_nc_CP, None, 2, (6,), verb_token, conj_animater, False),
+                                         )
 
 
 
@@ -778,21 +807,6 @@ vi_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(rel
                                                pred_funct=all_preds, ptcp_funct=all_ptcp)
     
 params['inventory']['vi_cmpl_domain'] = (
-                                             (vi_cmpl_sd_np, None, 2, (4,), verb_token, domainer, False),
-                                             (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
-                                             (vi_cmplSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer, False),
-                                             (vi_cmplSD_cr_vc_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
-                                             (vi_cmplSD_cr_vc_verb, None, 2, (5,), verb_token, domainer, False),
-                                             (vi_cmplSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer, False),
-                                             (vi_cmplSD_cr_nc_Prec_adv, None, 2, (5,), verb_token, domainer, False),
-                                             (vi_cmplSD_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
-                                         )
-
-
-
-
-# 3.4, Verb Inventory, Complements, Semantic Domains - Longform
-params['inventory']['vi_cmpl_domain2'] = (
                                              (vi_cmpl_sd_np, None, 2, (4,), verb_token, domainer2, False),
                                              (vi_cmpl_sd_pp, None, 2, (4,), verb_token, prep_o_domainer2, False),
                                              (vi_cmplSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
@@ -801,6 +815,36 @@ params['inventory']['vi_cmpl_domain2'] = (
                                              (vi_cmplSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
                                              (vi_cmplSD_cr_nc_Prec_adv, None, 2, (5,), verb_token, domainer2, False),
                                              (vi_cmplSD_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verbDomainer2, False),
+                                         )
+
+
+
+
+# 3.4, Verb Inventory, Complements, Animacy
+
+vi_cmpl_an_np = pred_target.format(basis=f'''
+
+    phrase function=Cmpl typ=NP|PrNP|AdvP
+        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+vi_cmpl_an_pp = pred_target.format(basis=f'''
+
+    phrase function=Cmpl typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+# Clause Relations; N.B. Only non-verbal clauses for animacy experiments
+vi_cmplAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Cmpl', reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
+    
+params['inventory']['vi_cmpl_animacy'] = (
+                                             (vi_cmpl_an_np, None, 2, (4,), verb_token, animater, False),
+                                             (vi_cmpl_an_pp, None, 2, (4,), verb_token, prep_o_animater, False),
+                                             (vi_cmplAN_cr_nc_CP, None, 2, (6,), verb_token, conj_animater, False),
                                          )
 
 
@@ -924,22 +968,6 @@ vi_adjSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(rela
 
     
 params['inventory']['vi_adj+_domain'] = (
-                                             (vi_adj_sd_np, None, 2, (4,), verb_token, domainer, False),
-                                             (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer, False),
-                                             (vi_adjSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer, False),
-                                             (vi_adjSD_cr_vc_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
-                                             (vi_adjSD_cr_vc_verb, None, 2, (5,), verb_token, domainer, False),
-                                             (vi_adjSD_cr_nc_CP, None, 2, (6,), verb_token, conj_domainer, False),
-                                             (vi_adjSD_cr_nc_Prec_adv, None, 2, (5,), verb_token, domainer, False),
-                                             (vi_adjSD_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verbDomainer, False),
-                                        )
-
-
-
-
-# 4.4, Verb Inventory, Adjuncts+, Semantic Domains - Longform
-
-params['inventory']['vi_adj+_domain2'] = (
                                              (vi_adj_sd_np, None, 2, (4,), verb_token, domainer2, False),
                                              (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_domainer2, False),
                                              (vi_adjSD_cr_vc_CP, None, 2, (6,), verb_token, conj_domainer2, False),
@@ -949,6 +977,38 @@ params['inventory']['vi_adj+_domain2'] = (
                                              (vi_adjSD_cr_nc_Prec_adv, None, 2, (5,), verb_token, domainer2, False),
                                              (vi_adjSD_cr_nc_Prec_prep, None, 2, (6,), verb_token, prep_verbDomainer2, False),
                                         )
+
+
+
+
+# 4.4, Verb Inventory, Adjuncts+, Animacy
+
+vi_adj_an_np = pred_target.format(basis=f'''
+
+    phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
+        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+vi_adj_an_pp = pred_target.format(basis=f'''
+
+    phrase function=Adju|Time|Loca|PrAd typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+# Clause Relations; NB only non-verbals for animacy
+vi_adjAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{good_sem_codes} sp#verb'),
+
+    
+params['inventory']['vi_adj+_animacy'] = (
+                                             (vi_adj_sd_np, None, 2, (4,), verb_token, animater, False),
+                                             (vi_adj_sd_pp, None, 2, (4,), verb_token, prep_o_animater, False),
+                                             (vi_adjSD_cr_nc_CP, None, 2, (6,), verb_token, conj_animater, False),
+                                        )
+
+
 
 
 
@@ -1264,57 +1324,6 @@ if not cached_data:
 else:
     valSD = cache['valSD']
 
-def funct_domainer(basis, target):
-    # basis tokenizer for semantic domains + functions
-    function = F.function.v(L.u(basis, 'phrase')[0])
-    sem_category = code2tag(F.sem_domain_code.v(basis))
-    return f'{function}.{sem_category}'
-    
-def funct_prep_o_domainer(basis, target):
-    # makes prep_domain + prep_obj_domain tokens + functions
-    prep_obj = E.prep_obj.f(basis)[0]
-    prep_o_domain = code2tag(F.sem_domain_code.v(prep_obj))
-    function = F.function.v(L.u(basis, 'phrase')[0])
-    return f'{function}.{F.lex.v(basis)}_{prep_o_domain}'
-
-def rela_prep_domainer(basis, target):
-    # returns clause relation + prep + verb domain
-    rela = F.rela.v(L.u(basis, 'clause')[0])
-    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
-    prep_lex = F.lex.v(prep)
-    sem_category = code2tag(F.sem_domain_code.v(basis))
-    return f'{rela}.{prep_lex}_{sem_category}'
-
-def rela_conj_domainer(basis, target):
-    # returns clause relation + conjunction string + verb domain
-    rela = F.rela.v(L.u(basis, 'clause')[0])
-    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
-    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
-    sem_category = code2tag(F.sem_domain_code.v(basis))
-    return f'{rela}.{conj_string}_{sem_category}'
-   
-def rela_domainer(basis, target):
-    # returns rela + domain
-    rela = F.rela.v(L.u(basis, 'clause')[0])
-    sem_category = code2tag(F.sem_domain_code.v(basis))
-    return f'{rela}.{sem_category}'
-    
-params['frame']['vf_argAll_domain'] = (
-                                          (vf_allarg_sd_np, valSD.daughters, 2, (5,), verb_token, funct_domainer, False),
-                                          (vf_allarg_sd_pp, valSD.daughters, 2, (5,), verb_token, funct_prep_o_domainer, False),
-                                          (vf_allarg_sd_pp_obj, valSD.daughters, 2, (6,), verb_token, funct_domainer, False),
-                                          (vf_argsSD_cr_vc_CP, valSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_argsSD_cr_vc_prep, valSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
-                                          (vf_argsSD_cr_vc_verb, valSD.mothers, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_argsSD_cr_nc_CP, valSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_argsSD_cr_nc_Prec_adv, valSD.mothers, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_argsSD_cr_nc_Prec_prep, valSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
-                                      )
-
-
-
-
-# 5.4, Verb Frames, All Arguments, Semantic Domains - Longform
 
 def funct_domainer2(basis, target):
     # basis tokenizer for semantic domains + functions
@@ -1351,7 +1360,7 @@ def rela_domainer2(basis, target):
     sem_domain = code2domain(basis)
     return f'{rela}.{sem_domain}'
 
-params['frame']['vf_argAll_domain2'] = (
+params['frame']['vf_argAll_domain'] = (
                                           (vf_allarg_sd_np, valSD.daughters, 2, (5,), verb_token, funct_domainer2, False),
                                           (vf_allarg_sd_pp, valSD.daughters, 2, (5,), verb_token, funct_prep_o_domainer2, False),
                                           (vf_allarg_sd_pp_obj, valSD.daughters, 2, (6,), verb_token, funct_domainer2, False),
@@ -1361,6 +1370,89 @@ params['frame']['vf_argAll_domain2'] = (
                                           (vf_argsSD_cr_nc_CP, valSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
                                           (vf_argsSD_cr_nc_Prec_adv, valSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
                                           (vf_argsSD_cr_nc_Prec_prep, valSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                      )
+
+
+
+
+# 5.4, Verb Frames, All Arguments, Animacy
+                                       
+vf_all_arg_conditionsAN = vf_clause_conditions.format(relas='Objc|Cmpl|Adju|Time|Loca|PrAd', 
+                                                      word_reqs=f'sem_domain_code~{animacy_codes} sp#verb',                                  
+                                                      clause_reqs='/without/\n    phrase function=Rela\n/-/')
+
+vf_allarg_an_np = pred_target.format(basis=f'''
+
+{vf_all_arg_conditionsAN}
+
+    phrase function=Objc|Cmpl|Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
+        -heads> word
+        
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
+
+vf_allarg_an_pp = pred_target.format(basis=f'''
+
+{vf_all_arg_conditionsAN}
+
+    phrase function=Cmpl|Adju|Time|Loca|PrAd typ=PP
+        -heads> word
+        -prep_obj> word
+        
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
+
+vf_allarg_an_pp_obj = pred_target.format(basis=f'''
+
+{vf_all_arg_conditionsAN}
+
+    phrase function=Objc typ=PP
+        -heads> word
+        -prep_obj> word
+     
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
+
+# Clause Relations; NB only non-verbal for animacy experiments
+vf_argsAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Cmpl|Adju', 
+                                                               reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
+                                                               pred_funct='Pred|PreS', ptcp_funct='PreC')
+
+if not cached_data:
+    valArgAN = validateFrame(mother_templates=(vf_allarg_an_np,
+                                               vf_allarg_an_pp, 
+                                               vf_allarg_an_pp_obj,
+                                               vf_allarg_simpleNull),
+                          daughter_templates = (vf_argsAN_cr_nc_CP,),
+                          exp_name='vf_allarg_an')
+    cache['valArgAN'] = valArgAN
+else:
+    valArgAN = cache['valArgAN']
+
+def funct_animater(basis, target):
+    # basis tokenizer for semantic domains + functions
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    animacy = code2animacy(basis)
+    return f'{function}.{animacy}'
+    
+def funct_prep_o_animater(basis, target):
+    # makes prep_domain + prep_obj_domain tokens + functions
+    prep_obj = E.prep_obj.f(basis)[0]
+    animacy = code2animacy(prep_obj)
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    return f'{function}.{F.lex.v(basis)}_{animacy}'
+
+def rela_conj_animater(basis, target):
+    # returns clause relation + conjunction string + animacy
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
+    animacy = code2animacy(basis)
+    return f'{rela}.{conj_string}_{animacy}'
+   
+params['frame']['vf_argAll_domain2'] = (
+                                          (vf_allarg_sd_np, valArgAN.daughters, 2, (5,), verb_token, funct_animater, False),
+                                          (vf_allarg_sd_pp, valArgAN.daughters, 2, (5,), verb_token, funct_prep_o_animater, False),
+                                          (vf_allarg_sd_pp_obj, valArgAN.daughters, 2, (6,), verb_token, funct_animater, False),
+                                          (vf_argsSD_cr_nc_CP, valArgAN.mothers, 2, (6,), verb_token, rela_conj_animater, False),
+
                                       )
 
 
@@ -1558,22 +1650,60 @@ else:
     valObjSD = cache['valObjSD']
     
 params['frame']['vf_obj_domain'] = (
-                                          (vf_obj_sd_np, valObjSD.daughters, 2, (5,), verb_token, funct_domainer, False),
-                                          (vf_obj_sd_pp, valObjSD.daughters, 2, (6,), verb_token, funct_domainer, False),
-                                          (vf_objSD_cr_vc_CP, valObjSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_objSD_cr_vc_prep, valObjSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
-                                          (vf_objSD_cr_vc_verb, valObjSD.mothers, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_objSD_cr_nc_CP, valObjSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False)
-                                      )
-
-# 6.4, Verb Frame, Objects, Semantic Domains - Longform
-params['frame']['vf_obj_domain2'] = (
                                           (vf_obj_sd_np, valObjSD.daughters, 2, (5,), verb_token, funct_domainer2, False),
                                           (vf_obj_sd_pp, valObjSD.daughters, 2, (6,), verb_token, funct_domainer2, False),
                                           (vf_objSD_cr_vc_CP, valObjSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
                                           (vf_objSD_cr_vc_prep, valObjSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
                                           (vf_objSD_cr_vc_verb, valObjSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
                                           (vf_objSD_cr_nc_CP, valObjSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False)
+                                      )
+
+                                       
+                                       
+                                       
+# 6.4, Verb Frame, Objects, Animacy
+vf_obj_arg_conditionsAN = vf_clause_conditions.format(relas='Objc', 
+                                                      word_reqs=f'sem_domain_code~{animacy_codes} sp#verb',                                  
+                                                      clause_reqs='/without/\n    phrase function=Rela\n/-/')
+
+vf_obj_an_np = pred_target.format(basis=f'''
+
+{vf_obj_arg_conditionsAN}
+
+    phrase function=Objc typ=NP|PrNP|AdvP
+        -heads> word
+        
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
+
+vf_obj_an_pp = pred_target.format(basis=f'''
+
+{vf_obj_arg_conditionsAN}
+
+    phrase function=Objc typ=PP
+        -heads> word
+        -prep_obj> word
+     
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
+
+# Clause Relations
+vf_objAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', 
+                                                              reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
+                                       pred_funct='Pred|PreS', ptcp_funct='PreC')
+
+if not cached_data:
+    valObjAN = validateFrame(mother_templates=(vf_obj_an_np,
+                                               vf_obj_an_pp,
+                                               vf_obj_simpleNull),
+                             daughter_templates = (vf_objAN_cr_nc_CP),
+                             exp_name='vf_obj_an')
+    cache['valObjAN'] = valObjAN
+else:
+    valObjAN = cache['valObjAN']
+    
+params['frame']['vf_obj_animacy'] = (
+                                          (vf_obj_an_np, valObjAN.daughters, 2, (5,), verb_token, funct_animater, False),
+                                          (vf_obj_sd_pp, valObjAN.daughters, 2, (6,), verb_token, funct_animater, False),
+                                          (vf_objSD_cr_nc_CP, valObjAN.mothers, 2, (6,), verb_token, rela_conj_animater, False)
                                       )
 
 
@@ -1729,22 +1859,22 @@ vf_cmpl_sd_pp = pred_target.format(basis=f'''
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 # Clause Relations
-vf_cmplSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc|Cmpl|Adju', 
+vf_cmplSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Cmpl', 
                                                                reqs=f'sem_domain_code~{good_sem_codes}'), 
                                                                pred_funct=all_preds, ptcp_funct=all_ptcp)
-vf_cmplSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc|Cmpl|Adju', 
+vf_cmplSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Cmpl', 
                                                                    reqs=f'sem_domain_code~{good_sem_codes}'),
                                                                     pred_funct=all_preds, ptcp_funct=all_ptcp)
-vf_cmplSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc|Cmpl|Adju', 
+vf_cmplSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Cmpl', 
                                                                    reqs=f'sem_domain_code~{good_sem_codes}'),
                                                                    pred_funct=all_preds, ptcp_funct=all_ptcp)
-vf_cmplSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Cmpl|Adju', 
+vf_cmplSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Cmpl', 
                                                                reqs=f'sem_domain_code~{good_sem_codes}'),
                                                                pred_funct=all_preds, ptcp_funct=all_ptcp)
-vf_cmplSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl|Adju',
+vf_cmplSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Cmpl',
                                                                            reqs=f'sem_domain_code~{good_sem_codes}'),
                                                                            pred_funct=all_preds, ptcp_funct=all_ptcp)
-vf_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl|Adju',
+vf_cmplSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl',
                                                                              reqs=f'sem_domain_code~{good_sem_codes}'),
                                                                              pred_funct=all_preds, ptcp_funct=all_ptcp)
 if not cached_data:
@@ -1764,22 +1894,6 @@ else:
 
     
 params['frame']['vf_cmpl_domain'] = (
-                                          (vf_cmpl_sd_np, valCmplSD.daughters, 2, (5,), verb_token, funct_domainer, False),
-                                          (vf_cmpl_sd_pp, valCmplSD.daughters, 2, (5,), verb_token, funct_prep_o_domainer, False),
-                                          (vf_cmplSD_cr_vc_CP, valCmplSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_cmplSD_cr_vc_prep, valCmplSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
-                                          (vf_cmplSD_cr_vc_verb, valCmplSD.mothers, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_cmplSD_cr_nc_CP, valCmplSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_cmplSD_cr_nc_Prec_adv, valCmplSD.mothers, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_cmplSD_cr_nc_Prec_prep, valCmplSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
-                                      )
-
-
-
-
-# 7.4, Verb Frame, Complements, Domains - Longform
-
-params['frame']['vf_cmpl_domain2'] = (
                                           (vf_cmpl_sd_np, valCmplSD.daughters, 2, (5,), verb_token, funct_domainer2, False),
                                           (vf_cmpl_sd_pp, valCmplSD.daughters, 2, (5,), verb_token, funct_prep_o_domainer2, False),
                                           (vf_cmplSD_cr_vc_CP, valCmplSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
@@ -1788,6 +1902,56 @@ params['frame']['vf_cmpl_domain2'] = (
                                           (vf_cmplSD_cr_nc_CP, valCmplSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
                                           (vf_cmplSD_cr_nc_Prec_adv, valCmplSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
                                           (vf_cmplSD_cr_nc_Prec_prep, valCmplSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                      )
+
+
+
+
+# 7.4, Verb Frame, Complements, Animacy
+                                       
+vf_cmpl_conditionsAN = vf_clause_conditions.format(relas='Cmpl', 
+                                                   word_reqs=f'sem_domain_code~{animacy_codes}',                                  
+                                                   clause_reqs='')
+
+vf_cmpl_an_np = pred_target.format(basis=f'''
+
+{vf_cmpl_conditionsAN}
+
+    phrase function=Cmpl typ=NP|PrNP|AdvP
+        -heads> word
+        
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+vf_cmpl_an_pp = pred_target.format(basis=f'''
+
+{vf_cmpl_conditionsAN}
+
+    phrase function=Cmpl typ=PP
+        -heads> word
+        -prep_obj> word
+        
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+# Clause Relations
+vf_cmplAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Cmpl', 
+                                                               reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
+                                                               pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+if not cached_data:
+    valCmplAN = validateFrame(mother_templates=(vf_cmpl_an_np,
+                                                vf_cmpl_an_pp, 
+                                                vf_cmpl_simpleNull),
+                          daughter_templates = (vf_cmplAN_cr_nc_CP,),
+                          exp_name='vf_cmpl_an')
+    cache['valCmplAN'] = valCmplAN
+else:
+    valCmplAN = cache['valCmplAN']
+
+    
+params['frame']['vf_cmpl_animacy'] = (
+                                          (vf_cmpl_an_np, valCmplAN.daughters, 2, (5,), verb_token, funct_animater, False),
+                                          (vf_cmpl_an_pp, valCmplAN.daughters, 2, (5,), verb_token, funct_prep_o_animater, False),
+                                          (vf_cmplAN_cr_nc_CP, valCmplAN.mothers, 2, (6,), verb_token, rela_conj_animater, False),
                                       )
 
 
@@ -1977,22 +2141,6 @@ else:
     valAdjuSD = cache['valAdjuSD']
     
 params['frame']['vf_adju_domain'] = (
-                                          (vf_adju_sd_np, valAdjuSD.daughters, 2, (5,), verb_token, funct_domainer, False),
-                                          (vf_adju_sd_pp, valAdjuSD.daughters, 2, (5,), verb_token, funct_prep_o_domainer, False),
-                                          (vf_adjuSD_cr_vc_CP, valAdjuSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_adjuSD_cr_vc_prep, valAdjuSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
-                                          (vf_adjuSD_cr_vc_verb, valAdjuSD.mothers, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_adjuSD_cr_nc_CP, valAdjuSD.mothers, 2, (6,), verb_token, rela_conj_domainer, False),
-                                          (vf_adjuSD_cr_nc_Prec_adv, valAdjuSD.mothers, 2, (5,), verb_token, rela_domainer, False),
-                                          (vf_adjuSD_cr_nc_Prec_prep, valAdjuSD.mothers, 2, (6,), verb_token, rela_prep_domainer, False),
-                                      )
-
-
-
-
-# 8.4, Verb Frame, Adjuncts+, Domains - Longform
-
-params['frame']['vf_adju_domain2'] = (
                                           (vf_adju_sd_np, valAdjuSD.daughters, 2, (5,), verb_token, funct_domainer2, False),
                                           (vf_adju_sd_pp, valAdjuSD.daughters, 2, (5,), verb_token, funct_prep_o_domainer2, False),
                                           (vf_adjuSD_cr_vc_CP, valAdjuSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
@@ -2001,6 +2149,55 @@ params['frame']['vf_adju_domain2'] = (
                                           (vf_adjuSD_cr_nc_CP, valAdjuSD.mothers, 2, (6,), verb_token, rela_conj_domainer2, False),
                                           (vf_adjuSD_cr_nc_Prec_adv, valAdjuSD.mothers, 2, (5,), verb_token, rela_domainer2, False),
                                           (vf_adjuSD_cr_nc_Prec_prep, valAdjuSD.mothers, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                      )
+
+
+
+
+# 8.4, Verb Frame, Adjuncts+, Animacy
+
+vf_adjuAN_conditions = vf_clause_conditions.format(relas='Adju|Time|Loca|PrAd', 
+                                                   word_reqs=f'sem_domain_code~{animacy_codes} sp#verb',
+                                                   clause_reqs='')
+
+vf_adju_an_np = pred_target.format(basis=f'''
+
+{vf_adjuAN_conditions}
+
+    phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
+        -heads> word
+        
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+vf_adju_an_pp = pred_target.format(basis=f'''
+
+{vf_adjuAN_conditions}
+
+    phrase function=Adju|Time|Loca|PrAd typ=PP
+        -heads> word
+        -prep_obj> word
+        
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+
+# Clause Relations
+vf_adjuAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{animacy_code} sp#verb'),
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+if not cached_data:
+    valAdjuAN = validateFrame(mother_templates=(vf_adju_an_np,
+                                                vf_adju_an_pp,
+                                                vf_adju_simpleNull),
+                               daughter_templates = (vf_adjuAN_cr_nc_CP,),
+                               exp_name='vf_adju_an')
+    cache['valAdjuAN'] = valAdjuAN
+else:
+    valAdjuAN = cache['valAdjuAN']
+    
+params['frame']['vf_adju_animacy'] = (
+                                          (vf_adju_an_np, valAdjuAN.daughters, 2, (5,), verb_token, funct_animater, False),
+                                          (vf_adju_an_pp, valAdjuAN.daughters, 2, (5,), verb_token, funct_prep_o_animater, False),
+                                          (vf_adjuAN_cr_nc_CP, valAdjuAN.mothers, 2, (6,), verb_token, rela_conj_animater, False),
                                       )
 
 
