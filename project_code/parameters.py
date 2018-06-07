@@ -78,7 +78,7 @@ def code2animacy(code):
     '''
     
     # animate object codes, all other sets of valid codes are inanimate:
-    animate = '1\.001001[0-9]*|1\.00300100[3,5,6]|1\.003001010'     
+    animate = '1\.001001[0-9]*|1\.00300100[3,5,6]|1\.00300101[0,3]'     
     if re.search(animate, code):
         return 'animate'
     else:
@@ -186,7 +186,7 @@ def prep_verber(basis, target):
 def conj_lexer(basis, target):
     # returns conjunction string + verb lex
     conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
-    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
     return f'{conj_string}_{F.lex.v(basis)}'
 
 def rela_prep_lexer(basis, target):
@@ -200,7 +200,7 @@ def rela_conj_lexer(basis, target):
     # returns clause relation + conjunction string + verb lex
     rela = F.rela.v(L.u(basis, 'clause')[0])
     conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
-    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
     return f'{rela}.{conj_string}_{F.lex.v(basis)}'
    
 def rela_lexer(basis, target):
@@ -229,7 +229,7 @@ def prep_verbDomainer2(basis, target):
 def conj_domainer2(basis, target):
     # returns conjunction string + verb lex
     conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
-    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
     sem_domain = code2domain(basis)
     return f'{conj_string}_{sem_domain}'
 
@@ -678,7 +678,7 @@ vi_objcAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', req
 def conj_animater(basis, target):
     # returns conjunction string + verb animacy
     conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
-    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
     animacy = code2animacy(F.sem_domain_code.v(basis))
     return f'{conj_string}_{animacy}'
                  
@@ -1526,7 +1526,7 @@ def rela_conj_domainer2(basis, target):
     if rela in {'Adju', 'PrAd'}:
         rela = 'adj+'
     conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
-    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
     sem_domain = code2domain(basis)
     return f'{rela}.{conj_string}_{sem_domain}'
    
@@ -1627,7 +1627,7 @@ def rela_conj_animater(basis, target):
     if rela in {'Adju', 'PrAd'}:
         rela = 'adj+'
     conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
-    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word'))
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
     animacy = code2animacy(F.sem_domain_code.v(basis))
     return f'{rela}.{conj_string}_{animacy}'
    
