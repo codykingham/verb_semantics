@@ -52,7 +52,8 @@ class Experiment:
         self.tf_api = tf
         
         # raw experiment_data[target_token][clause][list_of_bases_tokens]
-        experiment_data = collections.defaultdict(lambda: collections.defaultdict(list))
+        experiment_data = collections.defaultdict(lambda: collections.defaultdict(list)) if not frame else\
+                          collections.defaultdict(lambda: collections.defaultdict(lambda: collections.defaultdict(list)))
         self.collapse_instances = False # count presence/absence of features in a clause, i.e. don't add up multiple instances
         count_experiment = self.inventory_count if not frame else self.frame_count
         
@@ -82,7 +83,11 @@ class Experiment:
                     basis = specimen[basis_i]
                     basis_token = basis_tokener(basis, target)
                     basis_tokens = (basis_token,) if type(basis_token) == str else basis_token
-                    experiment_data[target_token][clause].extend(basis_tokens)
+                    if not frame:
+                        experiment_data[target_token][clause].extend(basis_tokens)
+                    else:
+                        basis_unit = L.u(basis, 'phrase') if F.otype.v(basis) == 'word' else basis
+                        experiment_data[target_token][clause][basis_unit].extend(basis_tokens)
                     
                     # add helper data 1, basis to results mapping
                     for bt in basis_tokens:
@@ -157,21 +162,51 @@ class Experiment:
         self.basis2result = collections.defaultdict(list)
         
         for target, clauses in experiment_data.items():
-            for clause, bases in clauses.items():
-                bases = bases if not self.collapse_instances else set(bases)
-                bases = bases if not set(bases) == {'ø'} else {'ø'} # count only one null value
-                frame = '|'.join(sorted(bases))
-                ecounts[target][frame] += 1
+            for clause, phrases in clauses.items():
                 
-                # helper data; combine all search results into a single result mapped to the frame
-                frame_results = set()
-                for basis, results in self.clause2basis2result[clause].items():
-                    for result in results:
-                        frame_results |= set(result)
-                self.basis2result[frame].append(tuple(frame_results))
+                bases = tuple(tuple(bs) for bs in phrases.values())
+                bases = bases if not set(bases) == {('ø',)} else (('ø',),)        
+                
+                # recursively combine all possible frame elements
+                for frame_list in self.stitch_frames(bases):
+                    frame = '|'.join(sorted(frame_list))
+                    ecounts[target][frame] += 1
+                
+                    # helper data; combine all search results into a single result mapped to the frame
+                    frame_results = set()
+                    for basis, results in self.clause2basis2result[clause].items():
+                        if basis not in frame_list:
+                            continue
+                        for result in results:
+                            frame_results |= set(result)
+                    self.basis2result[frame].append(tuple(frame_results))
                 
         counts = dict((target, counts) for target, counts in ecounts.items()
                                 if sum(counts.values()) >= self.min_obs)
         
         self.data = pd.DataFrame(counts).fillna(0)
         self.raw_data = experiment_data
+        
+        
+    def stitch_frames(self, tokenlists):
+        '''
+        A recursive constructor for frames
+        with multiple head elements.
+        Returns all possible frames given
+        the presence of multiple heads per
+        phrase. Requires a list of token lists,
+        where each token list corresponds to a phrase
+        with multiple heads that have been tokenized.
+
+        Credit: Thanks to Dirk Roorda for
+        this code and helping me understand
+        how it works.
+        '''
+        if len(tokenlists) == 1:
+            for token in tokenlists[0]:
+                yield (token,)
+
+        elif len(tokenlists) > 1:
+            for result in self.stitch_frames(tokenlists[1:]):
+                for token in tokenlists[0]:
+                    yield (token, *result)

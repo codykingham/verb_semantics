@@ -1291,13 +1291,6 @@ params['frame']['vf_argAll_pa'] = (
 
 # 6.2, Verb Frames, All Arguments, Lexemes
 
-# rules:
-# • Select only lexical elements (e.g. not pronouns) within the frame with all argument functions
-# • Any non-lexical elements with an argument function excludes the frame altogether.
-
-# a set of conditions that must hold true
-# for all frame elements that are selected
-# at the clause level:
 vf_clause_conditions = '''
 
 c2:clause
