@@ -417,7 +417,7 @@ clR_nc_CP = '''
 c2:clause kind=NC rela={relas}
     phrase typ=CP
     < phrase function=PreC
-        -heads> word pdp#prep|prps|prde|prin|inrg {reqs}
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj {reqs}
 
 c1 <mother- c2
 '''
@@ -430,7 +430,7 @@ c2:clause kind=NC rela={relas}
     phrase typ=CP
 /-/
     phrase function=PreC typ=AdvP
-        -heads> word pdp#prep|prps|prde|prin|inrg {reqs}
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj {reqs}
 
 c1 <mother- c2
 '''
@@ -444,7 +444,7 @@ c2:clause kind=NC rela={relas}
 /-/
     phrase function=PreC typ=PP
         -heads> word pdp=prep
-        -prep_obj> word pdp#prep|prps|prde|prin|inrg {reqs}
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj {reqs}
 
 c1 <mother- c2
 '''
@@ -466,7 +466,7 @@ else:
 vi_s_lex_np = pred_target.format(basis='''
 
     phrase typ=NP|PrNP function=Subj
-        -heads> word pdp#prep|prps|prde|prin|inrg
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -483,7 +483,7 @@ params['inventory']['vi_subj_lex'] = (
 vi_s_sd = pred_target.format(basis=f'''
 
     phrase typ=NP|PrNP function=Subj
-        -heads> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj sem_domain_code~{good_sem_codes}
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -576,7 +576,7 @@ params['inventory']['vi_objc_pa'] = (
 vi_o_lex_np = pred_target.format(basis='''
 
     phrase typ=NP|PrNP function=Objc
-        -heads> word pdp#prep|prps|prde|prin|inrg
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -584,7 +584,7 @@ vi_o_lex_pp = pred_target.format(basis='''
 
     phrase typ=PP function=Objc
         -heads> word pdp=prep
-        -prep_obj> word pdp#prep|prps|prde|prin|inrg
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -615,7 +615,7 @@ params['inventory']['vi_objc_lex'] = (
 vi_o_sd_np = pred_target.format(basis=f'''
 
     phrase typ=NP|PrNP function=Objc
-        -heads> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj sem_domain_code~{good_sem_codes}
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp
 )
@@ -624,7 +624,7 @@ vi_o_sd_pp = pred_target.format(basis=f'''
 
     phrase typ=PP function=Objc
         -heads> word pdp=prep
-        -prep_obj> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj sem_domain_code~{good_sem_codes}
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp
 )
@@ -735,7 +735,7 @@ params['inventory']['vi_cmpl_pa'] = (
 vi_cmpl_lex_np = pred_target.format(basis='''
 
     phrase function=Cmpl typ=NP|PrNP|AdvP
-        -heads> word pdp#prep|prps|prde|prin|inrg
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -743,7 +743,7 @@ vi_cmpl_lex_pp = pred_target.format(basis='''
 
     phrase function=Cmpl typ=PP
         -heads> word pdp=prep
-        -prep_obj> word pdp#prep|prps|prde|prin|inrg
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -781,7 +781,7 @@ params['inventory']['vi_cmpl_lex'] = (
 vi_cmpl_sd_np = pred_target.format(basis=f'''
 
     phrase function=Cmpl typ=NP|PrNP|AdvP
-        -heads> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj sem_domain_code~{good_sem_codes}
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -789,7 +789,7 @@ vi_cmpl_sd_pp = pred_target.format(basis=f'''
 
     phrase function=Cmpl typ=PP
         -heads> word pdp=prep
-        -prep_obj> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj sem_domain_code~{good_sem_codes}
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -895,7 +895,7 @@ params['inventory']['vi_adj+_pa'] = (
 vi_adj_lex_np = pred_target.format(basis='''
 
     phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
-        -heads> word pdp#prep|prps|prde|prin|inrg
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -903,7 +903,7 @@ vi_adj_lex_pp = pred_target.format(basis='''
 
     phrase function=Adju|Time|Loca|PrAd typ=PP
         -heads> word pdp=prep
-        -prep_obj> word pdp#prep|prps|prde|prin|inrg
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -940,7 +940,7 @@ params['inventory']['vi_adj+_lex'] = (
 vi_adj_sd_np = pred_target.format(basis=f'''
 
     phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
-        -heads> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj sem_domain_code~{good_sem_codes}
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -948,7 +948,7 @@ vi_adj_sd_pp = pred_target.format(basis=f'''
 
     phrase function=Adju|Time|Loca|PrAd typ=PP
         -heads> word pdp=prep
-        -prep_obj> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj sem_domain_code~{good_sem_codes}
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -1059,7 +1059,7 @@ params['inventory']['vi_coad_pa'] = (
 vi_coad_lex_np = pred_target.format(basis='''
 
     phrase function=Adju|Time|Loca|PrAd|Cmpl typ=NP|PrNP|AdvP
-        -heads> word pdp#prep|prps|prde|prin|inrg
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -1067,7 +1067,7 @@ vi_coad_lex_pp = pred_target.format(basis='''
 
     phrase function=Adju|Time|Loca|PrAd|Cmpl typ=PP
         -heads> word pdp=prep
-        -prep_obj> word pdp#prep|prps|prde|prin|inrg
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -1104,7 +1104,7 @@ params['inventory']['vi_coad_lex'] = (
 vi_coad_sd_np = pred_target.format(basis=f'''
 
     phrase function=Adju|Time|Loca|PrAd|Cmpl typ=NP|PrNP|AdvP
-        -heads> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj sem_domain_code~{good_sem_codes}
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -1112,7 +1112,7 @@ vi_coad_sd_pp = pred_target.format(basis=f'''
 
     phrase function=Adju|Time|Loca|PrAd|Cmpl typ=PP
         -heads> word pdp=prep
-        -prep_obj> word pdp#prep|prps|prde|prin|inrg sem_domain_code~{good_sem_codes}
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj sem_domain_code~{good_sem_codes}
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -1305,7 +1305,7 @@ c2:clause
     /where/
         -heads> w1:word
     /have/
-        w2:word pdp#prep|prps|prde|prin|inrg {word_reqs}
+        w2:word pdp#prep|prps|prde|prin|inrg|conj {word_reqs}
         w1 = w2
     /-/
 /-/
@@ -1316,7 +1316,7 @@ c2:clause
     /where/
         -heads> word pdp=prep
     /have/
-        -prep_obj> word pdp#prep|prps|prde|prin|inrg {word_reqs}
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj {word_reqs}
     /-/
 /-/
 
