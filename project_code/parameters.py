@@ -66,7 +66,7 @@ def verb_token(target):
     lex = F.lex.v(target)
     return f'{lex}.{vs}'
 
-animacy_codes = '1\.001[0-9]*|1\.003001[0-9]*|2\.[0-9]*' # eligible codes for animacy mapping
+animacy_codes = '1\.001[0-9]*|1\.003001[0-9]*|2\.(?!128)*' # eligible codes for animacy mapping; NB. exclude quantifier frames
 
 def code2animacy(code):
     
@@ -499,7 +499,7 @@ params['inventory']['vi_subj_domain'] = (
 vi_s_an = pred_target.format(basis=f'''
 
     phrase typ=NP|PrNP function=Subj
-        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes} sp#verb|adjv
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -660,7 +660,7 @@ params['inventory']['vi_objc_domain'] = (
 vi_o_an_np = pred_target.format(basis=f'''
 
     phrase typ=NP|PrNP function=Objc
-        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes} sp#verb|adjv
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp
 )
@@ -669,13 +669,13 @@ vi_o_an_pp = pred_target.format(basis=f'''
 
     phrase typ=PP function=Objc
         -heads> word pdp=prep
-        -prep_obj> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+        -prep_obj> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes} sp#verb|adjv
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp
 )
 
 # Clause Relations – N.B. Only non-verbal clauses for animacy experiments
-vi_objcAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
+vi_objcAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv'),
                                         pred_funct=all_preds, ptcp_funct=all_ptcp)
     
 def conj_animater(basis, target):
@@ -829,7 +829,7 @@ params['inventory']['vi_cmpl_domain'] = (
 vi_cmpl_an_np = pred_target.format(basis=f'''
 
     phrase function=Cmpl typ=NP|PrNP|AdvP
-        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes} sp#verb|adjv
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -837,12 +837,12 @@ vi_cmpl_an_pp = pred_target.format(basis=f'''
 
     phrase function=Cmpl typ=PP
         -heads> word pdp=prep
-        -prep_obj> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+        -prep_obj> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes} sp#verb|adjv
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 # Clause Relations; N.B. Only non-verbal clauses for animacy experiments
-vi_cmplAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Cmpl', reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
+vi_cmplAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Cmpl', reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv'),
                                         pred_funct=all_preds, ptcp_funct=all_ptcp)
     
 params['inventory']['vi_cmpl_animacy'] = (
@@ -989,7 +989,7 @@ params['inventory']['vi_adj+_domain'] = (
 vi_adj_an_np = pred_target.format(basis=f'''
 
     phrase function=Adju|Time|Loca|PrAd typ=NP|PrNP|AdvP
-        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes} sp#verb|adjv
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -997,12 +997,12 @@ vi_adj_an_pp = pred_target.format(basis=f'''
 
     phrase function=Adju|Time|Loca|PrAd typ=PP
         -heads> word pdp=prep
-        -prep_obj> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+        -prep_obj> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes} sp#verb|adjv
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 # Clause Relations; NB only non-verbals for animacy
-vi_adjAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
+vi_adjAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{animacy_codes} sp#verb|adj'),
                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 
     
@@ -1153,7 +1153,7 @@ params['inventory']['vi_coad_domain'] = (
 vi_coad_an_np = pred_target.format(basis=f'''
 
     phrase function=Adju|Time|Loca|PrAd|Cmpl typ=NP|PrNP|AdvP
-        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes} sp#verb|adjv
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -1161,12 +1161,12 @@ vi_coad_an_pp = pred_target.format(basis=f'''
 
     phrase function=Adju|Time|Loca|PrAd|Cmpl typ=PP
         -heads> word pdp=prep
-        -prep_obj> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes}
+        -prep_obj> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes} sp#verb|adjv
 
 ''', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 # Clause Relations; NB only non-verbals for animacy
-vi_coadAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd|Cmpl', reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
+vi_coadAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd|Cmpl', reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv'),
                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
 
     
@@ -1555,7 +1555,7 @@ params['frame']['vf_argAll_domain'] = (
 # 6.4, Verb Frames, All Arguments, Animacy
                                        
 vf_all_arg_conditionsAN = vf_clause_conditions.format(relas='Objc|Cmpl|Adju|Time|Loca|PrAd', 
-                                                      word_reqs=f'sem_domain_code~{animacy_codes} sp#verb',                                  
+                                                      word_reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv',                                  
                                                       clause_reqs='/without/\n    phrase function=Rela\n/-/')
 
 vf_allarg_an_np = pred_target.format(basis=f'''
@@ -1589,7 +1589,7 @@ vf_allarg_an_pp_obj = pred_target.format(basis=f'''
 
 # Clause Relations; NB only non-verbal for animacy experiments
 vf_argsAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Cmpl|Adju', 
-                                                               reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
+                                                               reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv'),
                                                                pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 if not cached_data:
@@ -1845,7 +1845,7 @@ params['frame']['vf_obj_domain'] = (
                                        
 # 7.4, Verb Frame, Objects, Animacy
 vf_obj_arg_conditionsAN = vf_clause_conditions.format(relas='Objc', 
-                                                      word_reqs=f'sem_domain_code~{animacy_codes} sp#verb',                                  
+                                                      word_reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv',                                  
                                                       clause_reqs='/without/\n    phrase function=Rela\n/-/')
 
 vf_obj_an_np = pred_target.format(basis=f'''
@@ -1869,7 +1869,7 @@ vf_obj_an_pp = pred_target.format(basis=f'''
 
 # Clause Relations
 vf_objAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', 
-                                                              reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
+                                                              reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv'),
                                        pred_funct='Pred|PreS', ptcp_funct='PreC')
 
 if not cached_data:
@@ -2092,7 +2092,7 @@ params['frame']['vf_cmpl_domain'] = (
 # 8.4, Verb Frame, Complements, Animacy
                                        
 vf_cmpl_conditionsAN = vf_clause_conditions.format(relas='Cmpl', 
-                                                   word_reqs=f'sem_domain_code~{animacy_codes} sp#verb',                                  
+                                                   word_reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv',                                  
                                                    clause_reqs='')
 
 vf_cmpl_an_np = pred_target.format(basis=f'''
@@ -2116,7 +2116,7 @@ vf_cmpl_an_pp = pred_target.format(basis=f'''
 
 # Clause Relations
 vf_cmplAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Cmpl', 
-                                                               reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
+                                                               reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv'),
                                                                pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 if not cached_data:
@@ -2339,7 +2339,7 @@ params['frame']['vf_adju_domain'] = (
 # 9.4, Verb Frame, Adjuncts+, Animacy
 
 vf_adjuAN_conditions = vf_clause_conditions.format(relas='Adju|Time|Loca|PrAd', 
-                                                   word_reqs=f'sem_domain_code~{animacy_codes} sp#verb',
+                                                   word_reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv',
                                                    clause_reqs='')
 
 vf_adju_an_np = pred_target.format(basis=f'''
@@ -2363,7 +2363,7 @@ vf_adju_an_pp = pred_target.format(basis=f'''
 
 
 # Clause Relations
-vf_adjuAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
+vf_adjuAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd', reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv'),
                                         pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 if not cached_data:
@@ -2585,7 +2585,7 @@ params['frame']['vf_coad_domain'] = (
 # 10.4, Verb Frame, Complements + Adjuncts, Animacy
 
 vf_coadAN_conditions = vf_clause_conditions.format(relas='Adju|Time|Loca|PrAd|Cmpl', 
-                                                   word_reqs=f'sem_domain_code~{animacy_codes} sp#verb',
+                                                   word_reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv',
                                                    clause_reqs='')
 
 vf_coad_an_np = pred_target.format(basis=f'''
@@ -2609,7 +2609,7 @@ vf_coad_an_pp = pred_target.format(basis=f'''
 
 
 # Clause Relations
-vf_coadAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd|Cmpl', reqs=f'sem_domain_code~{animacy_codes} sp#verb'),
+vf_coadAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd|Cmpl', reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv'),
                                         pred_funct=all_preds, ptcp_funct=all_ptcp)
 
 if not cached_data:
