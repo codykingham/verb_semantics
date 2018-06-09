@@ -548,7 +548,10 @@ vi_o_pa_speech = pred_target.format(basis='''
 
     ca1:clause_atom
     
-ca2:clause_atom code=999
+ca2:clause_atom code=999 instruction=.q
+
+verbumdicendi:word lex=>MR[|DBR[
+verbumdicendi = target
 
 ca1 <mother- ca2
 ca1 <: ca2
@@ -1235,7 +1238,10 @@ c2:clause
 /-/
     ca1:clause_atom
     
-ca2:clause_atom code=999
+ca2:clause_atom code=999 instruction=.q
+
+verbumdicendi:word lex=>MR[|DBR[
+verbumdicendi = target
 
 c1 = c2
 ca1 <mother- ca2
