@@ -142,8 +142,6 @@ def code2domain(word):
         return domain.split('|')[code_index]
     else:
         raise Exception(word) # avoid accidental selections
-
-
     
 def animater(basis, target):
     # basis tokenizer for semantic domains
@@ -213,6 +211,21 @@ def rela_lexer(basis, target):
     rela = F.rela.v(L.u(basis, 'clause')[0])
     return f'{rela}.{F.lex.v(basis)}'
 
+def funct_lexer(basis, target):
+    # returns function + lexeme basis tokens
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    return f'{function}.{F.lex.v(basis)}'
+
+def funct_prep_o_lexer(basis, target):
+    # returns function + preplex + preplex object
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    prep_obj = E.prep_obj.f(basis)[0]
+    return f'{function}.{F.lex.v(basis)}_{F.lex.v(prep_obj)}'
+
 def domainer2(basis, target):
     # basis tokenizer for semantic domains
     sem_domain = code2domain(basis)
@@ -237,6 +250,349 @@ def conj_domainer2(basis, target):
     conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
     sem_domain = code2domain(basis)
     return f'{conj_string}_{sem_domain}'
+
+
+def funct_domainer2(basis, target):
+    # basis tokenizer for semantic domains + functions
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{function}.{sem_domain}'
+    
+def funct_prep_o_domainer2(basis, target):
+    # makes prep_domain + prep_obj_domain tokens + functions
+    prep_obj = E.prep_obj.f(basis)[0]
+    sem_domain = code2domain(prep_obj)
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    return f'{function}.{F.lex.v(basis)}_{sem_domain}'
+
+def rela_prep_domainer2(basis, target):
+    # returns clause relation + prep + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
+    prep_lex = F.lex.v(prep)
+    sem_domain = code2domain(basis)
+    return f'{rela}.{prep_lex}_{sem_domain}'
+
+def rela_conj_domainer2(basis, target):
+    # returns clause relation + conjunction string + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
+    sem_domain = code2domain(basis)
+    return f'{rela}.{conj_string}_{sem_domain}'
+   
+def rela_domainer2(basis, target):
+    # returns rela + domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{rela}.{sem_domain}'
+
+def funct_domainer2(basis, target):
+    # basis tokenizer for semantic domains + functions
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{function}.{sem_domain}'
+    
+def funct_prep_o_domainer2(basis, target):
+    # makes prep_domain + prep_obj_domain tokens + functions
+    prep_obj = E.prep_obj.f(basis)[0]
+    sem_domain = code2domain(prep_obj)
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    return f'{function}.{F.lex.v(basis)}_{sem_domain}'
+
+def rela_prep_domainer2(basis, target):
+    # returns clause relation + prep + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
+    prep_lex = F.lex.v(prep)
+    sem_domain = code2domain(basis)
+    return f'{rela}.{prep_lex}_{sem_domain}'
+
+def rela_conj_domainer2(basis, target):
+    # returns clause relation + conjunction string + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
+    sem_domain = code2domain(basis)
+    return f'{rela}.{conj_string}_{sem_domain}'
+   
+def rela_domainer2(basis, target):
+    # returns rela + domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{rela}.{sem_domain}'
+
+def funct_domainer2(basis, target):
+    # basis tokenizer for semantic domains + functions
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{function}.{sem_domain}'
+    
+def funct_prep_o_domainer2(basis, target):
+    # makes prep_domain + prep_obj_domain tokens + functions
+    prep_obj = E.prep_obj.f(basis)[0]
+    sem_domain = code2domain(prep_obj)
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    return f'{function}.{F.lex.v(basis)}_{sem_domain}'
+
+def rela_prep_domainer2(basis, target):
+    # returns clause relation + prep + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
+    prep_lex = F.lex.v(prep)
+    sem_domain = code2domain(basis)
+    return f'{rela}.{prep_lex}_{sem_domain}'
+
+def rela_conj_domainer2(basis, target):
+    # returns clause relation + conjunction string + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
+    sem_domain = code2domain(basis)
+    return f'{rela}.{conj_string}_{sem_domain}'
+   
+def rela_domainer2(basis, target):
+    # returns rela + domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{rela}.{sem_domain}'
+
+def funct_domainer2(basis, target):
+    # basis tokenizer for semantic domains + functions
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{function}.{sem_domain}'
+    
+def funct_prep_o_domainer2(basis, target):
+    # makes prep_domain + prep_obj_domain tokens + functions
+    prep_obj = E.prep_obj.f(basis)[0]
+    sem_domain = code2domain(prep_obj)
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    return f'{function}.{F.lex.v(basis)}_{sem_domain}'
+
+def rela_prep_domainer2(basis, target):
+    # returns clause relation + prep + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
+    prep_lex = F.lex.v(prep)
+    sem_domain = code2domain(basis)
+    return f'{rela}.{prep_lex}_{sem_domain}'
+
+def rela_conj_domainer2(basis, target):
+    # returns clause relation + conjunction string + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
+    sem_domain = code2domain(basis)
+    return f'{rela}.{conj_string}_{sem_domain}'
+   
+def rela_domainer2(basis, target):
+    # returns rela + domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{rela}.{sem_domain}'
+
+def funct_domainer2(basis, target):
+    # basis tokenizer for semantic domains + functions
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{function}.{sem_domain}'
+    
+def funct_prep_o_domainer2(basis, target):
+    # makes prep_domain + prep_obj_domain tokens + functions
+    prep_obj = E.prep_obj.f(basis)[0]
+    sem_domain = code2domain(prep_obj)
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    return f'{function}.{F.lex.v(basis)}_{sem_domain}'
+
+def rela_prep_domainer2(basis, target):
+    # returns clause relation + prep + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
+    prep_lex = F.lex.v(prep)
+    sem_domain = code2domain(basis)
+    return f'{rela}.{prep_lex}_{sem_domain}'
+
+def rela_conj_domainer2(basis, target):
+    # returns clause relation + conjunction string + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
+    sem_domain = code2domain(basis)
+    return f'{rela}.{conj_string}_{sem_domain}'
+   
+def rela_domainer2(basis, target):
+    # returns rela + domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{rela}.{sem_domain}'
+
+def funct_domainer2(basis, target):
+    # basis tokenizer for semantic domains + functions
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{function}.{sem_domain}'
+    
+def funct_prep_o_domainer2(basis, target):
+    # makes prep_domain + prep_obj_domain tokens + functions
+    prep_obj = E.prep_obj.f(basis)[0]
+    sem_domain = code2domain(prep_obj)
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    return f'{function}.{F.lex.v(basis)}_{sem_domain}'
+
+def rela_prep_domainer2(basis, target):
+    # returns clause relation + prep + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
+    prep_lex = F.lex.v(prep)
+    sem_domain = code2domain(basis)
+    return f'{rela}.{prep_lex}_{sem_domain}'
+
+def rela_conj_domainer2(basis, target):
+    # returns clause relation + conjunction string + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
+    sem_domain = code2domain(basis)
+    return f'{rela}.{conj_string}_{sem_domain}'
+   
+def rela_domainer2(basis, target):
+    # returns rela + domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{rela}.{sem_domain}'
+
+def funct_domainer2(basis, target):
+    # basis tokenizer for semantic domains + functions
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{function}.{sem_domain}'
+    
+def funct_prep_o_domainer2(basis, target):
+    # makes prep_domain + prep_obj_domain tokens + functions
+    prep_obj = E.prep_obj.f(basis)[0]
+    sem_domain = code2domain(prep_obj)
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    return f'{function}.{F.lex.v(basis)}_{sem_domain}'
+
+def rela_prep_domainer2(basis, target):
+    # returns clause relation + prep + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
+    prep_lex = F.lex.v(prep)
+    sem_domain = code2domain(basis)
+    return f'{rela}.{prep_lex}_{sem_domain}'
+
+def rela_conj_domainer2(basis, target):
+    # returns clause relation + conjunction string + verb domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
+    sem_domain = code2domain(basis)
+    return f'{rela}.{conj_string}_{sem_domain}'
+   
+def rela_domainer2(basis, target):
+    # returns rela + domain
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    sem_domain = code2domain(basis)
+    return f'{rela}.{sem_domain}'
+
+def funct_animater(basis, target):
+    # basis tokenizer for semantic domains + functions
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    animacy = code2animacy(F.sem_domain_code.v(basis), basis)
+    return f'{function}.{animacy}'
+    
+def funct_prep_o_animater(basis, target):
+    # makes prep_domain + prep_obj_domain tokens + functions
+    prep_obj = E.prep_obj.f(basis)[0]
+    animacy = code2animacy(F.sem_domain_code.v(prep_obj), basis)
+    function = F.function.v(L.u(basis, 'phrase')[0])
+    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
+        function = 'adj+'
+    return f'{function}.{F.lex.v(basis)}_{animacy}'
+
+def rela_conj_animater(basis, target):
+    # returns clause relation + conjunction string + animacy
+    rela = F.rela.v(L.u(basis, 'clause')[0])
+    if rela in {'Adju', 'PrAd'}:
+        rela = 'adj+'
+    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
+    animacy = code2animacy(F.sem_domain_code.v(basis), basis)
+    return f'{rela}.{conj_string}_{animacy}'
 
 '''
 Frame Methodology Notes:
@@ -1182,10 +1538,200 @@ params['inventory']['vi_coad_animacy'] = (
                                         )
 
 
+# 6.1, Verb Inventory, All Arguments, Presence/Absence
+
+
+vi_allarg_pa = pred_target.format(basis='''
+
+    phrase function=Objc|Adju|Time|Loca|PrAd|Cmpl
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+vi_allarg_pa_clRel = pred_target.format(basis='''
+
+c2:clause rela=Objc|Adju|PrAd|Cmpl
+    c1 <mother- c2
+    
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+
+vi_allarg_pa_null = pred_target.format(basis='''
+
+c2:clause
+/without/
+    phrase function=Objc|Rela|Adju|Time|Loca|PrAd|Cmpl
+/-/
+/without/
+<mother- clause rela=Objc|Adju|PrAd|Cmpl
+/-/
+/without/
+    ca:clause_atom
+speech:clause_atom code=999
+ca <mother- speech
+/-/
+
+c1 = c2
+''', pred_funct='Pred|PreS', ptcp_funct='PreC')
+
+params['inventory']['vi_allarg_pa'] = (
+                                        (vi_allarg_pa, None, 2, (3,), verb_token, functioner, True),
+                                        (vi_allarg_pa_clRel, None, 2, (3,), verb_token, relationer, True),
+                                        (vi_allarg_pa_null, None, 2, (3,), verb_token, nuller, True)
+                                    )
 
 
 
-# 6.1, Verb Frames, All Arguments, Presence/Absence
+
+# 6.2, Verb Inventory, All Arguments, Lexemes
+
+vi_allarg_lex_np = pred_target.format(basis='''
+
+    phrase function=Objc|Adju|Time|Loca|PrAd|Cmpl typ=NP|PrNP|AdvP
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+vi_allarg_lex_pp = pred_target.format(basis='''
+
+    phrase function=Adju|Time|Loca|PrAd|Cmpl typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+vi_allarg_lex_obj_pp = pred_target.format(basis='''
+
+    phrase function=Objc typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+# Clause Relations
+vi_allarg_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Adju|PrAd|Cmpl|Objc', reqs=''), 
+                                     pred_funct=all_preds, ptcp_funct=all_ptcp)
+vi_allarg_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Adju|PrAd|Cmpl|Objc', reqs=''),
+                                       pred_funct=all_preds, ptcp_funct=all_ptcp)
+vi_allarg_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Adju|PrAd|Cmpl|Objc', reqs=''),
+                                       pred_funct=all_preds, ptcp_funct=all_ptcp)
+vi_allarg_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Adju|PrAd|Cmpl|Objc', reqs=''),
+                                     pred_funct=all_preds, ptcp_funct=all_ptcp)
+vi_allarg_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Adju|PrAd|Cmpl|Objc', reqs=''),
+                                           pred_funct=all_preds, ptcp_funct=all_ptcp)
+vi_allarg_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Adju|PrAd|Cmpl|Objc', reqs=''),
+                                            pred_funct=all_preds, ptcp_funct=all_ptcp)
+    
+params['inventory']['vi_allarg_lex'] = (
+                                         (vi_allarg_lex_np, None, 2, (4,), verb_token, funct_lexer, False),
+                                         (vi_allarg_lex_pp, None, 2, (4,), verb_token, funct_prep_o_lexer, False),
+                                         (vi_allarg_lex_obj_pp, None, 2, (5,), verb_token, funct_lexer, False),
+                                         (vi_allarg_cr_vc_CP, None, 2, (6,), verb_token, rela_conj_lexer, False),
+                                         (vi_allarg_cr_vc_prep, None, 2, (6,), verb_token, rela_prep_lexer, False),
+                                         (vi_allarg_cr_vc_verb, None, 2, (5,), verb_token, rela_lexer, False),
+                                         (vi_allarg_cr_nc_CP, None, 2, (6,), verb_token, rela_conj_lexer, False),
+                                         (vi_allarg_cr_nc_Prec_adv, None, 2, (5,), verb_token, rela_lexer, False),
+                                         (vi_allarg_cr_nc_Prec_prep, None, 2, (6,), verb_token, rela_prep_lexer, False),
+                                     )
+
+
+
+
+# 6.3, Verb Inventory, All Arguments, Semantic Domains
+
+vi_allarg_sd_np = pred_target.format(basis=f'''
+
+    phrase function=Objc|Adju|Time|Loca|PrAd|Cmpl typ=NP|PrNP|AdvP
+        -heads> word pdp#prep|prps|prde|prin|inrg|conj sem_domain_code~{good_sem_codes}
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+vi_allarg_sd_pp = pred_target.format(basis=f'''
+
+    phrase function=Adju|Time|Loca|PrAd|Cmpl typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj sem_domain_code~{good_sem_codes}
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+vi_allarg_sd_pp_obj = pred_target.format(basis=f'''
+
+    phrase function=Objc typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp#prep|prps|prde|prin|inrg|conj sem_domain_code~{good_sem_codes}
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+# Clause Relations
+vi_allargSD_cr_vc_CP = pred_target.format(basis=clR_vc_CP.format(relas='Objc|Adju|PrAd|Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'), 
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
+vi_allargSD_cr_vc_prep = pred_target.format(basis=clR_vc_prep.format(relas='Objc|Adju|PrAd|Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
+                                          pred_funct=all_preds, ptcp_funct=all_ptcp)
+vi_allargSD_cr_vc_verb = pred_target.format(basis=clR_vc_verb.format(relas='Objc|Adju|PrAd|Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
+                                          pred_funct=all_preds, ptcp_funct=all_ptcp)
+vi_allargSD_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Adju|PrAd|Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
+                                        pred_funct=all_preds, ptcp_funct=all_ptcp)
+vi_allargSD_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='Objc|Adju|PrAd|Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
+                                              pred_funct=all_preds, ptcp_funct=all_ptcp)
+vi_allargSD_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Objc|Adju|PrAd|Cmpl', reqs=f'sem_domain_code~{good_sem_codes}'),
+                                               pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+    
+params['inventory']['vi_allarg_domain'] = (
+                                             (vi_allarg_sd_np, None, 2, (4,), verb_token, funct_domainer2, False),
+                                             (vi_allarg_sd_pp, None, 2, (4,), verb_token, funct_prep_o_domainer2, False),
+                                             (vi_allarg_sd_pp_obj, None, 2, (5,), verb_token, funct_domainer2, False),
+                                             (vi_allargSD_cr_vc_CP, None, 2, (6,), verb_token, rela_conj_domainer2, False),
+                                             (vi_allargSD_cr_vc_prep, None, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                             (vi_allargSD_cr_vc_verb, None, 2, (5,), verb_token, rela_domainer2, False),
+                                             (vi_allargSD_cr_nc_CP, None, 2, (6,), verb_token, rela_conj_domainer2, False),
+                                             (vi_allargSD_cr_nc_Prec_adv, None, 2, (5,), verb_token, rela_domainer2, False),
+                                             (vi_allargSD_cr_nc_Prec_prep, None, 2, (6,), verb_token, rela_prep_domainer2, False),
+                                        )
+
+
+
+
+# 6.4, Verb Inventory, All Arguments, Animacy
+
+vi_allarg_an_np = pred_target.format(basis=f'''
+
+    phrase function=Objc|Adju|Time|Loca|PrAd|Cmpl typ=NP|PrNP|AdvP
+        -heads> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes} sp#verb|adjv
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+vi_allarg_an_pp = pred_target.format(basis=f'''
+
+    phrase function=Adju|Time|Loca|PrAd|Cmpl typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes} sp#verb|adjv
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+vi_allarg_an_pp_obj = pred_target.format(basis=f'''
+
+    phrase function=Objc typ=PP
+        -heads> word pdp=prep
+        -prep_obj> word pdp#verb|prep|prps|prde|prin|inrg sem_domain_code~{animacy_codes} sp#verb|adjv
+
+''', pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+# Clause Relations; NB only non-verbals for animacy
+vi_allargAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc|Adju|PrAd|Cmpl', reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv'),
+                                       pred_funct=all_preds, ptcp_funct=all_ptcp)
+
+    
+params['inventory']['vi_allarg_animacy'] = (
+                                             (vi_allarg_an_np, None, 2, (4,), verb_token, funct_animater, False),
+                                             (vi_allarg_an_pp, None, 2, (4,), verb_token, funct_prep_o_animater, False),
+                                             (vi_allarg_an_pp_obj, None, 2, (5,), verb_token, funct_animater, False),
+                                             (vi_allargAN_cr_nc_CP, None, 2, (6,), verb_token, rela_conj_animater, False),
+                                        )
+
+
+
+
+# 7.1, Verb Frames, All Arguments, Presence/Absence
 
 vf_allarg_pa = pred_target.format(basis='''
 
@@ -1300,7 +1846,7 @@ params['frame']['vf_argAll_pa'] = (
 
 
 
-# 6.2, Verb Frames, All Arguments, Lexemes
+# 7.2, Verb Frames, All Arguments, Lexemes
 
 vf_clause_conditions = '''
 
@@ -1381,21 +1927,6 @@ vf_args_cr_nc_Prec_adv = pred_target.format(basis=clR_nc_PreC_adv.format(relas='
 vf_args_cr_nc_Prec_prep = pred_target.format(basis=clR_nc_PreC_prep.format(relas='Cmpl|Adju', reqs=''),
                                              pred_funct='Pred|PreS', ptcp_funct='PreC')
 
-def funct_lexer(basis, target):
-    # returns function + lexeme basis tokens
-    function = F.function.v(L.u(basis, 'phrase')[0])
-    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
-        function = 'adj+'
-    return f'{function}.{F.lex.v(basis)}'
-
-def funct_prep_o_lexer(basis, target):
-    # returns function + preplex + preplex object
-    function = F.function.v(L.u(basis, 'phrase')[0])
-    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
-        function = 'adj+'
-    prep_obj = E.prep_obj.f(basis)[0]
-    return f'{function}.{F.lex.v(basis)}_{F.lex.v(prep_obj)}'
-
 if not cached_data:
     valLex = validateFrame(mother_templates=(vf_allarg_lex_np,
                                              vf_allarg_lex_pp, 
@@ -1426,7 +1957,7 @@ params['frame']['vf_argAll_lex'] = (
 
 
 
-# 6.3, Verb Frames, All Arguments, Semantic Domains
+# 7.3, Verb Frames, All Arguments, Semantic Domains
 
 vf_all_arg_conditionsSD = vf_clause_conditions.format(relas='Objc|Cmpl|Adju|Time|Loca|PrAd', 
                                                       word_reqs=f'sem_domain_code~{good_sem_codes}',                                  
@@ -1497,50 +2028,6 @@ else:
     valSD = cache['valSD']
 
 
-def funct_domainer2(basis, target):
-    # basis tokenizer for semantic domains + functions
-    function = F.function.v(L.u(basis, 'phrase')[0])
-    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
-        function = 'adj+'
-    sem_domain = code2domain(basis)
-    return f'{function}.{sem_domain}'
-    
-def funct_prep_o_domainer2(basis, target):
-    # makes prep_domain + prep_obj_domain tokens + functions
-    prep_obj = E.prep_obj.f(basis)[0]
-    sem_domain = code2domain(prep_obj)
-    function = F.function.v(L.u(basis, 'phrase')[0])
-    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
-        function = 'adj+'
-    return f'{function}.{F.lex.v(basis)}_{sem_domain}'
-
-def rela_prep_domainer2(basis, target):
-    # returns clause relation + prep + verb domain
-    rela = F.rela.v(L.u(basis, 'clause')[0])
-    if rela in {'Adju', 'PrAd'}:
-        rela = 'adj+'
-    prep = next(w for w in L.d(L.u(basis, 'phrase')[0], 'word') if F.pdp.v(w) == 'prep')
-    prep_lex = F.lex.v(prep)
-    sem_domain = code2domain(basis)
-    return f'{rela}.{prep_lex}_{sem_domain}'
-
-def rela_conj_domainer2(basis, target):
-    # returns clause relation + conjunction string + verb domain
-    rela = F.rela.v(L.u(basis, 'clause')[0])
-    if rela in {'Adju', 'PrAd'}:
-        rela = 'adj+'
-    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
-    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
-    sem_domain = code2domain(basis)
-    return f'{rela}.{conj_string}_{sem_domain}'
-   
-def rela_domainer2(basis, target):
-    # returns rela + domain
-    rela = F.rela.v(L.u(basis, 'clause')[0])
-    if rela in {'Adju', 'PrAd'}:
-        rela = 'adj+'
-    sem_domain = code2domain(basis)
-    return f'{rela}.{sem_domain}'
 
 params['frame']['vf_argAll_domain'] = (
                                           (vf_allarg_sd_np, valSD.daughters, 2, (5,), verb_token, funct_domainer2, False),
@@ -1557,7 +2044,7 @@ params['frame']['vf_argAll_domain'] = (
 
 
 
-# 6.4, Verb Frames, All Arguments, Animacy
+# 7.4, Verb Frames, All Arguments, Animacy
                                        
 vf_all_arg_conditionsAN = vf_clause_conditions.format(relas='Objc|Cmpl|Adju|Time|Loca|PrAd', 
                                                       word_reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv',                                  
@@ -1608,32 +2095,6 @@ if not cached_data:
 else:
     valArgAN = cache['valArgAN']
 
-def funct_animater(basis, target):
-    # basis tokenizer for semantic domains + functions
-    function = F.function.v(L.u(basis, 'phrase')[0])
-    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
-        function = 'adj+'
-    animacy = code2animacy(F.sem_domain_code.v(basis), basis)
-    return f'{function}.{animacy}'
-    
-def funct_prep_o_animater(basis, target):
-    # makes prep_domain + prep_obj_domain tokens + functions
-    prep_obj = E.prep_obj.f(basis)[0]
-    animacy = code2animacy(F.sem_domain_code.v(prep_obj), basis)
-    function = F.function.v(L.u(basis, 'phrase')[0])
-    if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
-        function = 'adj+'
-    return f'{function}.{F.lex.v(basis)}_{animacy}'
-
-def rela_conj_animater(basis, target):
-    # returns clause relation + conjunction string + animacy
-    rela = F.rela.v(L.u(basis, 'clause')[0])
-    if rela in {'Adju', 'PrAd'}:
-        rela = 'adj+'
-    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
-    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
-    animacy = code2animacy(F.sem_domain_code.v(basis), basis)
-    return f'{rela}.{conj_string}_{animacy}'
    
 params['frame']['vf_argAll_animacy'] = (
                                           (vf_allarg_an_np, valArgAN.daughters, 2, (5,), verb_token, funct_animater, False),
@@ -1645,7 +2106,7 @@ params['frame']['vf_argAll_animacy'] = (
 
 
 
-# 7.1, Verb Frame, Objects, Presence/Absence
+# 8.1, Verb Frame, Objects, Presence/Absence
 vf_obj_pa = pred_target.format(basis='''
 
 c2:clause
@@ -1726,7 +2187,7 @@ params['frame']['vf_obj_pa'] = (
 
     
     
-# 7.2, Verb Frame, Objects, Lexemes 
+# 8.2, Verb Frame, Objects, Lexemes 
 vf_obj_arg_conditions = vf_clause_conditions.format(relas='Objc', 
                                                     word_reqs='',                                  
                                                     clause_reqs='/without/\n    phrase function=Rela\n/-/')
@@ -1785,7 +2246,7 @@ params['frame']['vf_obj_lex'] = (
 
 
 
-# 7.3, Verb Frame, Objects, Semantic Domains
+# 8.3, Verb Frame, Objects, Semantic Domains
 vf_obj_arg_conditionsSD = vf_clause_conditions.format(relas='Objc', 
                                                       word_reqs=f'sem_domain_code~{good_sem_codes}',                                  
                                                       clause_reqs='/without/\n    phrase function=Rela\n/-/')
@@ -1848,7 +2309,7 @@ params['frame']['vf_obj_domain'] = (
                                        
                                        
                                        
-# 7.4, Verb Frame, Objects, Animacy
+# 8.4, Verb Frame, Objects, Animacy
 vf_obj_arg_conditionsAN = vf_clause_conditions.format(relas='Objc', 
                                                       word_reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv',                                  
                                                       clause_reqs='/without/\n    phrase function=Rela\n/-/')
@@ -1896,7 +2357,7 @@ params['frame']['vf_obj_animacy'] = (
 
 
 
-# 8.1, Verb Frame, Complements, Presence/Absence
+# 9.1, Verb Frame, Complements, Presence/Absence
 vf_cmpl_pa = pred_target.format(basis='''
 
     phrase function=Cmpl
@@ -1952,7 +2413,7 @@ params['frame']['vf_cmpl_pa'] = (
 
 
 
-# 8.2, Verb Frame, Complements, Lexemes
+# 9.2, Verb Frame, Complements, Lexemes
 
 vf_cmpl_conditions = vf_clause_conditions.format(relas='Cmpl', 
                                                  word_reqs='',
@@ -2019,7 +2480,7 @@ params['frame']['vf_cmpl_lex'] = (
 
 
 
-# 8.3, Verb Frame, Complements, Domains
+# 9.3, Verb Frame, Complements, Domains
 
 
 vf_cmpl_conditionsSD = vf_clause_conditions.format(relas='Cmpl', 
@@ -2094,7 +2555,7 @@ params['frame']['vf_cmpl_domain'] = (
 
 
 
-# 8.4, Verb Frame, Complements, Animacy
+# 9.4, Verb Frame, Complements, Animacy
                                        
 vf_cmpl_conditionsAN = vf_clause_conditions.format(relas='Cmpl', 
                                                    word_reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv',                                  
@@ -2144,7 +2605,7 @@ params['frame']['vf_cmpl_animacy'] = (
 
 
 
-# 9.1, Verb Frame, Adjuncts+, Presence/Absence
+# 10.1, Verb Frame, Adjuncts+, Presence/Absence
 vf_adju_pa = pred_target.format(basis='''
 
     phrase function=Adju|Time|Loca|PrAd
@@ -2206,7 +2667,7 @@ params['frame']['vf_adju_pa'] = (
 
 
 
-# 9.2, Verb Frame, Adjuncts+, Lexemes
+# 10.2, Verb Frame, Adjuncts+, Lexemes
 
 vf_adju_conditions = vf_clause_conditions.format(relas='Adju|Time|Loca|PrAd', 
                                                  word_reqs='',
@@ -2273,7 +2734,7 @@ params['frame']['vf_adju_lex'] = (
 
 
 
-# 9.3, Verb Frame, Adjuncts+, Domains
+# 10.3, Verb Frame, Adjuncts+, Domains
 
 vf_adjuSD_conditions = vf_clause_conditions.format(relas='Adju|Time|Loca|PrAd', 
                                                    word_reqs=f'sem_domain_code~{good_sem_codes}',
@@ -2341,7 +2802,7 @@ params['frame']['vf_adju_domain'] = (
 
 
 
-# 9.4, Verb Frame, Adjuncts+, Animacy
+# 10.4, Verb Frame, Adjuncts+, Animacy
 
 vf_adjuAN_conditions = vf_clause_conditions.format(relas='Adju|Time|Loca|PrAd', 
                                                    word_reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv',
@@ -2390,7 +2851,7 @@ params['frame']['vf_adju_animacy'] = (
 
 
 
-# 10.1, Verb Frame, Complements + Adjuncts, Presence/Absence
+# 11.1, Verb Frame, Complements + Adjuncts, Presence/Absence
 vf_coad_pa = pred_target.format(basis='''
 
     phrase function=Adju|Time|Loca|PrAd|Cmpl
@@ -2452,7 +2913,7 @@ params['frame']['vf_coad_pa'] = (
 
 
 
-# 10.2, Verb Frame, Complements + Adjuncts, Lexemes
+# 11.2, Verb Frame, Complements + Adjuncts, Lexemes
 
 vf_coad_conditions = vf_clause_conditions.format(relas='Adju|Time|Loca|PrAd|Cmpl', 
                                                  word_reqs='',
@@ -2519,7 +2980,7 @@ params['frame']['vf_coad_lex'] = (
 
 
 
-# 10.3, Verb Frame, Complements + Adjuncts, Domains
+# 11.3, Verb Frame, Complements + Adjuncts, Domains
 
 vf_coadSD_conditions = vf_clause_conditions.format(relas='Adju|Time|Loca|PrAd|Cmpl', 
                                                    word_reqs=f'sem_domain_code~{good_sem_codes}',
@@ -2587,7 +3048,7 @@ params['frame']['vf_coad_domain'] = (
 
 
 
-# 10.4, Verb Frame, Complements + Adjuncts, Animacy
+# 11.4, Verb Frame, Complements + Adjuncts, Animacy
 
 vf_coadAN_conditions = vf_clause_conditions.format(relas='Adju|Time|Loca|PrAd|Cmpl', 
                                                    word_reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv',
@@ -2636,7 +3097,7 @@ params['frame']['vf_coad_animacy'] = (
 
 
 
-# 11.1, Verb Discourse, Parallelism, Lexemes
+# 12.1, Verb Discourse, Parallelism, Lexemes
 
 poetry = '|'.join(F.book.v(book) for book in F.otype.s('book') 
                       if 426595 < book < 426618) # Isaiah-Lamentations
@@ -2703,7 +3164,7 @@ params['inventory']['vd_par_lex'] = (
 
 
 
-# 12.1, Verb Discourse, Context, Window-2 Content words
+# 12.2, Verb Discourse, Context, Window-2 Content words
 
 content_words = {'subs', 'nmpr', 'verb', 'advb', 'adjv'}
 
@@ -2743,7 +3204,7 @@ params['inventory']['vd_con_window'] = (
 
 
 
-# 12.2, Verb Discourse, Context, Clause Content Words
+# 12.3, Verb Discourse, Context, Clause Content Words
 
 vd_con_clause = pred_target.format(basis='', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -2771,7 +3232,7 @@ params['inventory']['vd_con_clause'] = (
 
 
 
-# 12.3, Verb Discourse, Context, Mother-Daughter Chain Content Words
+# 12.4, Verb Discourse, Context, Mother-Daughter Chain Content Words
 
 vd_con_chain = pred_target.format(basis='', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -2813,7 +3274,7 @@ params['inventory']['vd_con_chain'] = (
 
 
 
-# 12.4, Verb Discourse, Domain, Simple
+# 12.5, Verb Discourse, Domain, Simple
 
 vd_domain_simple = pred_target.format(basis='', pred_funct=all_preds, ptcp_funct=all_ptcp)
 
@@ -2833,7 +3294,7 @@ params['inventory']['vd_domain_simple'] = (
 
 
 
-# 12.5, Verb Discourse, Domain, Embedding
+# 12.6, Verb Discourse, Domain, Embedding
 
 def notexist_unknown_txt(results):
     # filters out unknown domains
