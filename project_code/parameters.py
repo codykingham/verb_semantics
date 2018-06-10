@@ -66,7 +66,7 @@ def verb_token(target):
     lex = F.lex.v(target)
     return f'{lex}.{vs}'
 
-animacy_codes = '1\.001[0-9]*|1\.003001[0-9]*|2\.(?!128)*' # eligible codes for animacy mapping; NB. exclude quantifier frames
+animacy_codes = '1\.001[0-9]*|1\.003001[0-9]*|2\.(?!128).*' # eligible codes for animacy mapping; NB. exclude quantifier frames
 
 def code2animacy(code, basis):
     
