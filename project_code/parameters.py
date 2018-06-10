@@ -68,18 +68,23 @@ def verb_token(target):
 
 animacy_codes = '1\.001[0-9]*|1\.003001[0-9]*|2\.(?!128)*' # eligible codes for animacy mapping; NB. exclude quantifier frames
 
-def code2animacy(code):
+def code2animacy(code, basis):
     
     '''
     Maps SDBH semantic domains to one of two tags:
         animate or inanimate
     Codes fed to this algorithm must first be filtered
-    through animacy_codes (cf. above)
+    through animacy_codes (cf. above). This is done in the search template.
     '''
     
     # animate object codes, all other sets of valid codes are inanimate:
-    animate = '1\.001001[0-9]*|1\.00300100[3,5,6]|1\.00300101[0,3]'     
-    if re.search(animate, code):
+    animate = r'1\.001001[0-9]*|1\.00300100[3,5,6]|1\.00300101[0,3]'     
+    
+    # quick fix/solution for ambiguous SDBH codes
+    # mitigates some 57 false animacy tags
+    if F.function.v(L.u(basis, 'phrase')[0]) == 'Loca' and re.search(r'1\.00300100[5, 6]', code):
+        return 'inanimate'
+    elif re.search(animate, code):
         return 'animate'
     else:
         return 'inanimate'
@@ -142,13 +147,13 @@ def code2domain(word):
     
 def animater(basis, target):
     # basis tokenizer for semantic domains
-    sem_category = code2animacy(F.sem_domain_code.v(basis))
+    sem_category = code2animacy(F.sem_domain_code.v(basis), basis)
     return sem_category
 
 def prep_o_animater(basis, target):
     # makes prep_domain + prep_obj_domain tokens
     prep_obj = E.prep_obj.f(basis)[0]
-    prep_o_domain = code2animacy(F.sem_domain_code.v(prep_obj))
+    prep_o_domain = code2animacy(F.sem_domain_code.v(prep_obj), basis)
     return f'{F.lex.v(basis)}_{prep_o_domain}'
 
 def lexer(basis, target):
@@ -682,7 +687,7 @@ def conj_animater(basis, target):
     # returns conjunction string + verb animacy
     conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
     conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
-    animacy = code2animacy(F.sem_domain_code.v(basis))
+    animacy = code2animacy(F.sem_domain_code.v(basis), basis)
     return f'{conj_string}_{animacy}'
                  
 params['inventory']['vi_objc_animacy'] = (
@@ -1608,13 +1613,13 @@ def funct_animater(basis, target):
     function = F.function.v(L.u(basis, 'phrase')[0])
     if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
         function = 'adj+'
-    animacy = code2animacy(F.sem_domain_code.v(basis))
+    animacy = code2animacy(F.sem_domain_code.v(basis), basis)
     return f'{function}.{animacy}'
     
 def funct_prep_o_animater(basis, target):
     # makes prep_domain + prep_obj_domain tokens + functions
     prep_obj = E.prep_obj.f(basis)[0]
-    animacy = code2animacy(F.sem_domain_code.v(prep_obj))
+    animacy = code2animacy(F.sem_domain_code.v(prep_obj), basis)
     function = F.function.v(L.u(basis, 'phrase')[0])
     if function in {'Adju', 'Time', 'Loca', 'PrAd'}:
         function = 'adj+'
@@ -1627,7 +1632,7 @@ def rela_conj_animater(basis, target):
         rela = 'adj+'
     conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
     conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
-    animacy = code2animacy(F.sem_domain_code.v(basis))
+    animacy = code2animacy(F.sem_domain_code.v(basis), basis)
     return f'{rela}.{conj_string}_{animacy}'
    
 params['frame']['vf_argAll_animacy'] = (
