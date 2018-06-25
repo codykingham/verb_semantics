@@ -594,6 +594,13 @@ def rela_conj_animater(basis, target):
     animacy = code2animacy(F.sem_domain_code.v(basis), basis)
     return f'{rela}.{conj_string}_{animacy}'
 
+def conj_animater(basis, target):
+    # returns conjunction string + verb animacy
+    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
+    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
+    animacy = code2animacy(F.sem_domain_code.v(basis), basis)
+    return f'{conj_string}_{animacy}'
+
 '''
 Frame Methodology Notes:
 Within the frame, every capturable element
@@ -1038,13 +1045,6 @@ vi_o_an_pp = pred_target.format(basis=f'''
 # Clause Relations – N.B. Only non-verbal clauses for animacy experiments
 vi_objcAN_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs=f'sem_domain_code~{animacy_codes} sp#verb|adjv'),
                                         pred_funct=all_preds, ptcp_funct=all_ptcp)
-    
-def conj_animater(basis, target):
-    # returns conjunction string + verb animacy
-    conj_phrase = next(ph for ph in L.d(L.u(basis, 'clause')[0], 'phrase') if F.typ.v(ph) == 'CP')
-    conj_string = ''.join(F.lex.v(w) for w in L.d(conj_phrase, 'word') if F.pdp.v(w) != 'art')
-    animacy = code2animacy(F.sem_domain_code.v(basis), basis)
-    return f'{conj_string}_{animacy}'
                  
 params['inventory']['vi_objc_animacy'] = (
                                              (vi_o_an_np, None, 2, (4,), verb_token,  animater, False),
@@ -1573,9 +1573,17 @@ ca <mother- speech
 c1 = c2
 ''', pred_funct='Pred|PreS', ptcp_funct='PreC')
 
+def simple_allarg(basis, target):
+    '''
+    Registers the simple presence or absence
+    of any argument: i.e. objc, cmpl, adju
+    '''
+    return 'arg'
+    
+    
 params['inventory']['vi_allarg_pa'] = (
-                                        (vi_allarg_pa, None, 2, (3,), verb_token, functioner, True),
-                                        (vi_allarg_pa_clRel, None, 2, (3,), verb_token, relationer, True),
+                                        (vi_allarg_pa, None, 2, (3,), verb_token, simple_allarg, True),
+                                        (vi_allarg_pa_clRel, None, 2, (3,), verb_token, simple_allarg, True),
                                         (vi_allarg_pa_null, None, 2, (3,), verb_token, nuller, True)
                                     )
 
