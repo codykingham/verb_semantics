@@ -128,6 +128,7 @@ class SemSpace:
         # distance matrices
         self.distance_pmi = pd.DataFrame(self.pairwise_pmi, columns=row_col, index=row_col)
         self.dist_pmi_nogloss = pd.DataFrame(self.pairwise_pmi, columns=self.pmi.columns, index=self.pmi.columns)
+        self.dist_raw_nogloss = pd.DataFrame(self.pairwise_raw, columns=self.raw.columns, index=self.raw.columns)
         self.distance_raw = pd.DataFrame(self.pairwise_raw, columns=row_col, index=row_col)
         self.distance_pmi_pca = pd.DataFrame(self.pairwise_pmi_pca, columns=row_col, index=row_col)
         self.distance_raw_pca = pd.DataFrame(self.pairwise_raw_pca, columns=row_col, index=row_col)
@@ -140,6 +141,7 @@ class SemSpace:
         self.sim_pmi_nogloss = self.dist_pmi_nogloss.apply(lambda x: 1-x)
         self.sim_pmi_normalized = self.sim_pmi_nogloss / self.sim_pmi_nogloss.sum()
         self.similarity_raw = self.distance_raw.apply(lambda x: 1-x)
+        self.sim_raw_nogloss = self.dist_raw_nogloss.apply(lambda x: 1-x)
         self.similarity_jaccard = self.distance_jaccard.apply(lambda x: 1-x)
         
         # space plots
