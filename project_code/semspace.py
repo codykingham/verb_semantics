@@ -113,7 +113,7 @@ class SemSpace:
         # apply pca or other data maneuvers
         self.pca_pmi = self.apply_pca(self.pmi)
         self.pca_raw = self.apply_pca(data)
-        
+        # TODO: self.raw_norm = ....
         
         # pairwise distances
         if self.report:
