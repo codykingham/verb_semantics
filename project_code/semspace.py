@@ -140,10 +140,17 @@ class SemSpace:
             self.info('Building pairwise similarities...')
         self.similarity_pmi = self.distance_pmi.apply(lambda x: 1-x)
         self.sim_pmi_nogloss = self.dist_pmi_nogloss.apply(lambda x: 1-x)
-        self.sim_pmi_normalized = self.sim_pmi_nogloss / self.sim_pmi_nogloss.sum()
         self.similarity_raw = self.distance_raw.apply(lambda x: 1-x)
         self.sim_norm_raw = self.distance_raw_norm.apply(lambda x: 1-x)
         self.similarity_jaccard = self.distance_jaccard.apply(lambda x: 1-x)
+        
+        # special normalized similarity matrices
+        # these matrices are normalized based on their maximum expected value (excluding a word's comparison with itself)
+        pmi_values = self.sim_pmi_nogloss.values.copy() # pmi to be normalized to max
+        pmi_i = pmi_j = np.arange(np.min(pmi_values.shape))
+        pmi_values[pmi_i, pmi_j] = np.nan # diagnoal 1's converted to NAN
+        sim_pmi_maxNorm = pd.DataFrame(pmi_values, self.sim_pmi_nogloss.index, self.sim_pmi_nogloss.columns)
+        self.sim_pmi_maxNorm = sim_pmi_maxNorm / sim_pmi_maxNorm.max().max() # divide by maximum potential similarity        
         
         # space plots
         verb_functs = {'Pred', 'PreO', 'PreS', 'PtcO'} # format plots for verbs if space is verb space (add stem to gloss)
