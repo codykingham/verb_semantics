@@ -123,7 +123,7 @@ class SemSpace:
         self.pairwise_raw = pairwise_distances(self.raw.T.values, metric='cosine')
         self.pairwise_pmi_pca = pairwise_distances(self.pca_pmi, metric='euclidean')
         self.pairwise_raw_pca = pairwise_distances(self.pca_raw, metric='euclidean')
-        self.pairwise_raw_norm = pairwise_distances(self.raw_norm.T.values, metric='cosine')
+        self.pairwise_raw_norm = pairwise_distances(self.raw_norm.T.values, metric='euclidean')
         self.pairwise_jaccard = pairwise_distances((self.raw > 0).T.values, metric='jaccard')
         
         # distance matrices

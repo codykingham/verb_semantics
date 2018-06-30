@@ -135,9 +135,13 @@ class Experiment:
         self.basis2result = collections.defaultdict(list)
         for clause, bases in self.clause2basis2result.items():
             for basis, results in bases.items():
-                for result in results:
-                    self.basis2result[basis].append(result)
-       
+                self.basis2result[basis].extend(results)
+        self.target2basis2result = collections.defaultdict(lambda: collections.defaultdict(list))
+        for target, clauses in experiment_data.items():
+            for clause, bases in clauses.items():
+                for basis, results in self.clause2basis2result[clause].items():
+                    self.target2basis2result[target][basis].extend(results)
+        
     
     def frame_count(self, experiment_data):
         '''
@@ -160,6 +164,7 @@ class Experiment:
         
         # helper data
         self.basis2result = collections.defaultdict(list)
+        self.target2basis2result = collections.defaultdict(lambda: collections.defaultdict(list))
         
         for target, clauses in experiment_data.items():
             for clause, phrases in clauses.items():
@@ -180,6 +185,7 @@ class Experiment:
                         for result in results:
                             frame_results |= set(result)
                     self.basis2result[frame].append(tuple(frame_results))
+                    self.target2basis2result[target][frame].append(tuple(frame_results))
                 
         counts = dict((target, counts) for target, counts in ecounts.items()
                                 if sum(counts.values()) >= self.min_obs)
