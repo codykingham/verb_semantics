@@ -971,7 +971,7 @@ vi_objc_cr_nc_CP = pred_target.format(basis=clR_nc_CP.format(relas='Objc', reqs=
 
 params['inventory']['vi_objc_lex'] = (
                                       (vi_o_lex_np, None, 2, (4,), verb_token, lexer, False),
-                                      (vi_o_lex_pp, None, 2, (4,), verb_token, lexer, False),
+                                      (vi_o_lex_pp, None, 2, (5,), verb_token, lexer, False),
                                       (vi_objc_cr_vc_CP, None, 2, (6,), verb_token, conj_lexer, False),
                                       (vi_objc_cr_vc_prep, None, 2, (6,), verb_token, prep_verber, False),
                                       (vi_objc_cr_vc_verb, None, 2, (5,), verb_token, lexer, False),
