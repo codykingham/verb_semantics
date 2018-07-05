@@ -1,5 +1,5 @@
-# Natural Verb Clusters in Biblical Hebrew 
-## An Empirical, Text-Linguistic Approach to the Verb's Semantic Categorization
+# Toward a Textlinguistic Approach to Biblical Hebrew Verb Semantics 
+## An Experiment in Vector Spaces 
 
 ### An Introduction
 What is the most natural categorization for verbs in Biblical Hebrew? Do our usual semantic classifications apply? What is the nature of categorization when it comes to abstract linguistic phenomena? This project seeks an answer to these questions. Over the recent years, linguists in Biblical Hebrew have come to recognize a deficiency in the area of semantics, that is, in the linguistic analysis of word meaning (see, for instance, Shead 2011, de Blois 2000, and the ongoing Semantics of Ancient Hebrew Database project). One oversight in particular has been the interface of lexicon and syntax, i.e. of word lemmas and the grammatical arguments which surround them (Shead 2011). Under the influence of structuralist linguistics, Hebraists have tended to view semantics and syntax as two distinct components of language (Shead 2011: 69-86; Van Hecke 2011: 286-294). However, work in corpus linguistics (e.g. Stefanowitsch 2003) and cognitive linguistics (e.g. Goldberg 1995) has questioned the strict division between the two areas. 

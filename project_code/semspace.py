@@ -150,8 +150,9 @@ class SemSpace:
         pmi_values = self.sim_pmi_nogloss.values.copy() 
         pmi_i = pmi_j = np.arange(np.min(pmi_values.shape))
         pmi_values[pmi_i, pmi_j] = np.nan # diagnoal 1's converted to NAN
-        sim_pmi_maxNorm = pd.DataFrame(pmi_values, self.sim_pmi_nogloss.index, self.sim_pmi_nogloss.columns)
-        self.sim_pmi_maxNorm = sim_pmi_maxNorm / sim_pmi_maxNorm.max().quantile(q=0.75) # divide by maximum potential similarity        
+        sim_pmi_noDiag = pd.DataFrame(pmi_values, self.sim_pmi_nogloss.index, self.sim_pmi_nogloss.columns)
+        self.sim_pmi_maxNorm = sim_pmi_noDiag / sim_pmi_noDiag.max().quantile(q=0.75) # divide by 75th percentile
+        
         # raw ratio to be normalized to max:
         rRatio_values = self.sim_norm_raw.values.copy() 
         rr_i = rr_j = np.arange(np.min(rRatio_values.shape))
