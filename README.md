@@ -1,7 +1,6 @@
-# Toward a Textlinguistic Approach to Biblical Hebrew Verb Semantics 
-## An Experiment in Vector Spaces 
+# An Experiment in Vector Spaces Toward a Textlinguistic Approach to Biblical Hebrew Verb Semantics 
 
-### An Introduction
+## An Introduction
 What is the most natural categorization for verbs in Biblical Hebrew? Do our usual semantic classifications apply? What is the nature of categorization when it comes to abstract linguistic phenomena? This project seeks an answer to these questions. Over the recent years, linguists in Biblical Hebrew have come to recognize a deficiency in the area of semantics, that is, in the linguistic analysis of word meaning (see, for instance, Shead 2011, de Blois 2000, and the ongoing Semantics of Ancient Hebrew Database project). One oversight in particular has been the interface of lexicon and syntax, i.e. of word lemmas and the grammatical arguments which surround them (Shead 2011). Under the influence of structuralist linguistics, Hebraists have tended to view semantics and syntax as two distinct components of language (Shead 2011: 69-86; Van Hecke 2011: 286-294). However, work in corpus linguistics (e.g. Stefanowitsch 2003) and cognitive linguistics (e.g. Goldberg 1995) has questioned the strict division between the two areas. 
 
 Over the last decade, important work has been done on the syntax and semantics of the Hebrew verb. Cook's *Time and the Biblical Hebrew Verb* (2012) argues strongly for a thoroughly semantic approach to the verbal system, while also contending for an aspect-based view of the verb. Meanwhile, Joosten has argued, instead, for a tense-based understanding (2012) while taking note of word order. Kalkman's study examined the modality function of the yiqtol in the context of a clause's discourse relations (2015); he also argues for the merits of a text-linguistic (discourse) approach. On another front, Dyk has shown how a verb's syntactic arguments contribute to its lexical meaning (e.g. 2017).
@@ -24,6 +23,6 @@ The branch of cognitive linguistics which makes use of a form-to-function philos
 
 *[to be continued; bibliography to follow]*   
 
-### Data
+## Data
 The data used for the analysis is the [ETCBC](http://www.etcbc.nl)'s [BHSA](https://github.com/ETCBC/bhsa) in [Text-Fabric representation](https://github.com/Dans-labs/text-fabric/wiki). 
 
